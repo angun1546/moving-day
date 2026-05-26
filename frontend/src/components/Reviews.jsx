@@ -30,15 +30,20 @@ function Stars({ rating }) {
 
 function Reviews() {
   return (
-    <section id="reviews" className="mx-auto max-w-6xl px-4 py-20">
-      <h2 className="text-3xl font-bold text-gray-900">먼저 경험한 고객들의 이야기</h2>
+    <section id="reviews" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20">
+      <p className="font-inter text-sm font-semibold tracking-wider text-brand uppercase">
+        Review
+      </p>
+      <h2 className="mt-2 text-3xl font-bold text-gray-900">
+        먼저 경험한 고객들의 이야기
+      </h2>
       <p className="mt-3 text-gray-600">이삿날과 함께한 실제 고객 후기입니다.</p>
 
       <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
         {REVIEWS.map((r) => (
           <figure
             key={r.name}
-            className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+            className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
           >
             <Stars rating={r.rating} />
             <blockquote className="mt-4 leading-relaxed text-gray-700">

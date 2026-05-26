@@ -15,7 +15,7 @@ const SERVICES = [
 function ServiceCard({ icon, title, desc, featured }) {
   if (featured) {
     return (
-      <div className="rounded-3xl bg-brand p-8 text-white transition hover:-translate-y-1 md:col-span-2">
+      <div className="rounded-3xl bg-brand p-8 text-white transition hover:-translate-y-1 hover:shadow-lg md:col-span-2">
         <span className="text-4xl">{icon}</span>
         <h3 className="mt-4 text-2xl font-bold">{title}</h3>
         <p className="mt-2 max-w-md leading-relaxed text-brand-light">{desc}</p>
@@ -33,10 +33,11 @@ function ServiceCard({ icon, title, desc, featured }) {
 
 function BentoServices() {
   return (
-    <section id="services" className="mx-auto max-w-6xl px-4 py-20">
-      <h2 className="text-3xl font-bold text-gray-900">
-        필요한 이사만, 골라서
-      </h2>
+    <section id="services" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20">
+      <p className="font-inter text-sm font-semibold tracking-wider text-brand uppercase">
+        Service
+      </p>
+      <h2 className="mt-2 text-3xl font-bold text-gray-900">필요한 이사만, 골라서</h2>
       <p className="mt-3 text-gray-600">
         상황에 맞는 서비스를 선택하면 그에 맞는 업체 견적을 받아볼 수 있어요.
       </p>

@@ -5,18 +5,20 @@ const API = '/api/quotes'
 // 견적 신청 폼 제출 (React Router action)
 export async function createQuote({ request }) {
   const form = await request.formData()
-  const data = Object.fromEntries(form)
 
   // 선택 항목이 비어 있으면 전송하지 않는다
-  for (const key of ['moveDate', 'homeSize', 'memo']) {
-    if (!data[key]) delete data[key]
+  for (const key of ['moveDate', 'homeSize', 'memo', 'visitDate', 'callTime']) {
+    if (!form.get(key)) form.delete(key)
   }
 
-  const res = await fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
+  // 사진을 고르지 않았으면 빈 파일 항목 제거
+  const photos = form.getAll('photos')
+  if (photos.length === 1 && photos[0] instanceof File && photos[0].size === 0) {
+    form.delete('photos')
+  }
+
+  // multipart 그대로 전송 (Content-Type은 브라우저가 boundary와 함께 자동 설정)
+  const res = await fetch(API, { method: 'POST', body: form })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))

@@ -6,9 +6,12 @@ const STEPS = [
 
 function ProcessSteps() {
   return (
-    <section id="steps" className="bg-white">
+    <section id="steps" className="scroll-mt-20 bg-white">
       <div className="mx-auto max-w-6xl px-4 py-20">
-        <h2 className="text-3xl font-bold text-gray-900">3단계면 충분합니다</h2>
+        <p className="font-inter text-sm font-semibold tracking-wider text-brand uppercase">
+          Process
+        </p>
+        <h2 className="mt-2 text-3xl font-bold text-gray-900">3단계면 충분합니다</h2>
         <p className="mt-3 text-gray-600">복잡한 과정 없이, 견적 신청부터 이사까지.</p>
 
         <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
