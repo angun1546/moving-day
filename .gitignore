@@ -17,7 +17,9 @@ build/
 
 # 로그/임시
 *.log
-_srv.*.log
+*.err
+_*.log
+_*.err
 
 # OS / 에디터
 .DS_Store
