@@ -5,7 +5,8 @@ import QuoteMethodPage from '../pages/QuoteMethodPage'
 import QuoteTypePage from '../pages/QuoteTypePage'
 import QuoteFormPage from '../pages/QuoteFormPage'
 import QuoteDonePage from '../pages/QuoteDonePage'
-import ComingSoonPage from '../pages/ComingSoonPage'
+import LoginPage from '../pages/LoginPage'
+import SignupPage from '../pages/SignupPage'
 import { createQuote } from '../services/quotes'
 
 // 데이터 모드 라우터 설정
@@ -24,9 +25,9 @@ export const router = createBrowserRouter([
         element: <QuoteFormPage />,
         action: createQuote,
       },
-      // 인증 기능은 준비 중 (추후 실제 로그인/회원가입으로 교체)
-      { path: 'login', element: <ComingSoonPage /> },
-      { path: 'signup', element: <ComingSoonPage /> },
+      // 인증
+      { path: 'login', element: <LoginPage /> },
+      { path: 'signup', element: <SignupPage /> },
     ],
   },
 ])

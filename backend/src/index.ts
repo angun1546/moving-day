@@ -1,6 +1,7 @@
 import cors from 'cors'
 import express, { type ErrorRequestHandler } from 'express'
 import quotesRouter from './routes/quotes.ts'
+import authRouter from './routes/auth.ts'
 
 const app = express()
 const port = Number(process.env.PORT ?? 4000)
@@ -15,6 +16,9 @@ app.use('/uploads', express.static('uploads'))
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
 })
+
+// 인증 API
+app.use('/api/auth', authRouter)
 
 // 견적 신청 API
 app.use('/api/quotes', quotesRouter)
