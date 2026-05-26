@@ -1,0 +1,27 @@
+# 의존성
+node_modules/
+
+# 빌드 산출물
+dist/
+build/
+
+# 환경변수
+.env
+.env.*
+!.env.example
+
+# Prisma 생성물 / DB
+**/src/generated/
+*.db
+*.db-journal
+
+# 로그/임시
+*.log
+_srv.*.log
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+
+# Claude Code 로컬 설정
+.claude/settings.local.json
