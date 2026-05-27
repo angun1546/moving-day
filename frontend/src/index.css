@@ -5,11 +5,13 @@
   --font-sans: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
   --font-inter: 'Inter', sans-serif;
 
-  /* 브랜드 컬러: Deep Green (성장·안정·안심) */
-  --color-brand: #006e54;
-  --color-brand-dark: #1b4d3e;
-  --color-brand-light: #e2eee9;
-  --color-brand-bg: #f4f7f5;
+  /* 브랜드 컬러: 로고 기반 그린 (#00e676 시그니처를 진한 톤으로) */
+  --color-brand: #00a152;
+  --color-brand-dark: #007d3f;
+  --color-brand-light: #d7f5e4;
+  --color-brand-bg: #f1faf5;
+  /* 형광 포인트: 로고 시그니처 그린 (강조·배경용) */
+  --color-accent: #00e676;
 }
 
 @layer base {
