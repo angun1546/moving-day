@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 import { findMethod, findType } from '../data/quoteOptions'
 import { usePostcode } from '../hooks/usePostcode'
+import QuoteSteps from '../components/QuoteSteps'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -24,13 +25,13 @@ function Field({ label, required, children }) {
   )
 }
 
-// 출발지/도착지 주소 입력 (주소 검색 버튼 연동)
-function AddressField({ label, name, value, onSearch }) {
+// 출발지/도착지 주소 입력 (검색 주소 + 상세주소를 한 필드로 합쳐 전송)
+function AddressField({ label, name, value, detail, onSearch, onDetail }) {
+  const full = detail ? `${value} ${detail}` : value
   return (
     <Field label={label} required>
       <div className="mt-1 flex gap-2">
         <input
-          name={name}
           value={value}
           readOnly
           required
@@ -46,6 +47,14 @@ function AddressField({ label, name, value, onSearch }) {
           주소 검색
         </button>
       </div>
+      <input
+        value={detail}
+        onChange={(e) => onDetail(e.target.value)}
+        placeholder="상세주소 (동·호수, 층 등)"
+        className={`${inputClass} mt-2`}
+      />
+      {/* 실제 전송 값: 검색 주소 + 상세주소 */}
+      <input type="hidden" name={name} value={full} />
     </Field>
   )
 }
@@ -60,6 +69,8 @@ function QuoteFormPage() {
   const openPostcode = usePostcode()
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
+  const [fromDetail, setFromDetail] = useState('')
+  const [toDetail, setToDetail] = useState('')
   const [photos, setPhotos] = useState([])
 
   if (!m || !t) {
@@ -86,6 +97,7 @@ function QuoteFormPage() {
 
   return (
     <section className="mx-auto max-w-2xl px-4 py-16">
+      <QuoteSteps current={3} />
       <Link
         to={`/quote/${m.slug}`}
         className="text-sm text-gray-500 transition hover:text-brand"
@@ -138,13 +150,17 @@ function QuoteFormPage() {
           label="출발지"
           name="fromRegion"
           value={from}
+          detail={fromDetail}
           onSearch={() => openPostcode(setFrom)}
+          onDetail={setFromDetail}
         />
         <AddressField
           label="도착지"
           name="toRegion"
           value={to}
+          detail={toDetail}
           onSearch={() => openPostcode(setTo)}
+          onDetail={setToDetail}
         />
 
         {/* 방문견적: 방문 희망 일시 */}

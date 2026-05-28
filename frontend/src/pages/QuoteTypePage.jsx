@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { TYPES, findMethod } from '../data/quoteOptions'
+import QuoteSteps from '../components/QuoteSteps'
 
 function QuoteTypePage() {
   const { method } = useParams()
@@ -21,6 +22,7 @@ function QuoteTypePage() {
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-16">
+      <QuoteSteps current={2} />
       <Link to="/quote" className="text-sm text-gray-500 transition hover:text-brand">
         ← 견적 방식
       </Link>

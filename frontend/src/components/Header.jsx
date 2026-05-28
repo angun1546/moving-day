@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
 
@@ -47,8 +47,19 @@ function MenuIcon({ open }) {
 
 // 헤더 로고 (PNG)
 function Logo({ onClick }) {
+  const { pathname } = useLocation()
+
+  // 홈에서 로고를 누르면 이동 대신 맨 위로 부드럽게 스크롤
+  function handle(e) {
+    onClick?.()
+    if (pathname === '/') {
+      e.preventDefault()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   return (
-    <Link to="/" onClick={onClick} className="flex items-center">
+    <Link to="/" onClick={handle} className="flex items-center">
       <img
         src="/logo-mark.png"
         alt="이삿날 The Moving Day"
