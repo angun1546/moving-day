@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useLocalState } from '../hooks/useLocalState'
+import { maskKoreanNamesInText } from '../utils/userDisplay'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -51,10 +53,6 @@ const MATCH_DATA = [
   },
 ]
 
-// 시연 더미 제거 — 실제 작성된 데이터는 user/partner 페이지에서 localStorage로 공유 예정
-const INIT_REVIEWS = []
-const INIT_INQUIRIES = []
-
 function StatCard({ label, value }) {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -73,99 +71,7 @@ function Empty() {
   )
 }
 
-function InquiryCard({ inquiry, onAnswer, onClear, onRemove }) {
-  const [open, setOpen] = useState(false)
-  const [draft, setDraft] = useState('')
-
-  function save() {
-    if (!draft.trim()) return
-    onAnswer(inquiry.id, draft.trim())
-    setDraft('')
-    setOpen(false)
-  }
-
-  return (
-    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">
-              {inquiry.type}
-            </span>
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                inquiry.status === '답변완료'
-                  ? 'bg-brand-light text-brand'
-                  : 'bg-amber-100 text-amber-700'
-              }`}
-            >
-              {inquiry.status}
-            </span>
-          </div>
-          <p className="mt-2 font-medium text-gray-900">Q. {inquiry.q}</p>
-          <p className="mt-1 text-xs text-gray-400">{inquiry.author}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => onRemove(inquiry.id)}
-          className="text-xs font-semibold text-red-500 hover:text-red-700"
-        >
-          삭제
-        </button>
-      </div>
-
-      {inquiry.a ? (
-        <div className="mt-3 rounded-xl bg-brand-bg p-4">
-          <p className="text-xs font-bold text-brand">A. 관리자 답변</p>
-          <p className="mt-1 leading-relaxed text-gray-700">{inquiry.a}</p>
-          <button
-            type="button"
-            onClick={() => onClear(inquiry.id)}
-            className="mt-2 text-xs font-semibold text-gray-500 hover:text-brand"
-          >
-            답변 지우고 다시 작성
-          </button>
-        </div>
-      ) : open ? (
-        <div className="mt-3 space-y-2">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={3}
-            placeholder="답변을 입력하세요."
-            className={inputClass}
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={save}
-              className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
-            >
-              답변 등록
-            </button>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-600"
-            >
-              취소
-            </button>
-          </div>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="mt-3 text-sm font-semibold text-brand hover:underline"
-        >
-          + 답변 작성
-        </button>
-      )}
-    </article>
-  )
-}
-
-// 리뷰 카드 — 숨김/삭제 + 관리자 답변(작성·수정·삭제)
+// 리뷰 카드 — 통합 객체(_kind, type, author, ...) 받아 처리
 function ReviewItem({ review, onToggleHide, onRemove, onReply, onClearReply }) {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
@@ -174,17 +80,17 @@ function ReviewItem({ review, onToggleHide, onRemove, onReply, onClearReply }) {
 
   function save() {
     if (!draft.trim()) return
-    onReply(review.id, draft.trim())
+    onReply(review, draft.trim())
     setDraft('')
     setOpen(false)
   }
   function startEdit() {
-    setEditDraft(review.reply)
+    setEditDraft(review.reply || '')
     setEditing(true)
   }
   function saveEdit() {
     if (!editDraft.trim()) return
-    onReply(review.id, editDraft.trim())
+    onReply(review, editDraft.trim())
     setEditing(false)
   }
 
@@ -214,20 +120,20 @@ function ReviewItem({ review, onToggleHide, onRemove, onReply, onClearReply }) {
           </div>
           <p className="mt-2 leading-relaxed text-gray-700">{review.text}</p>
           <p className="mt-2 text-xs text-gray-400">
-            {review.author} · {review.createdAt}
+            {review.author} · {review.createdAt || ''}
           </p>
         </div>
         <div className="flex gap-2 text-xs">
           <button
             type="button"
-            onClick={() => onToggleHide(review.id)}
+            onClick={() => onToggleHide(review)}
             className="rounded-full border border-gray-300 px-3 py-1.5 font-semibold text-gray-600 transition hover:border-brand hover:text-brand"
           >
             {review.hidden ? '노출' : '숨김'}
           </button>
           <button
             type="button"
-            onClick={() => onRemove(review.id)}
+            onClick={() => onRemove(review)}
             className="rounded-full border border-red-300 px-3 py-1.5 font-semibold text-red-500 transition hover:bg-red-50"
           >
             삭제
@@ -252,14 +158,16 @@ function ReviewItem({ review, onToggleHide, onRemove, onReply, onClearReply }) {
               </button>
               <button
                 type="button"
-                onClick={() => onClearReply(review.id)}
+                onClick={() => onClearReply(review)}
                 className="font-semibold text-red-500 hover:text-red-700"
               >
                 삭제
               </button>
             </div>
           </div>
-          <p className="mt-2 leading-relaxed text-gray-700">{review.reply}</p>
+          <p className="mt-2 leading-relaxed text-gray-700">
+            {maskKoreanNamesInText(review.reply)}
+          </p>
         </div>
       ) : editing ? (
         <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
@@ -325,53 +233,202 @@ function ReviewItem({ review, onToggleHide, onRemove, onReply, onClearReply }) {
   )
 }
 
+// Q&A 문의 카드 — status는 a 유무로 자동 계산
+function InquiryCard({ inquiry, onAnswer, onClear, onRemove }) {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState('')
+  const status = inquiry.a ? '답변완료' : '대기'
+
+  function save() {
+    if (!draft.trim()) return
+    onAnswer(inquiry, draft.trim())
+    setDraft('')
+    setOpen(false)
+  }
+
+  return (
+    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">
+              {inquiry.type}
+            </span>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                status === '답변완료'
+                  ? 'bg-brand-light text-brand'
+                  : 'bg-amber-100 text-amber-700'
+              }`}
+            >
+              {status}
+            </span>
+          </div>
+          <p className="mt-2 font-medium text-gray-900">Q. {inquiry.q}</p>
+          <p className="mt-1 text-xs text-gray-400">{inquiry.author}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onRemove(inquiry)}
+          className="text-xs font-semibold text-red-500 hover:text-red-700"
+        >
+          삭제
+        </button>
+      </div>
+
+      {inquiry.a ? (
+        <div className="mt-3 rounded-xl bg-brand-bg p-4">
+          <p className="text-xs font-bold text-brand">A. 관리자 답변</p>
+          <p className="mt-1 leading-relaxed text-gray-700">
+            {maskKoreanNamesInText(inquiry.a)}
+          </p>
+          <button
+            type="button"
+            onClick={() => onClear(inquiry)}
+            className="mt-2 text-xs font-semibold text-gray-500 hover:text-brand"
+          >
+            답변 지우고 다시 작성
+          </button>
+        </div>
+      ) : open ? (
+        <div className="mt-3 space-y-2">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={3}
+            placeholder="답변을 입력하세요."
+            className={inputClass}
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={save}
+              className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+            >
+              답변 등록
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-600"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-3 text-sm font-semibold text-brand hover:underline"
+        >
+          + 답변 작성
+        </button>
+      )}
+    </article>
+  )
+}
+
 function AdminDashboardPage() {
-  const [reviews, setReviews] = useState(INIT_REVIEWS)
-  const [inquiries, setInquiries] = useState(INIT_INQUIRIES)
+  // 사용자 페이지와 같은 키 공유 — 양방향 동기화
+  const [userReviews, setUserReviews] = useLocalState(
+    'movingday_user_reviews',
+    [],
+  )
+  const [partnerStories, setPartnerStories] = useLocalState(
+    'movingday_partner_stories',
+    [],
+  )
+  const [userQa, setUserQa] = useLocalState('movingday_user_qa', [])
+  const [partnerQa, setPartnerQa] = useLocalState('movingday_partner_qa', [])
+
+  // 두 리뷰 큐를 합쳐 admin이 한 화면에서 관리, 시간 역순
+  const allReviews = useMemo(() => {
+    return [
+      ...userReviews.map((r) => ({
+        ...r,
+        _kind: 'user',
+        type: '고객',
+        author: r.name,
+        createdAt: r.date || '',
+      })),
+      ...partnerStories.map((r) => ({
+        ...r,
+        _kind: 'partner',
+        type: '파트너',
+        author: r.company,
+        createdAt: r.date || '',
+      })),
+    ].sort((a, b) => b.id - a.id)
+  }, [userReviews, partnerStories])
+
+  const allInquiries = useMemo(() => {
+    return [
+      ...userQa.map((q) => ({
+        ...q,
+        _kind: 'user',
+        type: '고객',
+        author: q.name,
+      })),
+      ...partnerQa.map((q) => ({
+        ...q,
+        _kind: 'partner',
+        type: '파트너',
+        author: q.name,
+      })),
+    ].sort((a, b) => b.id - a.id)
+  }, [userQa, partnerQa])
 
   // 통계
   const inProgress = MATCH_DATA.filter((m) => m.status === '입찰중').length
   const totalBids = MATCH_DATA.reduce((sum, m) => sum + m.bids.length, 0)
-  const hiddenReviews = reviews.filter((r) => r.hidden).length
-  const pendingQa = inquiries.filter((i) => i.status === '대기').length
+  const hiddenReviews = allReviews.filter((r) => r.hidden).length
+  const pendingQa = allInquiries.filter((i) => !i.a).length
 
-  // 리뷰 관리
-  function toggleHide(id) {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, hidden: !r.hidden } : r)),
-    )
+  // 리뷰 액션 — 어느 큐인지 _kind로 분기해 같은 키에 반영
+  function toggleHide(item) {
+    const updater = (prev) =>
+      prev.map((r) => (r.id === item.id ? { ...r, hidden: !r.hidden } : r))
+    if (item._kind === 'user') setUserReviews(updater)
+    else setPartnerStories(updater)
   }
-  function removeReview(id) {
+  function removeReview(item) {
     if (!window.confirm('이 리뷰를 삭제할까요?')) return
-    setReviews((prev) => prev.filter((r) => r.id !== id))
+    const filter = (prev) => prev.filter((r) => r.id !== item.id)
+    if (item._kind === 'user') setUserReviews(filter)
+    else setPartnerStories(filter)
   }
-  function replyReview(id, text) {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, reply: text } : r)),
-    )
+  function replyReview(item, text) {
+    const updater = (prev) =>
+      prev.map((r) => (r.id === item.id ? { ...r, reply: text } : r))
+    if (item._kind === 'user') setUserReviews(updater)
+    else setPartnerStories(updater)
   }
-  function clearReply(id) {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, reply: '' } : r)),
-    )
+  function clearReply(item) {
+    const updater = (prev) =>
+      prev.map((r) => (r.id === item.id ? { ...r, reply: '' } : r))
+    if (item._kind === 'user') setUserReviews(updater)
+    else setPartnerStories(updater)
   }
 
-  // Q&A 답변
-  function answer(id, text) {
-    setInquiries((prev) =>
-      prev.map((i) =>
-        i.id === id ? { ...i, a: text, status: '답변완료' } : i,
-      ),
-    )
+  // Q&A 액션
+  function answer(item, text) {
+    const updater = (prev) =>
+      prev.map((q) => (q.id === item.id ? { ...q, a: text } : q))
+    if (item._kind === 'user') setUserQa(updater)
+    else setPartnerQa(updater)
   }
-  function clearAnswer(id) {
-    setInquiries((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, a: '', status: '대기' } : i)),
-    )
+  function clearAnswer(item) {
+    const updater = (prev) =>
+      prev.map((q) => (q.id === item.id ? { ...q, a: '' } : q))
+    if (item._kind === 'user') setUserQa(updater)
+    else setPartnerQa(updater)
   }
-  function removeInquiry(id) {
+  function removeInquiry(item) {
     if (!window.confirm('이 문의를 삭제할까요?')) return
-    setInquiries((prev) => prev.filter((i) => i.id !== id))
+    const filter = (prev) => prev.filter((q) => q.id !== item.id)
+    if (item._kind === 'user') setUserQa(filter)
+    else setPartnerQa(filter)
   }
 
   return (
@@ -440,10 +497,7 @@ function AdminDashboardPage() {
                 <p className="text-xs font-semibold text-gray-500">입찰 내역</p>
                 <ul className="mt-2 space-y-1 text-sm">
                   {m.bids.map((b, i) => (
-                    <li
-                      key={i}
-                      className="flex items-center justify-between"
-                    >
+                    <li key={i} className="flex items-center justify-between">
                       <span className="text-gray-700">{b.company}</span>
                       <span className="font-inter font-semibold text-gray-900">
                         {won(b.price)}원
@@ -457,18 +511,19 @@ function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* ② 리뷰 관리 */}
+      {/* ② 리뷰 관리 — user/partner 통합 */}
       <h2 className="mt-12 text-xl font-bold text-gray-900">리뷰 관리</h2>
       <p className="mt-2 text-sm text-gray-500">
-        허위·욕설·비방 리뷰는 숨기거나 삭제할 수 있습니다.
+        사용자/파트너가 작성한 리뷰를 한 곳에서 관리합니다. 답변은 사용자
+        페이지에도 즉시 반영됩니다.
       </p>
       <div className="mt-4 space-y-3">
-        {reviews.length === 0 ? (
+        {allReviews.length === 0 ? (
           <Empty />
         ) : (
-          reviews.map((r) => (
+          allReviews.map((r) => (
             <ReviewItem
-              key={r.id}
+              key={`${r._kind}-${r.id}`}
               review={r}
               onToggleHide={toggleHide}
               onRemove={removeReview}
@@ -479,18 +534,19 @@ function AdminDashboardPage() {
         )}
       </div>
 
-      {/* ③ Q&A 답변 */}
+      {/* ③ Q&A 답변 — user/partner 통합 */}
       <h2 className="mt-12 text-xl font-bold text-gray-900">Q&A 답변</h2>
       <p className="mt-2 text-sm text-gray-500">
-        대기 중인 문의에 답변을 작성하면 답변완료로 전환됩니다.
+        대기 중인 문의에 답변을 작성하면 답변완료로 전환되고, 사용자 페이지에도
+        즉시 반영됩니다.
       </p>
       <div className="mt-4 space-y-3">
-        {inquiries.length === 0 ? (
+        {allInquiries.length === 0 ? (
           <Empty />
         ) : (
-          inquiries.map((i) => (
+          allInquiries.map((i) => (
             <InquiryCard
-              key={i.id}
+              key={`${i._kind}-${i.id}`}
               inquiry={i}
               onAnswer={answer}
               onClear={clearAnswer}

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useLocalState } from '../hooks/useLocalState'
 import { todayString } from '../utils/date'
+import { maskKoreanNamesInText } from '../utils/userDisplay'
 
 const PAGE_SIZE = 5
 
@@ -250,6 +251,16 @@ function PartnerStoryPage() {
                   <figcaption className="mt-4 text-sm font-semibold text-gray-900">
                     {r.company}
                   </figcaption>
+                  {r.reply && (
+                    <div className="mt-4 rounded-2xl bg-brand-bg p-4">
+                      <span className="inline-flex items-center rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-white">
+                        관리자 답변
+                      </span>
+                      <p className="mt-2 leading-relaxed text-gray-700">
+                        {maskKoreanNamesInText(r.reply)}
+                      </p>
+                    </div>
+                  )}
                   {isAdmin && (
                     <div className="mt-3 flex gap-3 border-t border-gray-100 pt-3 text-xs">
                       <button

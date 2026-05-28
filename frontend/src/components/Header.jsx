@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
 import MenuIcon from './MenuIcon'
@@ -15,23 +15,42 @@ const NAV = [
   { to: '/faq', label: 'FAQ' },
 ]
 
-// 헤더 로고 (PNG) — 클릭하면 무조건 유저 메인('/')만 이동, 홈에 있으면 스크롤 업
+// 헤더 로고 (PNG) — 자기 사이트 메인으로만 이동, 같은 페이지면 스크롤 업
+// ?role=partner로 진입한 경우(파트너에서 로그인/회원가입 들어옴): 경로·로고 모두 파트너 스타일로
 function Logo({ onClick }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const isPartner = params.get('role') === 'partner'
+  const homePath = isPartner ? '/partner' : '/'
 
   function handle(e) {
     e.preventDefault()
     onClick?.()
-    if (pathname === '/') {
+    if (pathname === homePath) {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
-      navigate('/')
+      navigate(homePath)
     }
   }
 
+  if (isPartner) {
+    return (
+      <Link to={homePath} onClick={handle} className="flex items-center gap-2">
+        <img
+          src="/logo-mark.png"
+          alt="무브 마스터 파트너"
+          className="h-9 w-auto"
+        />
+        <span className="hidden text-sm font-bold whitespace-nowrap text-brand sm:inline">
+          무브 마스터 파트너센터
+        </span>
+      </Link>
+    )
+  }
+
   return (
-    <Link to="/" onClick={handle} className="flex items-center">
+    <Link to={homePath} onClick={handle} className="flex items-center">
       <img
         src="/logo-mark.png"
         alt="이삿날 The Moving Day"

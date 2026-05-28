@@ -130,16 +130,16 @@ function PartnerHomePage() {
           </div>
 
           {/* 신뢰 지표 */}
-          <dl className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <dl className="mt-16 grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
             {STATS.map((s) => (
               <div
                 key={s.label}
-                className="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm"
+                className="rounded-2xl border border-gray-100 bg-white px-2 py-4 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md sm:p-5"
               >
-                <dt className="font-inter text-2xl font-bold text-brand md:text-3xl">
+                <dt className="font-inter text-lg font-bold text-brand sm:text-2xl md:text-3xl">
                   {s.value}
                 </dt>
-                <dd className="mt-1 text-xs text-gray-500 md:text-sm">
+                <dd className="mt-1 break-keep text-xs leading-tight text-gray-500 sm:text-sm">
                   {s.label}
                 </dd>
               </div>

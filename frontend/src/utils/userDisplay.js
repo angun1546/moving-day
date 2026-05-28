@@ -33,3 +33,24 @@ export function getDisplayName(user, mode) {
   if (m === 'real') return maskName(user.name)
   return user.nickname || user.name
 }
+
+// 답변 텍스트 자동 마스킹 — 호칭(님/씨) 앞에 오는 한국 이름만 골라 마스킹
+// 일반 단어("정말", "김치를" 등)는 호칭이 없어 자동으로 제외됨
+const KOREAN_FAMILY_NAMES = [
+  '김', '이', '박', '최', '정', '강', '조', '윤', '장', '임',
+  '한', '오', '서', '신', '권', '황', '안', '송', '류', '전',
+  '홍', '고', '문', '양', '손', '배', '백', '허', '남', '심',
+  '노', '하', '곽', '성', '차', '주', '우', '구', '민', '유',
+  '나', '진', '지', '엄', '채', '원', '천', '방', '공', '현',
+  '함', '변', '염', '여', '추', '도', '소', '석', '선', '설',
+]
+
+const NAME_IN_TEXT_PATTERN = new RegExp(
+  `(${KOREAN_FAMILY_NAMES.join('|')})[가-힣]{1,3}(?=님|씨)`,
+  'g',
+)
+
+export function maskKoreanNamesInText(text) {
+  if (!text) return text
+  return String(text).replace(NAME_IN_TEXT_PATTERN, (match) => maskName(match))
+}

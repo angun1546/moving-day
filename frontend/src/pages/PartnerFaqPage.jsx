@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useLocalState } from '../hooks/useLocalState'
+import { maskKoreanNamesInText } from '../utils/userDisplay'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -92,7 +93,9 @@ function QaCard({ qa, onAnswer, onDeleteAnswer, onDeleteQuestion, isAdmin }) {
               </div>
             )}
           </div>
-          <p className="mt-2 leading-relaxed text-gray-700">{qa.a}</p>
+          <p className="mt-2 leading-relaxed text-gray-700">
+            {maskKoreanNamesInText(qa.a)}
+          </p>
         </div>
       ) : editing ? (
         <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">

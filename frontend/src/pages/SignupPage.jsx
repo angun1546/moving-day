@@ -65,7 +65,8 @@ function SignupPage() {
         email,
         password,
       })
-      navigate('/')
+      // 파트너 컨텍스트에서 가입했으면 파트너 메인으로
+      navigate(isPartner ? '/partner' : '/')
     } catch (err) {
       setError(err.message)
     } finally {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getDisplayName } from '../utils/userDisplay'
+import { getDisplayName, maskKoreanNamesInText } from '../utils/userDisplay'
 import { useLocalState } from '../hooks/useLocalState'
 
 const inputClass =
@@ -93,7 +93,9 @@ function QaCard({ qa, onAnswer, onDeleteAnswer, onDeleteQuestion, isAdmin }) {
               </div>
             )}
           </div>
-          <p className="mt-2 leading-relaxed text-gray-700">{qa.a}</p>
+          <p className="mt-2 leading-relaxed text-gray-700">
+            {maskKoreanNamesInText(qa.a)}
+          </p>
         </div>
       ) : editing ? (
         <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
