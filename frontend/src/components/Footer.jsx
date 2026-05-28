@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 const COLUMNS = [
   {
     title: '서비스',
@@ -23,6 +25,12 @@ function Footer() {
             <p className="mt-2 text-sm text-gray-500">
               믿을 수 있는 이사 견적 비교 플랫폼
             </p>
+            <Link
+              to="/partner"
+              className="mt-3 inline-block text-sm font-semibold text-brand transition hover:underline"
+            >
+              무브 마스터 파트너센터 →
+            </Link>
           </div>
 
           <div className="grid grid-cols-3 gap-8 text-sm">

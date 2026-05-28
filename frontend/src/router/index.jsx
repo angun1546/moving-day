@@ -8,9 +8,15 @@ import QuoteDonePage from '../pages/QuoteDonePage'
 import BidComparePage from '../pages/BidComparePage'
 import LoginPage from '../pages/LoginPage'
 import SignupPage from '../pages/SignupPage'
+import UserReviewPage from '../pages/UserReviewPage'
+import PartnerLayout from '../components/PartnerLayout'
+import PartnerHomePage from '../pages/PartnerHomePage'
+import PartnerDashboardPage from '../pages/PartnerDashboardPage'
+import PartnerProfilePage from '../pages/PartnerProfilePage'
+import PartnerStoryPage from '../pages/PartnerStoryPage'
 import { createQuote } from '../services/quotes'
 
-// 데이터 모드 라우터 설정
+// 데이터 모드 라우터 (고객: '/' 레이아웃 / 업체: '/partner' 레이아웃)
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -31,6 +37,19 @@ export const router = createBrowserRouter([
       // 인증
       { path: 'login', element: <LoginPage /> },
       { path: 'signup', element: <SignupPage /> },
+      // 고객 리뷰
+      { path: 'reviews', element: <UserReviewPage /> },
+    ],
+  },
+  // 업체(파트너) 전용 영역 — 별도 레이아웃
+  {
+    path: '/partner',
+    element: <PartnerLayout />,
+    children: [
+      { index: true, element: <PartnerHomePage /> },
+      { path: 'dashboard', element: <PartnerDashboardPage /> },
+      { path: 'profile', element: <PartnerProfilePage /> },
+      { path: 'story', element: <PartnerStoryPage /> },
     ],
   },
 ])

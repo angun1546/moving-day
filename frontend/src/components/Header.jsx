@@ -2,48 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
+import MenuIcon from './MenuIcon'
+import SearchBox from './SearchBox'
 
 const NAV = [
   { href: '#services', label: '서비스' },
   { href: '#steps', label: '이용 절차' },
   { href: '#reviews', label: '고객 후기' },
 ]
-
-// 햄버거 ↔ X (GSAP: power2.inOut, 정중앙 회전)
-function MenuIcon({ open }) {
-  const top = useRef(null)
-  const mid = useRef(null)
-  const bot = useRef(null)
-
-  useEffect(() => {
-    const o = { duration: 0.4, ease: 'power2.inOut', transformOrigin: '50% 50%' }
-    if (open) {
-      gsap.to(top.current, { y: 5, rotate: 45, ...o })
-      gsap.to(mid.current, { autoAlpha: 0, ...o })
-      gsap.to(bot.current, { y: -5, rotate: -45, ...o })
-    } else {
-      gsap.to(top.current, { y: 0, rotate: 0, ...o })
-      gsap.to(mid.current, { autoAlpha: 1, ...o })
-      gsap.to(bot.current, { y: 0, rotate: 0, ...o })
-    }
-  }, [open])
-
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <line ref={top} x1="4" y1="7" x2="20" y2="7" />
-      <line ref={mid} x1="4" y1="12" x2="20" y2="12" />
-      <line ref={bot} x1="4" y1="17" x2="20" y2="17" />
-    </svg>
-  )
-}
 
 // 헤더 로고 (PNG)
 function Logo({ onClick }) {
@@ -100,6 +66,11 @@ function Header() {
             견적 받기
           </Link>
 
+          <SearchBox
+            placeholder="이사 서비스 검색"
+            className="hidden w-36 py-1.5 md:flex"
+          />
+
           {user ? (
             <>
               <span className="hidden text-sm font-medium text-gray-700 md:inline">
@@ -117,15 +88,15 @@ function Header() {
             <>
               <Link
                 to="/login"
-                className="hidden rounded-full px-3 py-2 text-sm font-medium text-gray-600 transition hover:text-brand md:inline-flex"
-              >
-                로그인
-              </Link>
-              <Link
-                to="/signup"
                 className="hidden rounded-full border border-brand px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white md:inline-flex"
               >
-                회원가입
+                로그인/회원가입
+              </Link>
+              <Link
+                to="/partner"
+                className="hidden rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-brand hover:text-brand md:inline-flex"
+              >
+                파트너
               </Link>
             </>
           )}
@@ -148,6 +119,10 @@ function Header() {
         className="invisible h-0 overflow-hidden border-t border-gray-100 bg-white/90 opacity-0 backdrop-blur-lg"
       >
         <div className="mx-auto max-w-6xl space-y-1 px-4 py-3">
+          <SearchBox
+            placeholder="이사 서비스 검색"
+            className="mb-2 py-2 md:hidden"
+          />
           {NAV.map((n) => (
             <a
               key={n.href}
@@ -177,22 +152,22 @@ function Header() {
                 </button>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <>
                 <Link
                   to="/login"
                   onClick={close}
-                  className="flex-1 rounded-full border border-gray-300 px-4 py-2 text-center text-sm font-medium text-gray-700"
+                  className="block rounded-full bg-brand px-4 py-2 text-center text-sm font-semibold text-white"
                 >
-                  로그인
+                  로그인/회원가입
                 </Link>
                 <Link
-                  to="/signup"
+                  to="/partner"
                   onClick={close}
-                  className="flex-1 rounded-full bg-brand px-4 py-2 text-center text-sm font-semibold text-white"
+                  className="mt-2 block rounded-full border border-gray-300 px-4 py-2 text-center text-sm font-semibold text-gray-600"
                 >
-                  회원가입
+                  무브 마스터 파트너센터
                 </Link>
-              </div>
+              </>
             )}
           </div>
         </div>
