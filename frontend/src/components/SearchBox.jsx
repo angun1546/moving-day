@@ -13,7 +13,7 @@ function SearchBox({ placeholder = '검색', className = '' }) {
       <button
         type="submit"
         aria-label="검색"
-        className="text-gray-400 transition hover:text-brand"
+        className="text-brand transition hover:text-brand-dark"
       >
         <svg
           width="16"

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import MenuIcon from './MenuIcon'
 import SearchBox from './SearchBox'
 import BellIcon from './BellIcon'
+import UserMenu from './UserMenu'
 
 // 햄버거 패널 메뉴 (앵커 + 라우트 혼합)
 const NAV = [
@@ -39,7 +40,7 @@ function Logo({ onClick }) {
 }
 
 function Header() {
-  const { user, logout } = useAuth()
+  const { user, isAdmin, logout } = useAuth()
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
   const panelRef = useRef(null)
@@ -57,7 +58,7 @@ function Header() {
   }, [open])
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/30 bg-white/60 shadow-sm backdrop-blur-lg">
+    <header className="sticky top-0 z-50 rounded-b-2xl border-b border-white/30 bg-white/60 shadow-sm backdrop-blur-lg">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Logo onClick={close} />
 
@@ -75,50 +76,41 @@ function Header() {
           </Link>
 
           {user ? (
-            <>
-              <span className="hidden text-sm font-medium text-gray-700 md:inline">
-                {user.name}님
-              </span>
-              <button
-                type="button"
-                onClick={logout}
-                className="hidden rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-brand hover:text-brand md:inline-flex"
-              >
-                로그아웃
-              </button>
-            </>
+            <UserMenu user={user} logout={logout} />
           ) : (
-            <>
-              <Link
-                to="/login"
-                className="hidden rounded-full border border-brand px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white md:inline-flex"
-              >
-                로그인/회원가입
-              </Link>
-              <Link
-                to="/partner"
-                className="hidden rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-brand hover:text-brand md:inline-flex"
-              >
-                파트너
-              </Link>
-            </>
+            <Link
+              to="/login"
+              className="hidden rounded-full border border-brand px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white md:inline-flex"
+            >
+              로그인/회원가입
+            </Link>
+          )}
+          {/* 파트너 진입 (로그인 여부와 무관하게 항상 표시) */}
+          <Link
+            to="/partner"
+            className="hidden rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-brand hover:text-brand md:inline-flex"
+          >
+            파트너
+          </Link>
+          {/* 관리자 진입 (admin 로그인 시에만) */}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="hidden rounded-full bg-amber-100 px-3 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-200 md:inline-flex"
+            >
+              관리자
+            </Link>
           )}
 
-          {/* 알림 (목업: 동작 추후) */}
-          <button
-            type="button"
-            aria-label="알림"
-            className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 transition hover:bg-gray-100"
-          >
-            <BellIcon />
-          </button>
+          {/* 알림 (클릭 시 딸랑딸랑 흔들림) */}
+          <BellIcon />
 
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label="메뉴"
             aria-expanded={open}
-            className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 transition hover:bg-gray-100"
+            className="inline-flex items-center justify-center rounded-lg p-2 text-brand transition hover:bg-brand-bg"
           >
             <MenuIcon open={open} />
           </button>
@@ -128,7 +120,7 @@ function Header() {
       {/* 메뉴 패널 */}
       <div
         ref={panelRef}
-        className="invisible h-0 overflow-hidden border-t border-gray-100 bg-white/90 opacity-0 backdrop-blur-lg"
+        className="invisible h-0 overflow-hidden rounded-b-2xl border-t border-white/30 bg-white/60 opacity-0 shadow-sm backdrop-blur-xl"
       >
         <div className="mx-auto max-w-6xl space-y-1 px-4 py-3">
           <SearchBox
@@ -159,39 +151,52 @@ function Header() {
 
           <div className="pt-2 md:hidden">
             {user ? (
-              <div className="flex items-center justify-between">
-                <span className="px-3 text-sm font-medium text-gray-700">
-                  {user.name}님
-                </span>
+              <div className="space-y-1">
+                <div className="px-3 py-2 text-sm font-semibold text-gray-700">
+                  {user.nickname || user.name}님
+                </div>
+                <Link
+                  to="/mypage"
+                  onClick={close}
+                  className="block rounded-lg px-3 py-2 font-medium text-gray-700 transition hover:bg-brand-bg hover:text-brand"
+                >
+                  마이페이지
+                </Link>
+                <Link
+                  to="/account"
+                  onClick={close}
+                  className="block rounded-lg px-3 py-2 font-medium text-gray-700 transition hover:bg-brand-bg hover:text-brand"
+                >
+                  회원정보 수정
+                </Link>
                 <button
                   type="button"
                   onClick={() => {
                     logout()
                     close()
                   }}
-                  className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
+                  className="block w-full rounded-lg px-3 py-2 text-left font-medium text-gray-700 transition hover:bg-brand-bg hover:text-brand"
                 >
                   로그아웃
                 </button>
               </div>
             ) : (
-              <>
-                <Link
-                  to="/login"
-                  onClick={close}
-                  className="block rounded-full bg-brand px-4 py-2 text-center text-sm font-semibold text-white"
-                >
-                  로그인/회원가입
-                </Link>
-                <Link
-                  to="/partner"
-                  onClick={close}
-                  className="mt-2 block rounded-full border border-gray-300 px-4 py-2 text-center text-sm font-semibold text-gray-600"
-                >
-                  무브 마스터 파트너센터
-                </Link>
-              </>
+              <Link
+                to="/login"
+                onClick={close}
+                className="block rounded-full bg-brand px-4 py-2 text-center text-sm font-semibold text-white"
+              >
+                로그인/회원가입
+              </Link>
             )}
+            {/* 파트너 진입 (로그인 여부와 무관) */}
+            <Link
+              to="/partner"
+              onClick={close}
+              className="mt-2 block rounded-full border border-gray-300 px-4 py-2 text-center text-sm font-semibold text-gray-600"
+            >
+              무브 마스터 파트너센터
+            </Link>
           </div>
         </div>
       </div>
