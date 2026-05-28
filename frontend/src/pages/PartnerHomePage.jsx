@@ -228,6 +228,7 @@ function PartnerHomePage() {
             title="먼저 시작한 파트너들의 이야기"
             description="실제 활동 중인 파트너들의 솔직한 후기예요."
             reviews={storyDisplay}
+            viewAllPath="/partner/story"
           />
           <div className="mx-auto -mt-10 max-w-6xl px-4 pb-12 text-right">
             <Link

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 // 별점 표시 (소수점 미지원, 1~5 정수)
 function Stars({ rating }) {
@@ -72,12 +73,14 @@ function ReviewCard({ review }) {
 }
 
 // 고객 리뷰 캐러셀 — 데스크톱 3개 / 태블릿 2개 / 모바일 1개 표시, 화살표 + 터치 스와이프
+// viewAllPath 전달 시 헤더 우측에 "전체 보기 →" 링크 노출
 function ReviewCarousel({
   label = 'Review',
   title,
   description,
   reviews,
   background = 'plain',
+  viewAllPath,
 }) {
   const trackRef = useRef(null)
   const [atStart, setAtStart] = useState(true)
@@ -129,9 +132,20 @@ function ReviewCarousel({
               <p className="mt-3 text-gray-600">{description}</p>
             )}
           </div>
-          <div className="flex gap-2">
-            <ArrowBtn dir={-1} disabled={atStart} onClick={() => scroll(-1)} />
-            <ArrowBtn dir={1} disabled={atEnd} onClick={() => scroll(1)} />
+          <div className="flex items-center gap-3">
+            {viewAllPath && (
+              <Link
+                to={viewAllPath}
+                className="text-sm font-semibold text-brand transition hover:underline"
+                aria-label="전체 보기"
+              >
+                전체 보기 →
+              </Link>
+            )}
+            <div className="flex gap-2">
+              <ArrowBtn dir={-1} disabled={atStart} onClick={() => scroll(-1)} />
+              <ArrowBtn dir={1} disabled={atEnd} onClick={() => scroll(1)} />
+            </div>
           </div>
         </div>
 

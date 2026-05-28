@@ -56,6 +56,7 @@ function Reviews() {
         title="고객 리뷰"
         description="이삿날을 이용한 고객들의 솔직한 후기를 확인해 보세요."
         reviews={display}
+        viewAllPath="/reviews"
       />
       <div className="mx-auto -mt-10 max-w-6xl px-4 pb-12 text-right">
         <Link
