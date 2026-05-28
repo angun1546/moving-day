@@ -10,13 +10,18 @@ import LoginPage from '../pages/LoginPage'
 import SignupPage from '../pages/SignupPage'
 import UserReviewPage from '../pages/UserReviewPage'
 import UserFaqPage from '../pages/UserFaqPage'
+import MyPage from '../pages/MyPage'
+import AccountEditPage from '../pages/AccountEditPage'
 import PartnerLayout from '../components/PartnerLayout'
 import PartnerHomePage from '../pages/PartnerHomePage'
 import PartnerDashboardPage from '../pages/PartnerDashboardPage'
 import PartnerProfilePage from '../pages/PartnerProfilePage'
 import PartnerStoryPage from '../pages/PartnerStoryPage'
 import PartnerFaqPage from '../pages/PartnerFaqPage'
+import PartnerMyPage from '../pages/PartnerMyPage'
 import RequireAuth from '../components/RequireAuth'
+import RequireAdmin from '../components/RequireAdmin'
+import AdminDashboardPage from '../pages/AdminDashboardPage'
 import { createQuote } from '../services/quotes'
 
 // 데이터 모드 라우터 (고객: '/' 레이아웃 / 업체: '/partner' 레이아웃)
@@ -44,6 +49,18 @@ export const router = createBrowserRouter([
       { path: 'reviews', element: <UserReviewPage /> },
       // FAQ (자주 묻는 질문 + Q&A)
       { path: 'faq', element: <UserFaqPage /> },
+      // 회원 영역
+      { path: 'mypage', element: <MyPage /> },
+      { path: 'account', element: <AccountEditPage /> },
+      // 관리자 대시보드 (admin 전용 가드)
+      {
+        path: 'admin',
+        element: (
+          <RequireAdmin>
+            <AdminDashboardPage />
+          </RequireAdmin>
+        ),
+      },
     ],
   },
   // 업체(파트너) 전용 영역 — 별도 레이아웃
@@ -71,6 +88,7 @@ export const router = createBrowserRouter([
       },
       { path: 'story', element: <PartnerStoryPage /> },
       { path: 'faq', element: <PartnerFaqPage /> },
+      { path: 'mypage', element: <PartnerMyPage /> },
     ],
   },
 ])

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 
 const PAGE_SIZE = 5
 
@@ -26,12 +27,70 @@ function StarPick({ rating, setRating }) {
   )
 }
 
+// 관리자용 수정 폼
+function EditStoryForm({ review, onSave, onCancel }) {
+  const [rating, setRating] = useState(review.rating)
+  function submit(e) {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const company = fd.get('company')?.toString().trim()
+    const text = fd.get('text')?.toString().trim()
+    if (!company || !text) return
+    onSave({ rating, company, text })
+  }
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <div>
+        <span className="text-sm font-semibold text-gray-800">별점</span>
+        <StarPick rating={rating} setRating={setRating} />
+      </div>
+      <label className="block">
+        <span className="text-sm font-semibold text-gray-800">업체명</span>
+        <input
+          type="text"
+          name="company"
+          required
+          defaultValue={review.company}
+          className={inputClass}
+        />
+      </label>
+      <label className="block">
+        <span className="text-sm font-semibold text-gray-800">후기</span>
+        <textarea
+          name="text"
+          rows={3}
+          required
+          defaultValue={review.text}
+          className={inputClass}
+        />
+      </label>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+        >
+          저장
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-600"
+        >
+          취소
+        </button>
+      </div>
+    </form>
+  )
+}
+
 function PartnerStoryPage() {
-  const [reviews, setReviews] = useState([]) // 작성된 후기 (목업: 세션 내)
+  const { isAdmin } = useAuth()
+  const [reviews, setReviews] = useState([])
   const [rating, setRating] = useState(5)
   const [showForm, setShowForm] = useState(false)
   const [q, setQ] = useState('')
   const [page, setPage] = useState(1)
+  const [editingId, setEditingId] = useState(null)
 
   // 검색 필터 (업체명·내용)
   const filtered = useMemo(() => {
@@ -67,6 +126,18 @@ function PartnerStoryPage() {
     setRating(5)
     setShowForm(false)
     setPage(1)
+  }
+
+  // 관리자: 수정/삭제
+  function update(id, updates) {
+    setReviews((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, ...updates } : r)),
+    )
+    setEditingId(null)
+  }
+  function remove(id) {
+    if (!window.confirm('이 후기를 삭제할까요?')) return
+    setReviews((prev) => prev.filter((r) => r.id !== id))
   }
 
   return (
@@ -153,16 +224,46 @@ function PartnerStoryPage() {
               key={r.id}
               className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
             >
-              <span className="text-amber-400">
-                {'★'.repeat(r.rating)}
-                <span className="text-gray-200">{'★'.repeat(5 - r.rating)}</span>
-              </span>
-              <blockquote className="mt-3 leading-relaxed text-gray-700">
-                “{r.text}”
-              </blockquote>
-              <figcaption className="mt-4 text-sm font-semibold text-gray-900">
-                {r.company}
-              </figcaption>
+              {editingId === r.id ? (
+                <EditStoryForm
+                  review={r}
+                  onSave={(u) => update(r.id, u)}
+                  onCancel={() => setEditingId(null)}
+                />
+              ) : (
+                <>
+                  <span className="text-amber-400">
+                    {'★'.repeat(r.rating)}
+                    <span className="text-gray-200">
+                      {'★'.repeat(5 - r.rating)}
+                    </span>
+                  </span>
+                  <blockquote className="mt-3 leading-relaxed text-gray-700">
+                    “{r.text}”
+                  </blockquote>
+                  <figcaption className="mt-4 text-sm font-semibold text-gray-900">
+                    {r.company}
+                  </figcaption>
+                  {isAdmin && (
+                    <div className="mt-3 flex gap-3 border-t border-gray-100 pt-3 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(r.id)}
+                        className="font-semibold text-gray-500 hover:text-brand"
+                      >
+                        수정
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remove(r.id)}
+                        className="font-semibold text-red-500 hover:text-red-700"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </figure>
           ))
         )}

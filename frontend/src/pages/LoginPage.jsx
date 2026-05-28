@@ -19,8 +19,9 @@ function LoginPage() {
     setLoading(true)
     const fd = new FormData(e.currentTarget)
     try {
-      await login(fd.get('email'), fd.get('password'))
-      navigate('/')
+      const u = await login(fd.get('email'), fd.get('password'))
+      // 관리자 계정이면 대시보드로 자동 진입
+      navigate(u?.email === 'admin@movingday.com' ? '/admin' : '/')
     } catch (err) {
       setError(err.message)
     } finally {

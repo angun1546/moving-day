@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
+import { getDisplayName } from '../utils/userDisplay'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -23,16 +25,27 @@ const FAQS = [
   },
 ]
 
-// 질문 카드 (답변 토글 — 목업: 누구나 관리자 답변 입력 가능)
-function QaCard({ qa, onAnswer }) {
+// 질문 카드 (답변/수정/삭제는 관리자만)
+function QaCard({ qa, onAnswer, onDeleteAnswer, onDeleteQuestion, isAdmin }) {
   const [draft, setDraft] = useState('')
   const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editDraft, setEditDraft] = useState('')
 
   function save() {
     if (!draft.trim()) return
     onAnswer(qa.id, draft.trim())
     setDraft('')
     setOpen(false)
+  }
+  function startEdit() {
+    setEditDraft(qa.a)
+    setEditing(true)
+  }
+  function saveEdit() {
+    if (!editDraft.trim()) return
+    onAnswer(qa.id, editDraft.trim())
+    setEditing(false)
   }
 
   return (
@@ -43,56 +56,122 @@ function QaCard({ qa, onAnswer }) {
           <p className="font-medium text-gray-900">{qa.q}</p>
           <p className="mt-1 text-xs text-gray-400">{qa.name}</p>
         </div>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => onDeleteQuestion(qa.id)}
+            className="text-xs font-semibold text-red-500 hover:text-red-700"
+          >
+            질문 삭제
+          </button>
+        )}
       </div>
 
-      {qa.a ? (
+      {qa.a && !editing ? (
         <div className="mt-4 rounded-2xl bg-brand-bg p-4">
-          <span className="inline-flex items-center rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-white">
-            관리자 답변
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-white">
+              관리자 답변
+            </span>
+            {isAdmin && (
+              <div className="flex gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={startEdit}
+                  className="font-semibold text-gray-600 hover:text-brand"
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteAnswer(qa.id)}
+                  className="font-semibold text-red-500 hover:text-red-700"
+                >
+                  삭제
+                </button>
+              </div>
+            )}
+          </div>
           <p className="mt-2 leading-relaxed text-gray-700">{qa.a}</p>
         </div>
-      ) : open ? (
+      ) : editing ? (
         <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
           <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            value={editDraft}
+            onChange={(e) => setEditDraft(e.target.value)}
             rows={3}
-            placeholder="관리자 답변을 입력하세요."
             className={inputClass}
           />
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={save}
+              onClick={saveEdit}
               className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
             >
-              답변 등록
+              저장
             </button>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={() => setEditing(false)}
               className="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-600"
             >
               취소
             </button>
           </div>
         </div>
+      ) : isAdmin ? (
+        open ? (
+          <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={3}
+              placeholder="관리자 답변을 입력하세요."
+              className={inputClass}
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={save}
+                className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+              >
+                답변 등록
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-600"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="mt-3 text-sm font-semibold text-brand hover:underline"
+          >
+            + 답변 작성 (관리자)
+          </button>
+        )
       ) : (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="mt-3 text-sm font-semibold text-brand hover:underline"
-        >
-          + 답변 작성 (관리자)
-        </button>
+        <p className="mt-3 text-sm text-gray-400">
+          관리자 답변을 기다리는 중입니다.
+        </p>
       )}
     </article>
   )
 }
 
 function UserFaqPage() {
-  const [questions, setQuestions] = useState([]) // 유저 Q&A (목업: 세션 내)
+  const { user, isAdmin } = useAuth()
+  const [questions, setQuestions] = useState([])
+  // 로그인 사용자면 표시명을 자동 채움
+  const [authorName, setAuthorName] = useState('')
+  useEffect(() => {
+    if (user) setAuthorName(getDisplayName(user))
+  }, [user])
 
   function ask(e) {
     e.preventDefault()
@@ -111,6 +190,15 @@ function UserFaqPage() {
     setQuestions((prev) =>
       prev.map((qa) => (qa.id === id ? { ...qa, a: text } : qa)),
     )
+  }
+  function deleteAnswer(id) {
+    setQuestions((prev) =>
+      prev.map((qa) => (qa.id === id ? { ...qa, a: '' } : qa)),
+    )
+  }
+  function deleteQuestion(id) {
+    if (!window.confirm('이 질문을 삭제할까요?')) return
+    setQuestions((prev) => prev.filter((qa) => qa.id !== id))
   }
 
   return (
@@ -156,9 +244,17 @@ function UserFaqPage() {
             type="text"
             name="name"
             required
+            value={authorName}
+            onChange={(e) => setAuthorName(e.target.value)}
+            readOnly={!!user}
             placeholder="예: 김O영"
-            className={inputClass}
+            className={`${inputClass} ${user ? 'cursor-default bg-gray-50' : ''}`}
           />
+          {user && (
+            <p className="mt-1 text-xs text-gray-400">
+              회원정보의 표시 방식에 따라 자동 입력됩니다.
+            </p>
+          )}
         </label>
         <label className="block">
           <span className="text-sm font-semibold text-gray-800">질문 내용</span>
@@ -192,7 +288,14 @@ function UserFaqPage() {
           </div>
         ) : (
           questions.map((qa) => (
-            <QaCard key={qa.id} qa={qa} onAnswer={answer} />
+            <QaCard
+              key={qa.id}
+              qa={qa}
+              onAnswer={answer}
+              onDeleteAnswer={deleteAnswer}
+              onDeleteQuestion={deleteQuestion}
+              isAdmin={isAdmin}
+            />
           ))
         )}
       </div>

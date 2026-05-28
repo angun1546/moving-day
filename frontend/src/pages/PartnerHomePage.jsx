@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import ReviewCarousel from '../components/ReviewCarousel'
+import { PARTNER_STORIES } from '../data/sampleReviews'
 
 const STATS = [
   { value: '320+', label: '일 평균 견적 요청' },
@@ -207,30 +209,21 @@ function PartnerHomePage() {
         </div>
       </section>
 
-      {/* 파트너 후기 (아직 후기 없음 — 빈 상태) */}
-      <section className="mx-auto max-w-6xl px-4 py-20">
-        <p className="font-inter text-sm font-semibold tracking-wider text-brand uppercase">
-          Partner Story
-        </p>
-        <h2 className="mt-2 text-3xl font-bold text-gray-900">
-          파트너들의 생생한 후기
-        </h2>
-        <div className="mt-10 rounded-3xl border border-dashed border-gray-300 bg-white p-12 text-center">
-          <p className="text-4xl">✍️</p>
-          <p className="mt-4 font-semibold text-gray-700">
-            아직 등록된 후기가 없어요
-          </p>
-          <p className="mt-1 text-sm text-gray-500">
-            무브 마스터 파트너의 첫 후기를 남겨주세요.
-          </p>
-          <Link
-            to="/partner/story"
-            className="mt-6 inline-block rounded-full bg-brand px-6 py-3 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark"
-          >
-            후기 작성하기
-          </Link>
-        </div>
-      </section>
+      {/* 파트너 스토리 — 캐러셀 + 작성 페이지 진입 */}
+      <ReviewCarousel
+        label="Partner Story"
+        title="먼저 시작한 파트너들의 이야기"
+        description="실제 활동 중인 파트너들의 솔직한 후기예요."
+        reviews={PARTNER_STORIES}
+      />
+      <div className="mx-auto -mt-10 max-w-6xl px-4 pb-12 text-right">
+        <Link
+          to="/partner/story"
+          className="text-sm font-semibold text-brand transition hover:underline"
+        >
+          내 후기 남기기 →
+        </Link>
+      </div>
 
       {/* FAQ */}
       <section className="bg-white">
