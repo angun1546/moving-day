@@ -3,20 +3,22 @@ import { NavLink, Link, Outlet } from 'react-router-dom'
 import gsap from 'gsap'
 import MenuIcon from './MenuIcon'
 import SearchBox from './SearchBox'
+import BellIcon from './BellIcon'
+import PageTransition from './PageTransition'
 
 const NAV = [
   { to: '/partner/dashboard', label: '입찰 목록' },
   { to: '/partner/profile', label: '업체 정보' },
   { to: '/partner/story', label: '파트너 스토리' },
+  { to: '/partner/faq', label: 'FAQ' },
 ]
 
-// 업체(파트너) 전용 레이아웃 — 유저 헤더와 동일 패턴(검색·로그인·햄버거)
+// 업체(파트너) 전용 레이아웃 — 유저 헤더와 동일 패턴(검색·로그인·알림·햄버거)
 function PartnerLayout() {
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
   const panelRef = useRef(null)
 
-  // 메뉴 패널 펼침/접힘
   useEffect(() => {
     const el = panelRef.current
     if (!el) return
@@ -60,7 +62,7 @@ function PartnerLayout() {
               className="hidden w-44 py-1.5 md:flex"
             />
             <Link
-              to="/login"
+              to="/login?role=partner"
               className="hidden rounded-full border border-brand px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white md:inline-flex"
             >
               로그인/회원가입
@@ -71,6 +73,13 @@ function PartnerLayout() {
             >
               고객 사이트로
             </Link>
+            <button
+              type="button"
+              aria-label="알림"
+              className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 transition hover:bg-gray-100"
+            >
+              <BellIcon />
+            </button>
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
@@ -99,7 +108,7 @@ function PartnerLayout() {
               </NavLink>
             ))}
             <Link
-              to="/login"
+              to="/login?role=partner"
               onClick={close}
               className="block rounded-full bg-brand px-4 py-2 text-center text-sm font-semibold text-white md:hidden"
             >
@@ -117,7 +126,9 @@ function PartnerLayout() {
       </header>
 
       <main className="flex-1">
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
     </div>
   )

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const inputClass =
@@ -8,6 +8,8 @@ const inputClass =
 function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const isPartner = params.get('role') === 'partner' // 파트너 헤더에서 진입
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -57,20 +59,27 @@ function LoginPage() {
 
       <p className="mt-4 text-center text-sm text-gray-500">
         아직 회원이 아니신가요?{' '}
-        <Link to="/signup" className="font-semibold text-brand hover:underline">
+        <Link
+          to={isPartner ? '/signup?role=partner' : '/signup'}
+          className="font-semibold text-brand hover:underline"
+        >
           회원가입
         </Link>
       </p>
 
-      <div className="mt-8 border-t border-gray-200 pt-6 text-center">
-        <p className="text-sm text-gray-500">로그인 없이도 견적을 받을 수 있어요.</p>
-        <Link
-          to="/quote"
-          className="mt-3 inline-block rounded-full border border-brand px-6 py-3 font-semibold text-brand transition hover:bg-brand hover:text-white"
-        >
-          비회원으로 견적 신청
-        </Link>
-      </div>
+      {!isPartner && (
+        <div className="mt-8 border-t border-gray-200 pt-6 text-center">
+          <p className="text-sm text-gray-500">
+            로그인 없이도 견적을 받을 수 있어요.
+          </p>
+          <Link
+            to="/quote"
+            className="mt-3 inline-block rounded-full border border-brand px-6 py-3 font-semibold text-brand transition hover:bg-brand hover:text-white"
+          >
+            비회원으로 견적 신청
+          </Link>
+        </div>
+      )}
     </section>
   )
 }

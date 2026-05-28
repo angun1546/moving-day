@@ -4,11 +4,14 @@ import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
 import MenuIcon from './MenuIcon'
 import SearchBox from './SearchBox'
+import BellIcon from './BellIcon'
 
+// 햄버거 패널 메뉴 (앵커 + 라우트 혼합)
 const NAV = [
   { href: '#services', label: '서비스' },
   { href: '#steps', label: '이용 절차' },
   { href: '#reviews', label: '고객 후기' },
+  { to: '/faq', label: 'FAQ' },
 ]
 
 // 헤더 로고 (PNG)
@@ -41,7 +44,7 @@ function Header() {
   const close = () => setOpen(false)
   const panelRef = useRef(null)
 
-  // 메뉴 패널을 부드럽게 펼침/접힘
+  // 메뉴 패널 부드럽게 펼침/접힘
   useEffect(() => {
     const el = panelRef.current
     if (!el) return
@@ -59,17 +62,17 @@ function Header() {
         <Logo onClick={close} />
 
         <div className="flex items-center gap-2">
+          {/* 검색창 (견적 받기 왼쪽) */}
+          <SearchBox
+            placeholder="이사 서비스 검색"
+            className="hidden w-36 py-1.5 md:flex"
+          />
           <Link
             to="/quote"
             className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
           >
             견적 받기
           </Link>
-
-          <SearchBox
-            placeholder="이사 서비스 검색"
-            className="hidden w-36 py-1.5 md:flex"
-          />
 
           {user ? (
             <>
@@ -101,6 +104,15 @@ function Header() {
             </>
           )}
 
+          {/* 알림 (목업: 동작 추후) */}
+          <button
+            type="button"
+            aria-label="알림"
+            className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 transition hover:bg-gray-100"
+          >
+            <BellIcon />
+          </button>
+
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -113,7 +125,7 @@ function Header() {
         </div>
       </div>
 
-      {/* 메뉴 패널 (항상 렌더 + GSAP로 펼침/접힘) */}
+      {/* 메뉴 패널 */}
       <div
         ref={panelRef}
         className="invisible h-0 overflow-hidden border-t border-gray-100 bg-white/90 opacity-0 backdrop-blur-lg"
@@ -123,16 +135,27 @@ function Header() {
             placeholder="이사 서비스 검색"
             className="mb-2 py-2 md:hidden"
           />
-          {NAV.map((n) => (
-            <a
-              key={n.href}
-              href={n.href}
-              onClick={close}
-              className="block rounded-lg px-3 py-2 font-medium text-gray-700 transition hover:bg-brand-bg hover:text-brand"
-            >
-              {n.label}
-            </a>
-          ))}
+          {NAV.map((n) =>
+            n.to ? (
+              <Link
+                key={n.label}
+                to={n.to}
+                onClick={close}
+                className="block rounded-lg px-3 py-2 font-medium text-gray-700 transition hover:bg-brand-bg hover:text-brand"
+              >
+                {n.label}
+              </Link>
+            ) : (
+              <a
+                key={n.label}
+                href={n.href}
+                onClick={close}
+                className="block rounded-lg px-3 py-2 font-medium text-gray-700 transition hover:bg-brand-bg hover:text-brand"
+              >
+                {n.label}
+              </a>
+            ),
+          )}
 
           <div className="pt-2 md:hidden">
             {user ? (
