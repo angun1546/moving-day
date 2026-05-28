@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getDisplayName } from '../utils/userDisplay'
+import { useLocalState } from '../hooks/useLocalState'
+import { todayString } from '../utils/date'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
 
-const fileClass =
-  'block w-full text-sm text-gray-600 file:mr-3 file:rounded-full file:border-0 file:bg-brand-light file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand hover:file:bg-brand-light/70'
+// 이사 종류 (리뷰 카드 tag로 사용)
+const MOVE_TYPES = [
+  '포장이사',
+  '반포장이사',
+  '일반이사',
+  '사무실이사',
+  '원룸이사',
+  '프리미엄이사',
+]
 
 // 별점 선택 (클릭으로 1~5)
 function StarPick({ rating, setRating }) {
@@ -29,7 +38,7 @@ function StarPick({ rating, setRating }) {
   )
 }
 
-// 관리자용 수정 폼 (별점/이름/내용만 수정 — 사진은 그대로 유지)
+// 관리자용 수정 폼
 function EditReviewForm({ review, onSave, onCancel }) {
   const [rating, setRating] = useState(review.rating)
   function submit(e) {
@@ -87,34 +96,30 @@ function EditReviewForm({ review, onSave, onCancel }) {
 
 function UserReviewPage() {
   const { user, isAdmin } = useAuth()
-  const [reviews, setReviews] = useState([])
+  // localStorage에 영속화 (메인 캐러셀과 공유)
+  const [reviews, setReviews] = useLocalState('movingday_user_reviews', [])
   const [rating, setRating] = useState(5)
-  const [photos, setPhotos] = useState([])
   const [editingId, setEditingId] = useState(null)
-  // 로그인 사용자면 표시명을 자동 채움 (프라이버시: 실명 모드면 마스킹된 형태)
+  // 로그인 사용자면 표시명 자동 채움 (실명 모드면 마스킹된 형태)
   const [authorName, setAuthorName] = useState('')
   useEffect(() => {
     if (user) setAuthorName(getDisplayName(user))
   }, [user])
 
-  function onPhotos(e) {
-    const files = Array.from(e.target.files ?? []).slice(0, 5)
-    setPhotos(files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) })))
-  }
-
   function submit(e) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
-    const name = fd.get('name')?.toString().trim()
+    const name = (user ? authorName : fd.get('name')?.toString().trim()) || ''
     const text = fd.get('text')?.toString().trim()
+    const moveType = fd.get('moveType')?.toString() || MOVE_TYPES[0]
     if (!name || !text) return
     setReviews((prev) => [
-      { id: Date.now(), name, text, rating, photos },
+      { id: Date.now(), name, text, rating, moveType, date: todayString() },
       ...prev,
     ])
     e.currentTarget.reset()
     setRating(5)
-    setPhotos([])
+    if (!user) setAuthorName('')
   }
 
   // 관리자: 수정/삭제
@@ -133,7 +138,7 @@ function UserReviewPage() {
     <section className="mx-auto max-w-3xl px-4 py-16">
       <h1 className="text-3xl font-bold text-gray-900">고객 리뷰</h1>
       <p className="mt-3 text-gray-600">
-        이삿날과 함께한 경험을 자유롭게 남겨주세요. 사진도 함께 올릴 수 있어요.
+        이삿날과 함께한 경험을 자유롭게 남겨주세요.
       </p>
 
       {/* 작성 폼 */}
@@ -166,6 +171,20 @@ function UserReviewPage() {
           )}
         </label>
         <label className="block">
+          <span className="text-sm font-semibold text-gray-800">이사 종류</span>
+          <select
+            name="moveType"
+            defaultValue={MOVE_TYPES[0]}
+            className={inputClass}
+          >
+            {MOVE_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
           <span className="text-sm font-semibold text-gray-800">리뷰 내용</span>
           <textarea
             name="text"
@@ -174,31 +193,6 @@ function UserReviewPage() {
             placeholder="이삿날을 이용한 경험을 솔직하게 적어주세요."
             className={inputClass}
           />
-        </label>
-        <label className="block">
-          <span className="text-sm font-semibold text-gray-800">
-            사진 첨부
-            <span className="font-normal text-gray-400"> (선택, 최대 5장)</span>
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={onPhotos}
-            className={`${fileClass} mt-1`}
-          />
-          {photos.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {photos.map((p) => (
-                <img
-                  key={p.url}
-                  src={p.url}
-                  alt={p.name}
-                  className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
-                />
-              ))}
-            </div>
-          )}
         </label>
         <button
           type="submit"
@@ -238,29 +232,27 @@ function UserReviewPage() {
                   />
                 ) : (
                   <>
-                    <span className="text-amber-400">
-                      {'★'.repeat(r.rating)}
-                      <span className="text-gray-200">
-                        {'★'.repeat(5 - r.rating)}
+                    <div className="flex items-center justify-between">
+                      {r.moveType && (
+                        <span className="rounded-full bg-brand-light px-3 py-1 text-xs font-semibold text-brand">
+                          {r.moveType}
+                        </span>
+                      )}
+                      <span className="text-amber-400">
+                        {'★'.repeat(r.rating)}
+                        <span className="text-gray-200">
+                          {'★'.repeat(5 - r.rating)}
+                        </span>
                       </span>
-                    </span>
+                    </div>
                     <blockquote className="mt-3 leading-relaxed text-gray-700">
                       “{r.text}”
                     </blockquote>
-                    {r.photos && r.photos.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {r.photos.map((p) => (
-                          <img
-                            key={p.url}
-                            src={p.url}
-                            alt={p.name}
-                            className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
-                          />
-                        ))}
-                      </div>
-                    )}
-                    <figcaption className="mt-4 text-sm font-semibold text-gray-900">
-                      {r.name}
+                    <figcaption className="mt-4 flex items-center justify-between text-sm">
+                      <span className="font-semibold text-gray-900">{r.name}</span>
+                      {r.date && (
+                        <span className="font-inter text-gray-400">{r.date}</span>
+                      )}
                     </figcaption>
                     {isAdmin && (
                       <div className="mt-3 flex gap-3 border-t border-gray-100 pt-3 text-xs">

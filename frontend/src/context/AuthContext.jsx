@@ -10,11 +10,12 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [ready, setReady] = useState(false)
 
-  // 앱 시작 시 저장된 토큰으로 로그인 상태 복원
+  // 앱 시작 시 저장된 토큰으로 로그인 상태 복원 (네트워크 실패도 안전)
   useEffect(() => {
     auth
       .fetchMe()
       .then(setUser)
+      .catch(() => setUser(null))
       .finally(() => setReady(true))
   }, [])
 

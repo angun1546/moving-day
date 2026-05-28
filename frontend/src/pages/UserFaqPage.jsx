@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getDisplayName } from '../utils/userDisplay'
+import { useLocalState } from '../hooks/useLocalState'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -166,7 +167,7 @@ function QaCard({ qa, onAnswer, onDeleteAnswer, onDeleteQuestion, isAdmin }) {
 
 function UserFaqPage() {
   const { user, isAdmin } = useAuth()
-  const [questions, setQuestions] = useState([])
+  const [questions, setQuestions] = useLocalState('movingday_user_qa', [])
   // 로그인 사용자면 표시명을 자동 채움
   const [authorName, setAuthorName] = useState('')
   useEffect(() => {

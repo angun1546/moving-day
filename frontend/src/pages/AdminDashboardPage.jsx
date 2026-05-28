@@ -51,63 +51,9 @@ const MATCH_DATA = [
   },
 ]
 
-const INIT_REVIEWS = [
-  {
-    id: 1,
-    type: '고객',
-    author: '김O영',
-    rating: 5,
-    text: '견적 비교가 정말 편했어요. 가격도 투명하고 기사님도 친절했습니다.',
-    createdAt: '2026-05-25',
-    reply: '',
-  },
-  {
-    id: 2,
-    type: '파트너',
-    author: '한솔이사',
-    rating: 5,
-    text: '입찰 방식이라 효율이 확 올랐어요. 매출이 30% 늘었습니다.',
-    createdAt: '2026-05-24',
-    reply:
-      '소중한 후기 감사합니다. 앞으로도 더 많은 파트너분께 좋은 매칭을 전해드릴게요.',
-  },
-  {
-    id: 3,
-    type: '고객',
-    author: '익명',
-    rating: 1,
-    text: '(예시) 욕설·타 업체 비방을 포함한 부적절 리뷰',
-    createdAt: '2026-05-23',
-    reply: '',
-  },
-]
-
-const INIT_INQUIRIES = [
-  {
-    id: 1,
-    type: '고객',
-    author: '김O영',
-    q: '취소나 환불은 어떻게 하나요?',
-    a: '',
-    status: '대기',
-  },
-  {
-    id: 2,
-    type: '파트너',
-    author: '한솔이사',
-    q: '수수료 비율이 어떻게 되나요?',
-    a: '낙찰 시 합리적 수수료가 발생합니다. 자세한 비율은 가입 후 안내드립니다.',
-    status: '답변완료',
-  },
-  {
-    id: 3,
-    type: '고객',
-    author: '박O은',
-    q: '비회원도 견적 신청 가능한가요?',
-    a: '',
-    status: '대기',
-  },
-]
+// 시연 더미 제거 — 실제 작성된 데이터는 user/partner 페이지에서 localStorage로 공유 예정
+const INIT_REVIEWS = []
+const INIT_INQUIRIES = []
 
 function StatCard({ label, value }) {
   return (

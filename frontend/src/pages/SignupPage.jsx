@@ -96,7 +96,8 @@ function SignupPage() {
           name="nickname"
           type="text"
           required
-          placeholder="닉네임"
+          maxLength={15}
+          placeholder="닉네임 (15자 이내)"
           className={inputClass}
         />
 

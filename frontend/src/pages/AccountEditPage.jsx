@@ -80,8 +80,9 @@ function AccountEditPage() {
             type="text"
             name="nickname"
             required
+            maxLength={15}
             defaultValue={user.nickname || ''}
-            placeholder="닉네임"
+            placeholder="닉네임 (15자 이내)"
             className={inputClass}
           />
         </label>

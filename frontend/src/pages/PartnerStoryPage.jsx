@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useLocalState } from '../hooks/useLocalState'
+import { todayString } from '../utils/date'
 
 const PAGE_SIZE = 5
 
@@ -85,7 +87,8 @@ function EditStoryForm({ review, onSave, onCancel }) {
 
 function PartnerStoryPage() {
   const { isAdmin } = useAuth()
-  const [reviews, setReviews] = useState([])
+  // localStorage 영속화 (메인 캐러셀과 공유)
+  const [reviews, setReviews] = useLocalState('movingday_partner_stories', [])
   const [rating, setRating] = useState(5)
   const [showForm, setShowForm] = useState(false)
   const [q, setQ] = useState('')
@@ -121,7 +124,10 @@ function PartnerStoryPage() {
     const company = fd.get('company')?.toString().trim()
     const text = fd.get('text')?.toString().trim()
     if (!company || !text) return
-    setReviews((prev) => [{ id: Date.now(), company, text, rating }, ...prev])
+    setReviews((prev) => [
+      { id: Date.now(), company, text, rating, date: todayString() },
+      ...prev,
+    ])
     e.currentTarget.reset()
     setRating(5)
     setShowForm(false)
