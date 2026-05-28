@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const STATS = [
@@ -55,6 +56,12 @@ const FAQS = [
 ]
 
 function PartnerHomePage() {
+  // 업체 정보 등록 여부 (목업: localStorage 플래그)
+  const [profileSaved, setProfileSaved] = useState(false)
+  useEffect(() => {
+    setProfileSaved(localStorage.getItem('partnerProfileSaved') === 'true')
+  }, [])
+
   return (
     <>
       {/* Hero */}
@@ -74,19 +81,39 @@ function PartnerHomePage() {
               입찰하고, 광고비 없이 새로운 고객을 만나보세요.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                to="/partner/dashboard"
-                className="rounded-full bg-brand px-7 py-3 text-center font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark"
-              >
-                무료로 파트너 시작하기
-              </Link>
+              {profileSaved ? (
+                <Link
+                  to="/partner/dashboard"
+                  className="rounded-full bg-brand px-7 py-3 text-center font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark"
+                >
+                  입찰 시작하기
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  title="업체 정보를 먼저 등록해 주세요"
+                  className="cursor-not-allowed rounded-full bg-gray-200 px-7 py-3 text-center font-semibold text-gray-400"
+                >
+                  입찰 시작하기
+                </button>
+              )}
               <Link
                 to="/partner/profile"
-                className="rounded-full border border-gray-300 bg-white px-7 py-3 text-center font-semibold text-gray-700 transition hover:border-brand hover:text-brand"
+                className={
+                  profileSaved
+                    ? 'rounded-full border border-gray-300 bg-white px-7 py-3 text-center font-semibold text-gray-700 transition hover:border-brand hover:text-brand'
+                    : 'rounded-full bg-brand px-7 py-3 text-center font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark'
+                }
               >
-                업체 정보 등록
+                {profileSaved ? '업체 정보 등록' : '업체 정보 등록하기'}
               </Link>
             </div>
+            {!profileSaved && (
+              <p className="mt-3 text-sm font-medium text-amber-700">
+                ⚠️ 업체 정보를 먼저 등록해야 입찰을 시작할 수 있어요.
+              </p>
+            )}
           </div>
 
           {/* 신뢰 지표 */}
@@ -208,9 +235,18 @@ function PartnerHomePage() {
       {/* FAQ */}
       <section className="bg-white">
         <div className="mx-auto max-w-3xl px-4 py-20">
-          <p className="font-inter text-sm font-semibold tracking-wider text-brand uppercase">
-            FAQ
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="font-inter text-sm font-semibold tracking-wider text-brand uppercase">
+              FAQ
+            </p>
+            <Link
+              to="/partner/faq"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-brand transition hover:underline"
+              aria-label="전체 FAQ 보기"
+            >
+              전체 보기 →
+            </Link>
+          </div>
           <h2 className="mt-2 text-3xl font-bold text-gray-900">
             자주 묻는 질문
           </h2>
@@ -243,10 +279,10 @@ function PartnerHomePage() {
             가입은 무료입니다. 1분이면 시작할 수 있어요.
           </p>
           <Link
-            to="/partner/dashboard"
+            to={profileSaved ? '/partner/dashboard' : '/partner/profile'}
             className="mt-8 inline-block rounded-full bg-white px-8 py-3 font-semibold text-brand transition hover:-translate-y-0.5"
           >
-            무료로 파트너 시작하기
+            {profileSaved ? '무료로 파트너 시작하기' : '업체 정보 등록하기'}
           </Link>
         </div>
       </section>

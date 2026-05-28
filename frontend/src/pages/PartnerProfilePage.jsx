@@ -70,6 +70,8 @@ function PartnerProfilePage() {
     }
     setError('')
     setSaved(true)
+    // 파트너 홈에서 "입찰 시작하기" 게이트 해제용 플래그
+    localStorage.setItem('partnerProfileSaved', 'true')
   }
 
   return (
