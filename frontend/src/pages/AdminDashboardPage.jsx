@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useLocalState } from '../hooks/useLocalState'
 import { maskKoreanNamesInText } from '../utils/userDisplay'
+import { addNotification } from '../utils/notifications'
+import { todayString } from '../utils/date'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -341,6 +343,13 @@ function AdminDashboardPage() {
   )
   const [userQa, setUserQa] = useLocalState('movingday_user_qa', [])
   const [partnerQa, setPartnerQa] = useLocalState('movingday_partner_qa', [])
+  // 공지 — NoticePage와 동일 키 (즉시 양방향 동기화)
+  const [notices, setNotices] = useLocalState('movingday_notices', [])
+  const [noticeOpen, setNoticeOpen] = useState(false)
+  const [editingNoticeId, setEditingNoticeId] = useState(null)
+  const editingNotice = editingNoticeId
+    ? notices.find((n) => n.id === editingNoticeId)
+    : null
 
   // 두 리뷰 큐를 합쳐 admin이 한 화면에서 관리, 시간 역순
   const allReviews = useMemo(() => {
@@ -403,6 +412,13 @@ function AdminDashboardPage() {
       prev.map((r) => (r.id === item.id ? { ...r, reply: text } : r))
     if (item._kind === 'user') setUserReviews(updater)
     else setPartnerStories(updater)
+    // 답변은 작성자 본인에게만 (관리자 자신 포함 다른 사용자에겐 노출 X)
+    addNotification({
+      type: 'reply',
+      message: `${item.author}님의 리뷰에 관리자 답변이 달렸어요.`,
+      link: item._kind === 'user' ? '/reviews' : '/partner/story',
+      to: item.authorEmail || '',
+    })
   }
   function clearReply(item) {
     const updater = (prev) =>
@@ -417,6 +433,13 @@ function AdminDashboardPage() {
       prev.map((q) => (q.id === item.id ? { ...q, a: text } : q))
     if (item._kind === 'user') setUserQa(updater)
     else setPartnerQa(updater)
+    // 답변은 질문자 본인에게만
+    addNotification({
+      type: 'reply',
+      message: `${item.author}님의 질문에 관리자 답변이 달렸어요.`,
+      link: item._kind === 'user' ? '/faq' : '/partner/faq',
+      to: item.authorEmail || '',
+    })
   }
   function clearAnswer(item) {
     const updater = (prev) =>
@@ -431,6 +454,52 @@ function AdminDashboardPage() {
     else setPartnerQa(filter)
   }
 
+  // 공지 액션 — 작성·수정·삭제 (전체 사용자 알림, 관리자 본인 제외 X = 전체에게)
+  function submitNotice(e) {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const title = fd.get('title')?.toString().trim()
+    const body = fd.get('body')?.toString().trim()
+    if (!title || !body) return
+    if (editingNoticeId) {
+      setNotices((prev) =>
+        prev.map((n) =>
+          n.id === editingNoticeId ? { ...n, title, body } : n,
+        ),
+      )
+      addNotification({
+        type: 'notice',
+        message: `공지가 수정되었어요: ${title}`,
+        link: '/notice',
+      })
+      setEditingNoticeId(null)
+    } else {
+      setNotices((prev) => [
+        { id: Date.now(), title, body, date: todayString() },
+        ...prev,
+      ])
+      addNotification({
+        type: 'notice',
+        message: `새 공지: ${title}`,
+        link: '/notice',
+      })
+    }
+    e.currentTarget.reset()
+    setNoticeOpen(false)
+  }
+  function removeNotice(id) {
+    if (!window.confirm('이 공지를 삭제할까요?')) return
+    setNotices((prev) => prev.filter((n) => n.id !== id))
+  }
+  function startEditNotice(n) {
+    setEditingNoticeId(n.id)
+    setNoticeOpen(true)
+  }
+  function cancelNotice() {
+    setNoticeOpen(false)
+    setEditingNoticeId(null)
+  }
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-10">
       <p className="font-inter text-sm font-semibold tracking-wider text-brand uppercase">
@@ -442,11 +511,12 @@ function AdminDashboardPage() {
       </p>
 
       {/* 통계 (Bento) */}
-      <dl className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <dl className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-5">
         <StatCard label="진행 중 견적" value={inProgress} />
         <StatCard label="누적 입찰" value={totalBids} />
         <StatCard label="숨김 리뷰" value={hiddenReviews} />
         <StatCard label="미답변 Q&A" value={pendingQa} />
+        <StatCard label="공지" value={notices.length} />
       </dl>
 
       {/* ① 매칭/입찰 현황 */}
@@ -552,6 +622,117 @@ function AdminDashboardPage() {
               onClear={clearAnswer}
               onRemove={removeInquiry}
             />
+          ))
+        )}
+      </div>
+
+      {/* ④ 공지사항 — NoticePage와 동일 키 공유 */}
+      <div className="mt-12 flex items-end justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">공지사항</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            여기서 작성·수정·삭제한 내용은 공지사항 페이지에 즉시 반영됩니다.
+          </p>
+        </div>
+        {!noticeOpen && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditingNoticeId(null)
+              setNoticeOpen(true)
+            }}
+            className="shrink-0 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+          >
+            + 공지 작성
+          </button>
+        )}
+      </div>
+
+      {noticeOpen && (
+        <form
+          onSubmit={submitNotice}
+          className="mt-4 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">
+              {editingNoticeId ? '공지 수정' : '공지 작성'}
+            </h3>
+            <button
+              type="button"
+              onClick={cancelNotice}
+              className="text-sm text-gray-500 hover:text-brand"
+            >
+              닫기
+            </button>
+          </div>
+          <label className="block">
+            <span className="text-sm font-semibold text-gray-800">제목</span>
+            <input
+              type="text"
+              name="title"
+              required
+              defaultValue={editingNotice?.title || ''}
+              placeholder="공지 제목"
+              className={inputClass}
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm font-semibold text-gray-800">내용</span>
+            <textarea
+              name="body"
+              rows={5}
+              required
+              defaultValue={editingNotice?.body || ''}
+              placeholder="공지 내용을 입력하세요."
+              className={inputClass}
+            />
+          </label>
+          <button
+            type="submit"
+            className="w-full rounded-full bg-brand px-7 py-3 font-semibold text-white transition hover:bg-brand-dark"
+          >
+            {editingNoticeId ? '수정 저장' : '공지 등록'}
+          </button>
+        </form>
+      )}
+
+      <div className="mt-4 space-y-3">
+        {notices.length === 0 ? (
+          <Empty />
+        ) : (
+          notices.map((n) => (
+            <article
+              key={n.id}
+              className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-900">
+                    {n.title}
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-400">{n.date}</p>
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => startEditNotice(n)}
+                    className="rounded-full border border-gray-300 px-3 py-1.5 font-semibold text-gray-600 transition hover:border-brand hover:text-brand"
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeNotice(n.id)}
+                    className="rounded-full border border-red-300 px-3 py-1.5 font-semibold text-red-500 transition hover:bg-red-50"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+              <p className="mt-3 leading-relaxed whitespace-pre-line text-gray-700">
+                {n.body}
+              </p>
+            </article>
           ))
         )}
       </div>

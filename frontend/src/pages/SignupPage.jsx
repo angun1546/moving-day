@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { setDisplayMode } from '../utils/userDisplay'
 
 const inputClass =
   'w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -18,7 +17,7 @@ const DOMAINS = [
 ]
 
 function SignupPage() {
-  const { signup } = useAuth()
+  const { signup, setDisplayMode } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const isPartner = params.get('role') === 'partner' // 파트너 헤더에서 진입

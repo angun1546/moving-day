@@ -1,22 +1,57 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import ReviewCarousel from './ReviewCarousel'
 import { useLocalState } from '../hooks/useLocalState'
 import { maskName } from '../utils/userDisplay'
+import { useAuth } from '../context/AuthContext'
 
 // 메인 리뷰 섹션 — 작성된 리뷰가 있으면 캐러셀, 없으면 빈 상태
 function Reviews() {
-  const [reviews] = useLocalState('movingday_user_reviews', [])
+  const [reviews, setReviews] = useLocalState('movingday_user_reviews', [])
+  const { user, displayMode } = useAuth()
 
-  // 캐러셀 카드 데이터로 변환 — 메인 노출 시점에 일괄 마스킹(프라이버시 보호)
-  const display = reviews.map((r) => ({
-    id: r.id,
-    name: maskName(r.name),
-    rating: r.rating,
-    tag: r.moveType || '리뷰',
-    text: r.text,
-    company: r.company || '',
-    date: r.date || '',
-  }))
+  // 백필: authorEmail 없는 옛 리뷰 중 본인 이름/닉네임/마스킹 결과와 일치하면 본인 메일로 보정
+  useEffect(() => {
+    if (!user) return
+    const candidates = [
+      user.name,
+      user.nickname || '',
+      maskName(user.name || ''),
+    ].filter(Boolean)
+    let changed = false
+    const next = reviews.map((r) => {
+      if (r.authorEmail) return r
+      if (candidates.includes(r.name)) {
+        changed = true
+        return { ...r, authorEmail: user.email }
+      }
+      return r
+    })
+    if (changed) setReviews(next)
+  }, [user, reviews, setReviews])
+
+  // 본인 리뷰는 현재 displayMode 따라 동적 계산 → 회원정보 수정 즉시 반영
+  // 그 외 리뷰는 작성 시 저장된 이름에 마스킹 안전망
+  const display = reviews.map((r) => {
+    let name
+    if (r.authorEmail && user && r.authorEmail === user.email) {
+      name =
+        displayMode === 'real'
+          ? maskName(user.name)
+          : user.nickname || user.name
+    } else {
+      name = maskName(r.name)
+    }
+    return {
+      id: r.id,
+      name,
+      rating: r.rating,
+      tag: r.moveType || '리뷰',
+      text: r.text,
+      company: r.company || '',
+      date: r.date || '',
+    }
+  })
 
   if (display.length === 0) {
     return (

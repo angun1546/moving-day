@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { getDisplayMode, setDisplayMode } from '../utils/userDisplay'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
 
 function AccountEditPage() {
-  const { user, updateUser, headerMode, setHeaderMode } = useAuth()
+  const { user, updateUser, headerMode, setHeaderMode, displayMode, setDisplayMode } =
+    useAuth()
+  const [params] = useSearchParams()
+  const isPartner = params.get('role') === 'partner'
+  const backPath = isPartner ? '/partner/mypage' : '/mypage'
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
-  const currentMode = getDisplayMode()
 
   if (!user) {
     return (
@@ -47,7 +49,10 @@ function AccountEditPage() {
       nickname: fd.get('nickname')?.toString().trim() || user.nickname,
       phone: fd.get('phone')?.toString().trim() || user.phone,
     })
-    setDisplayMode(fd.get('displayMode') || 'nickname')
+    // 파트너 컨텍스트에서는 리뷰·FAQ 표시 방식 옵션이 숨김이므로 displayMode는 변경하지 않음
+    if (!isPartner) {
+      setDisplayMode(fd.get('displayMode') || 'nickname')
+    }
     setHeaderMode(fd.get('headerMode') || 'nickname')
     setSaved(true)
   }
@@ -55,7 +60,7 @@ function AccountEditPage() {
   return (
     <section className="mx-auto max-w-md px-4 py-16">
       <Link
-        to="/mypage"
+        to={backPath}
         className="text-sm text-gray-500 transition hover:text-brand"
       >
         ← 마이페이지
@@ -130,37 +135,39 @@ function AccountEditPage() {
           </p>
         </div>
 
-        {/* 리뷰·FAQ 표시 방식 */}
-        <div>
-          <span className="text-sm font-semibold text-gray-800">
-            리뷰·FAQ 표시 방식
-          </span>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <label className="cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition has-[:checked]:bg-brand has-[:checked]:text-white">
-              <input
-                type="radio"
-                name="displayMode"
-                value="nickname"
-                defaultChecked={currentMode !== 'real'}
-                className="sr-only"
-              />
-              닉네임 그대로
-            </label>
-            <label className="cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition has-[:checked]:bg-brand has-[:checked]:text-white">
-              <input
-                type="radio"
-                name="displayMode"
-                value="real"
-                defaultChecked={currentMode === 'real'}
-                className="sr-only"
-              />
-              실명 일부 가림
-            </label>
+        {/* 리뷰·FAQ 표시 방식 — 파트너 컨텍스트에서는 숨김(파트너 영역은 업체명 위주라 의미 없음) */}
+        {!isPartner && (
+          <div>
+            <span className="text-sm font-semibold text-gray-800">
+              리뷰·FAQ 표시 방식
+            </span>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <label className="cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition has-[:checked]:bg-brand has-[:checked]:text-white">
+                <input
+                  type="radio"
+                  name="displayMode"
+                  value="nickname"
+                  defaultChecked={displayMode !== 'real'}
+                  className="sr-only"
+                />
+                닉네임 그대로
+              </label>
+              <label className="cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition has-[:checked]:bg-brand has-[:checked]:text-white">
+                <input
+                  type="radio"
+                  name="displayMode"
+                  value="real"
+                  defaultChecked={displayMode === 'real'}
+                  className="sr-only"
+                />
+                실명 일부 가림
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-gray-400">
+              예: 실명 “김민지” → “김O지”로 리뷰·FAQ에 표시됩니다.
+            </p>
           </div>
-          <p className="mt-2 text-xs text-gray-400">
-            예: 실명 “김민지” → “김O지”로 리뷰·FAQ에 표시됩니다.
-          </p>
-        </div>
+        )}
 
         <div className="border-t border-gray-100 pt-4">
           <p className="text-sm font-semibold text-gray-800">비밀번호 변경</p>

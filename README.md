@@ -38,22 +38,25 @@ Moving-day/
 - **견적 신청 3단계**: 방식 선택(방문/사진/전화) → 이사 종류 → 신청 폼 (출발·도착지 다음 우편번호 검색 + 상세주소)
 - **입찰 비교**(`/quote/bids`): 업체별 가격·평점·서비스·메시지, **최저가/평점 1위 배지**, 정렬(최저가/평점), 선택
 - **고객 리뷰**(`/reviews`): 별점·이름·이사 종류·**이용 업체**·내용·사진 첨부(메모리), localStorage 영속화
-- **FAQ + 직접 질문**(`/faq`): 자주묻는질문 + 관리자 답변 Q&A
+- **FAQ + 직접 질문**(`/faq`): **관리자가 직접 작성·수정·삭제하는 자주 묻는 질문** + 관리자 답변 Q&A. 전체보기 진입 시 작성 폼은 닫혀 있고 글 목록만 노출(토글)
 - **마이페이지**(`/mypage`): 활동 카드(견적 신청·작성 리뷰·내 질문) → 클릭 시 해당 페이지
+- **공지사항**(`/notice`): 관리자 작성·수정·삭제, 모든 사용자에게 알림 푸시
 
 ### 🏢 파트너 영역(`/partner/*`)
 - **메인 랜딩**(`/partner`): Hero(통계)·혜택 벤토·시작 4단계·**파트너 스토리 캐러셀**·FAQ·CTA
 - **입찰 대시보드**(`/partner/dashboard`): 들어온 견적 요청 + 입찰 제출 (로그인 필요)
-- **업체 정보 등록**(`/partner/profile`): 프로필 사진·사업자 정보·**서비스 가능 지역**(권역 → 시·도 → 시·군·구 3단계 트리, 약 229개)·업체 사진·자격증 업로드 (로그인 필요)
+- **업체 정보 등록**(`/partner/profile`): 프로필 사진·사업자 정보·**서비스 가능 지역**(권역 → 시·도 → 시·군·구 3단계 트리, 약 229개, **권역 전체 / 시·도별 전체 선택 지원**)·업체 사진·자격증 업로드, **localStorage 영속화로 재진입 시 기존 값 복원** (로그인 필요)
 - **파트너 스토리**(`/partner/story`): 후기 작성 + 검색·페이지네이션, 등록 폼 토글
-- **FAQ**(`/partner/faq`): 자주묻는질문 + 관리자 답변 Q&A
-- **파트너 마이페이지**(`/partner/mypage`): 받은 입찰·작성 스토리·내 질문 활동 카드
+- **FAQ**(`/partner/faq`): **관리자 직접 편집** 자주 묻는 질문 + 관리자 답변 Q&A (전체보기 = 글만)
+- **파트너 마이페이지**(`/partner/mypage`): 받은 입찰·작성 스토리·내 질문 활동 카드 + **내 업체 정보** 요약 + "업체정보 수정" 단축 진입
+- **공지사항**(`/partner/notice`): 고객 사이트와 같은 공지 데이터 공유
 
 ### 🛡️ 관리자 영역(`/admin`)
 - **매칭·입찰 현황**: 견적 요청별 카드, 입찰 내역, 최저가, 상태 배지
 - **리뷰 관리**: 사용자/파트너 리뷰 통합 표시, 숨김·노출 토글·삭제·**관리자 답변**(자동 마스킹)
 - **Q&A 답변**: 사용자/파트너 문의 통합, 답변/수정/삭제 (자동 마스킹)
-- **자동 통계**: 진행 중 견적·누적 입찰·숨김 리뷰·미답변 Q&A 카드
+- **공지사항 관리**: 작성·수정·삭제 — `/notice`·`/partner/notice`와 동일 데이터 즉시 양방향 동기화
+- **자동 통계**: 진행 중 견적·누적 입찰·숨김 리뷰·미답변 Q&A·공지 카드
 - `isAdmin` 판별: 현재 `user.email === 'admin@movingday.com'` (풀스택 단계에서 `user.role === 'admin'`로 한 줄 교체)
 
 ### 🔐 인증·회원
@@ -63,7 +66,8 @@ Moving-day/
 - **클라이언트 오버라이드**: 이메일 키 기반 localStorage로 닉네임/전화 영속화(백엔드 컬럼 추가 전까지)
 
 ### 🎨 공통 UI / 인터랙션
-- **헤더 통일**: 글래스모피즘(`bg-white/60 backdrop-blur`) + `rounded-b-2xl`, 검색창(SVG 돋보기)·알림 벨(클릭 시 GSAP `keyframes`로 좌우 흔들기)·사용자 메뉴 드롭다운(GSAP fade+slide)·햄버거(GSAP morph)
+- **헤더 통일**: 글래스모피즘(`bg-white/60 backdrop-blur`) + `rounded-b-2xl`, 검색창(SVG 돋보기)·**알림 벨(좌우 흔들기 + 미확인 빨간점 + 드롭다운, 수신자별 필터링)**·사용자 메뉴 드롭다운(GSAP fade+slide)·햄버거(GSAP morph)
+- **알림 시스템**: `addNotification({ type, message, link, to })` — 견적/입찰/답변/공지/결제 이벤트 발생 시 BellIcon 큐에 적재. `to` 지정 시 그 사용자에게만(`!to || to === user.email` 필터). **관리자 답변 알림은 항상 글 작성자 본인에게만 전송**, 공지/본인 액션은 전체 노출
 - **TOP 버튼**: 우하단 고정, 300px 스크롤 이상에서 페이드인
 - **페이지 전환**: 모든 라우트에 GSAP fade+slide-in(0.5s, y 16) + 스크롤 최상단 리셋
 - **메인 캐러셀**: `snap-x` + 화살표 + 터치 스와이프 + 모바일 1개/태블릿 2개/데스크톱 3개, "전체 보기 →" 링크
@@ -105,12 +109,16 @@ cd frontend && npm install && npm run dev                          # 5173
 ### 클라이언트 localStorage 키 (영속화)
 | 키 | 용도 |
 |---|---|
-| `movingday_user_reviews` | 고객 리뷰 |
-| `movingday_partner_stories` | 파트너 스토리 |
-| `movingday_user_qa` / `movingday_partner_qa` | 사용자/파트너 Q&A (관리자 답변 포함) |
+| `movingday_user_reviews` | 고객 리뷰 (작성자 식별용 `authorEmail` 포함) |
+| `movingday_partner_stories` | 파트너 스토리 (`authorEmail` 포함) |
+| `movingday_user_qa` / `movingday_partner_qa` | 사용자/파트너 Q&A (관리자 답변 + `authorEmail`) |
+| `movingday_user_faqs` / `movingday_partner_faqs` | 자주 묻는 질문(관리자 편집) |
+| `movingday_notices` | 공지사항 (고객·파트너 공유) |
+| `movingday_notifications` | 알림 큐(수신자 `to` 필드로 필터) |
 | `movingday_user_quote_count` / `movingday_partner_bid_count` | 활동 카운트 |
 | `movingday_user_overrides_{email}` | 회원정보 클라이언트 오버라이드(닉네임·전화) |
 | `movingday_header_mode` / `movingday_display_mode` | 헤더 표시 방식 / 리뷰·FAQ 표시 방식 |
+| `movingday_partner_profile` | 파트너 업체정보(지역·사진·자격증 등) |
 | `partnerProfileSaved` | 파트너 업체정보 등록 플래그(입찰 시작 게이트) |
 
 ## 주요 API

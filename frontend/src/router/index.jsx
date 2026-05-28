@@ -12,6 +12,7 @@ import UserReviewPage from '../pages/UserReviewPage'
 import UserFaqPage from '../pages/UserFaqPage'
 import MyPage from '../pages/MyPage'
 import AccountEditPage from '../pages/AccountEditPage'
+import NoticePage from '../pages/NoticePage'
 import PartnerLayout from '../components/PartnerLayout'
 import PartnerHomePage from '../pages/PartnerHomePage'
 import PartnerDashboardPage from '../pages/PartnerDashboardPage'
@@ -52,6 +53,8 @@ export const router = createBrowserRouter([
       // 회원 영역
       { path: 'mypage', element: <MyPage /> },
       { path: 'account', element: <AccountEditPage /> },
+      // 공지사항
+      { path: 'notice', element: <NoticePage /> },
       // 관리자 대시보드 (admin 전용 가드)
       {
         path: 'admin',
@@ -89,6 +92,7 @@ export const router = createBrowserRouter([
       { path: 'story', element: <PartnerStoryPage /> },
       { path: 'faq', element: <PartnerFaqPage /> },
       { path: 'mypage', element: <PartnerMyPage /> },
+      { path: 'notice', element: <NoticePage /> },
     ],
   },
 ])

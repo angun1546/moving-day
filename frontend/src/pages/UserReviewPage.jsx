@@ -108,16 +108,18 @@ function EditReviewForm({ review, onSave, onCancel }) {
 }
 
 function UserReviewPage() {
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, displayMode } = useAuth()
   // localStorage에 영속화 (메인 캐러셀과 공유) — 텍스트 데이터만
   const [reviews, setReviews] = useLocalState('movingday_user_reviews', [])
   const [rating, setRating] = useState(5)
   const [editingId, setEditingId] = useState(null)
-  // 로그인 사용자면 표시명 자동 채움 (실명 모드면 마스킹된 형태)
+  // 전체보기 화살표로 진입 시 글 목록만 — 작성은 토글로
+  const [showForm, setShowForm] = useState(false)
+  // 로그인 사용자면 표시명 자동 채움 — displayMode 바뀌면 즉시 재계산
   const [authorName, setAuthorName] = useState('')
   useEffect(() => {
-    if (user) setAuthorName(getDisplayName(user))
-  }, [user])
+    if (user) setAuthorName(getDisplayName(user, displayMode))
+  }, [user, displayMode])
 
   // 사진은 메모리 전용 — 새 사진 선택·언마운트 시 revoke로 누수 차단, localStorage 저장 X
   const [photos, setPhotos] = useState([])
@@ -147,7 +149,17 @@ function UserReviewPage() {
     if (!name || !text) return
     const id = Date.now()
     setReviews((prev) => [
-      { id, name, text, rating, moveType, company, date: todayString() },
+      {
+        id,
+        name,
+        text,
+        rating,
+        moveType,
+        company,
+        date: todayString(),
+        // 작성자 식별 — 본인 리뷰는 메인 캐러셀에서 displayMode 따라 동적 표시
+        authorEmail: user?.email || '',
+      },
       ...prev,
     ])
     // 사진은 메모리 맵에만 저장 (localStorage 용량/직렬화 회피)
@@ -157,6 +169,7 @@ function UserReviewPage() {
     e.currentTarget.reset()
     setRating(5)
     setPhotos([])
+    setShowForm(false)
     if (!user) setAuthorName('')
   }
 
@@ -189,11 +202,22 @@ function UserReviewPage() {
         이삿날과 함께한 경험을 자유롭게 남겨주세요.
       </p>
 
-      {/* 작성 폼 */}
+      {/* 작성 폼 (토글) */}
+      {showForm && (
       <form
         onSubmit={submit}
         className="mt-8 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
       >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">리뷰 작성</h2>
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="text-sm text-gray-500 hover:text-brand"
+          >
+            닫기
+          </button>
+        </div>
         <div>
           <span className="text-sm font-semibold text-gray-800">별점</span>
           <StarPick rating={rating} setRating={setRating} />
@@ -287,12 +311,22 @@ function UserReviewPage() {
           리뷰 등록
         </button>
       </form>
+      )}
 
       {/* 등록된 리뷰 목록 */}
       <div className="mt-10">
-        <h2 className="text-lg font-bold text-gray-900">
-          등록된 리뷰 {reviews.length > 0 && `(${reviews.length})`}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">
+            등록된 리뷰 {reviews.length > 0 && `(${reviews.length})`}
+          </h2>
+          <button
+            type="button"
+            onClick={() => setShowForm((v) => !v)}
+            className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+          >
+            {showForm ? '폼 닫기' : '+ 리뷰 등록'}
+          </button>
+        </div>
         {reviews.length === 0 ? (
           <div className="mt-4 rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center">
             <p className="text-3xl">✍️</p>

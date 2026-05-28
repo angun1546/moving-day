@@ -132,7 +132,7 @@ function ReviewCarousel({
               <p className="mt-3 text-gray-600">{description}</p>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end gap-2">
             {viewAllPath && (
               <Link
                 to={viewAllPath}

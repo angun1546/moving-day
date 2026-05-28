@@ -2,25 +2,30 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getDisplayName, maskKoreanNamesInText } from '../utils/userDisplay'
 import { useLocalState } from '../hooks/useLocalState'
+import { addNotification } from '../utils/notifications'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
 
-// 자주 묻는 질문 (정적)
-const FAQS = [
+// 자주 묻는 질문 초기값 — 관리자가 추가·수정·삭제하면 localStorage에 반영
+const DEFAULT_FAQS = [
   {
+    id: 1,
     q: '견적은 무료인가요?',
     a: '네, 견적 신청과 비교는 모두 무료입니다. 실제 이사 진행 시에만 업체와 직접 거래합니다.',
   },
   {
+    id: 2,
     q: '신청 후 얼마나 기다려야 하나요?',
     a: '보통 1영업일 이내에 여러 업체의 입찰이 들어옵니다.',
   },
   {
+    id: 3,
     q: '비회원도 견적 신청이 가능한가요?',
     a: '네, 회원가입 없이도 견적 신청이 가능합니다.',
   },
   {
+    id: 4,
     q: '취소나 환불은 어떻게 하나요?',
     a: '낙찰 전에는 언제든 취소할 수 있고, 낙찰 후엔 선택한 업체와 직접 협의해 주세요.',
   },
@@ -168,13 +173,50 @@ function QaCard({ qa, onAnswer, onDeleteAnswer, onDeleteQuestion, isAdmin }) {
 }
 
 function UserFaqPage() {
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, displayMode } = useAuth()
   const [questions, setQuestions] = useLocalState('movingday_user_qa', [])
-  // 로그인 사용자면 표시명을 자동 채움
+  // FAQ도 영속 — 관리자 작성·수정·삭제
+  const [faqs, setFaqs] = useLocalState('movingday_user_faqs', DEFAULT_FAQS)
+  const [faqOpen, setFaqOpen] = useState(false)
+  const [editingFaqId, setEditingFaqId] = useState(null)
+  const editingFaq = editingFaqId ? faqs.find((f) => f.id === editingFaqId) : null
+  // 전체보기 화살표/메뉴 진입 시 글만 노출 — 작성은 토글로
+  const [showAsk, setShowAsk] = useState(false)
+  // 로그인 사용자면 표시명을 자동 채움 — displayMode 변경 즉시 재계산
   const [authorName, setAuthorName] = useState('')
+
+  function submitFaq(e) {
+    e.preventDefault()
+    const fd = new FormData(e.currentTarget)
+    const q = fd.get('q')?.toString().trim()
+    const a = fd.get('a')?.toString().trim()
+    if (!q || !a) return
+    if (editingFaqId) {
+      setFaqs((prev) =>
+        prev.map((f) => (f.id === editingFaqId ? { ...f, q, a } : f)),
+      )
+      setEditingFaqId(null)
+    } else {
+      setFaqs((prev) => [...prev, { id: Date.now(), q, a }])
+    }
+    e.currentTarget.reset()
+    setFaqOpen(false)
+  }
+  function removeFaq(id) {
+    if (!window.confirm('이 FAQ를 삭제할까요?')) return
+    setFaqs((prev) => prev.filter((f) => f.id !== id))
+  }
+  function startEditFaq(f) {
+    setEditingFaqId(f.id)
+    setFaqOpen(true)
+  }
+  function cancelFaq() {
+    setFaqOpen(false)
+    setEditingFaqId(null)
+  }
   useEffect(() => {
-    if (user) setAuthorName(getDisplayName(user))
-  }, [user])
+    if (user) setAuthorName(getDisplayName(user, displayMode))
+  }, [user, displayMode])
 
   function ask(e) {
     e.preventDefault()
@@ -183,16 +225,32 @@ function UserFaqPage() {
     const text = fd.get('q')?.toString().trim()
     if (!name || !text) return
     setQuestions((prev) => [
-      { id: Date.now(), name, q: text, a: '' },
+      {
+        id: Date.now(),
+        name,
+        q: text,
+        a: '',
+        authorEmail: user?.email || '',
+      },
       ...prev,
     ])
     e.currentTarget.reset()
+    setShowAsk(false)
   }
 
   function answer(id, text) {
     setQuestions((prev) =>
       prev.map((qa) => (qa.id === id ? { ...qa, a: text } : qa)),
     )
+    const target = questions.find((qa) => qa.id === id)
+    addNotification({
+      type: 'reply',
+      message: target
+        ? `${target.name}님의 질문에 관리자 답변이 달렸어요.`
+        : '관리자 답변이 등록되었어요.',
+      link: '/faq',
+      to: target?.authorEmail || '',
+    })
   }
   function deleteAnswer(id) {
     setQuestions((prev) =>
@@ -211,11 +269,76 @@ function UserFaqPage() {
         궁금한 점을 먼저 찾아보고, 없으면 아래에서 직접 질문해 주세요.
       </p>
 
+      {/* 관리자 FAQ 작성 토글 버튼 */}
+      {isAdmin && !faqOpen && (
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              setEditingFaqId(null)
+              setFaqOpen(true)
+            }}
+            className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+          >
+            + FAQ 작성
+          </button>
+        </div>
+      )}
+
+      {/* 관리자 FAQ 작성/수정 폼 */}
+      {isAdmin && faqOpen && (
+        <form
+          onSubmit={submitFaq}
+          className="mt-6 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">
+              {editingFaqId ? 'FAQ 수정' : 'FAQ 작성'}
+            </h3>
+            <button
+              type="button"
+              onClick={cancelFaq}
+              className="text-sm text-gray-500 hover:text-brand"
+            >
+              닫기
+            </button>
+          </div>
+          <label className="block">
+            <span className="text-sm font-semibold text-gray-800">질문</span>
+            <input
+              type="text"
+              name="q"
+              required
+              defaultValue={editingFaq?.q || ''}
+              placeholder="자주 묻는 질문"
+              className={inputClass}
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm font-semibold text-gray-800">답변</span>
+            <textarea
+              name="a"
+              rows={4}
+              required
+              defaultValue={editingFaq?.a || ''}
+              placeholder="답변 내용"
+              className={inputClass}
+            />
+          </label>
+          <button
+            type="submit"
+            className="w-full rounded-full bg-brand px-7 py-3 font-semibold text-white transition hover:bg-brand-dark"
+          >
+            {editingFaqId ? '수정 저장' : 'FAQ 등록'}
+          </button>
+        </form>
+      )}
+
       {/* 자주 묻는 질문 (아코디언) */}
       <div className="mt-8 space-y-3">
-        {FAQS.map((f) => (
+        {faqs.map((f) => (
           <details
-            key={f.q}
+            key={f.id}
             className="group rounded-2xl border border-gray-100 bg-brand-bg p-5"
           >
             <summary className="flex cursor-pointer items-center justify-between font-semibold text-gray-900">
@@ -225,16 +348,46 @@ function UserFaqPage() {
               </span>
             </summary>
             <p className="mt-3 leading-relaxed text-gray-600">{f.a}</p>
+            {isAdmin && (
+              <div className="mt-3 flex gap-2 border-t border-gray-200 pt-3 text-xs">
+                <button
+                  type="button"
+                  onClick={() => startEditFaq(f)}
+                  className="rounded-full border border-gray-300 px-3 py-1.5 font-semibold text-gray-600 transition hover:border-brand hover:text-brand"
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeFaq(f.id)}
+                  className="rounded-full border border-red-300 px-3 py-1.5 font-semibold text-red-500 transition hover:bg-red-50"
+                >
+                  삭제
+                </button>
+              </div>
+            )}
           </details>
         ))}
       </div>
 
-      {/* 직접 질문하기 */}
-      <h2 className="mt-12 text-xl font-bold text-gray-900">직접 질문하기</h2>
-      <p className="mt-2 text-sm text-gray-500">
-        자주 묻는 질문에 없으면 직접 남겨주세요. 관리자가 답변해 드립니다.
-      </p>
+      {/* 직접 질문하기 (토글) */}
+      <div className="mt-12 flex items-end justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">직접 질문하기</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            자주 묻는 질문에 없으면 직접 남겨주세요. 관리자가 답변해 드립니다.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAsk((v) => !v)}
+          className="shrink-0 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+        >
+          {showAsk ? '폼 닫기' : '+ 질문하기'}
+        </button>
+      </div>
 
+      {showAsk && (
       <form
         onSubmit={ask}
         className="mt-4 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
@@ -276,6 +429,7 @@ function UserFaqPage() {
           질문 등록
         </button>
       </form>
+      )}
 
       {/* 질문 목록 */}
       <div className="mt-8 space-y-4">

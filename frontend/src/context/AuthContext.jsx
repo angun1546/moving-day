@@ -6,6 +6,7 @@ const AuthContext = createContext(null)
 // 관리자 식별 이메일 (풀스택 단계에서 user.role === 'admin' 체크로 교체)
 const ADMIN_EMAIL = 'admin@movingday.com'
 const HEADER_KEY = 'movingday_header_mode'
+const DISPLAY_KEY = 'movingday_display_mode'
 
 // 백엔드가 아직 모르는 필드(nickname 등)를 이메일별 localStorage 오버라이드로 영속화
 // 풀스택에서 User 모델에 컬럼이 추가되면 이 함수들 제거하고 fetchMe 결과를 그대로 사용
@@ -48,6 +49,17 @@ export function AuthProvider({ children }) {
     localStorage.setItem(HEADER_KEY, m)
   }
 
+  // 리뷰·FAQ 표시 방식(닉네임/실명 마스킹) — Context로 두어 작성 폼이 즉시 갱신
+  const [displayMode, setDisplayModeState] = useState(() => {
+    if (typeof window === 'undefined') return 'nickname'
+    return localStorage.getItem(DISPLAY_KEY) || 'nickname'
+  })
+  function setDisplayMode(mode) {
+    const m = mode === 'real' ? 'real' : 'nickname'
+    setDisplayModeState(m)
+    localStorage.setItem(DISPLAY_KEY, m)
+  }
+
   // 앱 시작 시 저장된 토큰으로 로그인 상태 복원 + 클라이언트 오버라이드 병합
   useEffect(() => {
     auth
@@ -69,6 +81,8 @@ export function AuthProvider({ children }) {
     isAdmin,
     headerMode,
     setHeaderMode,
+    displayMode,
+    setDisplayMode,
     login: async (email, password) => {
       const u = await auth.login(email, password)
       const merged = u ? { ...u, ...getOverrides(u.email) } : u

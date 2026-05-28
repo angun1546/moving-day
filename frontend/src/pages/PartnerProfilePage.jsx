@@ -17,12 +17,63 @@ function Opt() {
   return <span className="font-normal text-gray-400"> (선택)</span>
 }
 
+// 저장된 업체 정보 로드 (마운트 시점) — 마이페이지에서도 동일 키로 읽음
+function loadStoredProfile() {
+  try {
+    const raw = localStorage.getItem('movingday_partner_profile')
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
 function PartnerProfilePage() {
+  const stored = loadStoredProfile()
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('') // 서비스 지역 미선택 안내
   const [profileImg, setProfileImg] = useState(null) // 프로필 사진 1장
   const [workPhotos, setWorkPhotos] = useState([]) // 업체·이사 사진
   const [certs, setCerts] = useState([]) // 자격증·서류 (이미지/PDF)
+  // 서비스 지역 — controlled (권역별 전체 선택 토글을 위해)
+  const [selectedRegions, setSelectedRegions] = useState(
+    () => new Set(stored.regions || []),
+  )
+
+  function toggleRegion(value) {
+    setSelectedRegions((prev) => {
+      const next = new Set(prev)
+      if (next.has(value)) next.delete(value)
+      else next.add(value)
+      return next
+    })
+  }
+
+  function toggleGroup(sidoMap) {
+    // 그룹 안 모든 '시도 시군구' 키 집계
+    const all = []
+    Object.entries(sidoMap).forEach(([sido, sgs]) => {
+      sgs.forEach((sg) => all.push(`${sido} ${sg}`))
+    })
+    const allOn = all.every((r) => selectedRegions.has(r))
+    setSelectedRegions((prev) => {
+      const next = new Set(prev)
+      if (allOn) all.forEach((r) => next.delete(r))
+      else all.forEach((r) => next.add(r))
+      return next
+    })
+  }
+
+  // 시·도 단위 일괄 토글 (예: 서울 25구 한 번에)
+  function toggleSido(sido, sgs) {
+    const all = sgs.map((sg) => `${sido} ${sg}`)
+    const allOn = all.every((r) => selectedRegions.has(r))
+    setSelectedRegions((prev) => {
+      const next = new Set(prev)
+      if (allOn) all.forEach((r) => next.delete(r))
+      else all.forEach((r) => next.add(r))
+      return next
+    })
+  }
 
   // 프로필 사진 (단일)
   function onProfile(e) {
@@ -51,11 +102,26 @@ function PartnerProfilePage() {
   // 저장 (목업): 서비스 지역은 최소 1곳 선택해야 함
   function submit(e) {
     e.preventDefault()
-    const regions = new FormData(e.currentTarget).getAll('regions')
-    if (regions.length === 0) {
+    if (selectedRegions.size === 0) {
       setSaved(false)
       setError('서비스 가능 지역을 1곳 이상 선택해 주세요.')
       return
+    }
+    const fd = new FormData(e.currentTarget)
+    // 업체 정보 영속화 — 파트너 마이페이지에서 같은 키로 읽음
+    const profile = {
+      company: fd.get('company')?.toString().trim() || '',
+      bizNo: fd.get('bizNo')?.toString().trim() || '',
+      ceo: fd.get('ceo')?.toString().trim() || '',
+      phone: fd.get('phone')?.toString().trim() || '',
+      trucks: fd.get('trucks')?.toString().trim() || '',
+      intro: fd.get('intro')?.toString().trim() || '',
+      regions: Array.from(selectedRegions),
+    }
+    try {
+      localStorage.setItem('movingday_partner_profile', JSON.stringify(profile))
+    } catch {
+      // 저장 실패 무시
     }
     setError('')
     setSaved(true)
@@ -114,6 +180,7 @@ function PartnerProfilePage() {
             type="text"
             name="company"
             required
+            defaultValue={stored.company || ''}
             placeholder="예: 한솔이사"
             className={inputClass}
           />
@@ -129,6 +196,7 @@ function PartnerProfilePage() {
               type="text"
               name="bizNo"
               required
+              defaultValue={stored.bizNo || ''}
               placeholder="예: 123-45-67890"
               className={inputClass}
             />
@@ -142,6 +210,7 @@ function PartnerProfilePage() {
               type="text"
               name="ceo"
               required
+              defaultValue={stored.ceo || ''}
               placeholder="예: 김한솔"
               className={inputClass}
             />
@@ -158,6 +227,7 @@ function PartnerProfilePage() {
               type="tel"
               name="phone"
               required
+              defaultValue={stored.phone || ''}
               placeholder="예: 02-1234-5678"
               className={inputClass}
             />
@@ -171,6 +241,7 @@ function PartnerProfilePage() {
               type="number"
               name="trucks"
               min="0"
+              defaultValue={stored.trucks || ''}
               placeholder="예: 4"
               className={inputClass}
             />
@@ -187,44 +258,101 @@ function PartnerProfilePage() {
             권역을 펼쳐 세부 시·군·구를 선택하세요.
           </p>
           <div className="mt-3 space-y-2">
-            {Object.entries(REGION_TREE).map(([group, sidoMap]) => (
-              <details
-                key={group}
-                className="group rounded-2xl border border-gray-100 bg-white"
-              >
-                <summary className="flex cursor-pointer items-center justify-between px-4 py-3 font-semibold text-gray-800 transition hover:text-brand">
-                  {group}
-                  <span className="text-brand transition group-open:rotate-180">
-                    ▾
-                  </span>
-                </summary>
-                <div className="space-y-4 border-t border-gray-100 px-4 py-4">
-                  {Object.entries(sidoMap).map(([sido, sgs]) => (
-                    <div key={sido}>
-                      <p className="text-xs font-semibold text-gray-500">
-                        {sido}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {sgs.map((sg) => (
-                          <label
-                            key={`${sido}-${sg}`}
-                            className="cursor-pointer rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 transition has-[:checked]:bg-brand has-[:checked]:text-white"
-                          >
-                            <input
-                              type="checkbox"
-                              name="regions"
-                              value={`${sido} ${sg}`}
-                              className="sr-only"
-                            />
-                            {sg}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ))}
+            {Object.entries(REGION_TREE).map(([group, sidoMap]) => {
+              const allRegions = Object.entries(sidoMap).flatMap(
+                ([sido, sgs]) => sgs.map((sg) => `${sido} ${sg}`),
+              )
+              const allOn = allRegions.every((r) => selectedRegions.has(r))
+              const partial =
+                !allOn && allRegions.some((r) => selectedRegions.has(r))
+              return (
+                <details
+                  key={group}
+                  className="group rounded-2xl border border-gray-100 bg-white"
+                >
+                  <summary className="flex cursor-pointer items-center justify-between px-4 py-3 font-semibold text-gray-800 transition hover:text-brand">
+                    <span className="flex items-center gap-2">
+                      {group}
+                      {partial && (
+                        <span className="rounded-full bg-brand-light px-2 py-0.5 text-xs font-bold text-brand">
+                          일부 선택
+                        </span>
+                      )}
+                      {allOn && (
+                        <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-white">
+                          전체 선택
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-brand transition group-open:rotate-180">
+                      ▾
+                    </span>
+                  </summary>
+                  <div className="space-y-4 border-t border-gray-100 px-4 py-4">
+                    {/* 권역 전체 선택 토글 */}
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(sidoMap)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                        allOn
+                          ? 'bg-brand text-white hover:bg-brand-dark'
+                          : 'border border-brand text-brand hover:bg-brand hover:text-white'
+                      }`}
+                    >
+                      {allOn ? '권역 전체 해제' : `${group} 전체 선택`}
+                    </button>
+
+                    {Object.entries(sidoMap).map(([sido, sgs]) => {
+                      const sidoAll = sgs.map((sg) => `${sido} ${sg}`)
+                      const sidoAllOn = sidoAll.every((r) =>
+                        selectedRegions.has(r),
+                      )
+                      return (
+                        <div key={sido}>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-xs font-semibold text-gray-500">
+                              {sido}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => toggleSido(sido, sgs)}
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold transition ${
+                                sidoAllOn
+                                  ? 'bg-brand text-white hover:bg-brand-dark'
+                                  : 'border border-gray-300 text-gray-500 hover:border-brand hover:text-brand'
+                              }`}
+                            >
+                              {sidoAllOn ? `${sido} 전체 해제` : `${sido} 전체 선택`}
+                            </button>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {sgs.map((sg) => {
+                              const value = `${sido} ${sg}`
+                              return (
+                                <label
+                                  key={`${sido}-${sg}`}
+                                  className="cursor-pointer rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 transition has-[:checked]:bg-brand has-[:checked]:text-white"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    name="regions"
+                                    value={value}
+                                    checked={selectedRegions.has(value)}
+                                    onChange={() => toggleRegion(value)}
+                                    className="sr-only"
+                                  />
+                                  {sg}
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </details>
+              )
+            })}
           </div>
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         </div>
@@ -237,6 +365,7 @@ function PartnerProfilePage() {
           <textarea
             name="intro"
             rows={3}
+            defaultValue={stored.intro || ''}
             placeholder="예: 20년 경력 베테랑 팀이 포장부터 정리까지 직접 책임집니다."
             className={inputClass}
           />

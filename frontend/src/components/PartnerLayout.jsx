@@ -14,6 +14,7 @@ const NAV = [
   { to: '/partner/profile', label: '업체 정보' },
   { to: '/partner/story', label: '파트너 스토리' },
   { to: '/partner/faq', label: 'FAQ' },
+  { to: '/partner/notice', label: '공지사항' },
 ]
 
 // 업체(파트너) 전용 레이아웃 — 유저 헤더와 동일 패턴(검색·로그인·알림·햄버거)
@@ -135,11 +136,18 @@ function PartnerLayout() {
                   마이페이지
                 </Link>
                 <Link
-                  to="/account"
+                  to="/account?role=partner"
                   onClick={close}
                   className="block rounded-lg px-3 py-2 font-medium text-gray-700 transition hover:bg-brand-bg hover:text-brand"
                 >
                   회원정보 수정
+                </Link>
+                <Link
+                  to="/partner/profile"
+                  onClick={close}
+                  className="block rounded-lg px-3 py-2 font-medium text-gray-700 transition hover:bg-brand-bg hover:text-brand"
+                >
+                  업체정보 수정
                 </Link>
                 <button
                   type="button"

@@ -10,10 +10,10 @@ function UserMenu({ user, logout }) {
   // 헤더 표시 이름 — 회원정보 수정에서 선택한 모드대로
   const headerName =
     headerMode === 'real' ? user.name : user.nickname || user.name
-  // 파트너 영역에서 진입하면 파트너 마이페이지로 분기
-  const myPagePath = pathname.startsWith('/partner')
-    ? '/partner/mypage'
-    : '/mypage'
+  // 파트너 영역에서 진입하면 마이페이지·회원정보 수정 모두 파트너 컨텍스트로
+  const isPartner = pathname.startsWith('/partner')
+  const myPagePath = isPartner ? '/partner/mypage' : '/mypage'
+  const accountPath = isPartner ? '/account?role=partner' : '/account'
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const dropdownRef = useRef(null)
@@ -74,9 +74,18 @@ function UserMenu({ user, logout }) {
         >
           마이페이지
         </Link>
-        <Link to="/account" onClick={() => setOpen(false)} className={itemClass}>
+        <Link to={accountPath} onClick={() => setOpen(false)} className={itemClass}>
           회원정보 수정
         </Link>
+        {isPartner && (
+          <Link
+            to="/partner/profile"
+            onClick={() => setOpen(false)}
+            className={itemClass}
+          >
+            업체정보 수정
+          </Link>
+        )}
         <button
           type="button"
           onClick={() => {

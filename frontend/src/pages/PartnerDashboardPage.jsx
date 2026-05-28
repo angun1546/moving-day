@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { REQUESTS } from '../data/requests'
+import { addNotification } from '../utils/notifications'
 
 const won = (n) => n.toLocaleString('ko-KR')
 
@@ -25,6 +26,15 @@ function PartnerDashboardPage() {
     } catch {
       // 저장 실패 무시
     }
+    // 알림 추가 — 클릭 시 파트너 대시보드로
+    const req = REQUESTS.find((r) => r.id === id)
+    addNotification({
+      type: 'bid',
+      message: req
+        ? `${req.from} → ${req.to} 건에 입찰을 제출했어요.`
+        : '입찰을 제출했어요.',
+      link: '/partner/dashboard',
+    })
   }
 
   return (

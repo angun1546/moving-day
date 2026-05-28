@@ -13,6 +13,7 @@ const NAV = [
   { href: '#steps', label: '이용 절차' },
   { href: '#reviews', label: '고객 후기' },
   { to: '/faq', label: 'FAQ' },
+  { to: '/notice', label: '공지사항' },
 ]
 
 // 헤더 로고 (PNG) — 자기 사이트 메인으로만 이동, 같은 페이지면 스크롤 업

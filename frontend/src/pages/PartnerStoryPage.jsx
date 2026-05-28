@@ -87,7 +87,7 @@ function EditStoryForm({ review, onSave, onCancel }) {
 }
 
 function PartnerStoryPage() {
-  const { isAdmin } = useAuth()
+  const { user, isAdmin } = useAuth()
   // localStorage 영속화 (메인 캐러셀과 공유)
   const [reviews, setReviews] = useLocalState('movingday_partner_stories', [])
   const [rating, setRating] = useState(5)
@@ -126,7 +126,14 @@ function PartnerStoryPage() {
     const text = fd.get('text')?.toString().trim()
     if (!company || !text) return
     setReviews((prev) => [
-      { id: Date.now(), company, text, rating, date: todayString() },
+      {
+        id: Date.now(),
+        company,
+        text,
+        rating,
+        date: todayString(),
+        authorEmail: user?.email || '',
+      },
       ...prev,
     ])
     e.currentTarget.reset()

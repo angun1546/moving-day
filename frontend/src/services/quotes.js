@@ -1,4 +1,5 @@
 import { redirect } from 'react-router-dom'
+import { addNotification } from '../utils/notifications'
 
 const API = '/api/quotes'
 
@@ -35,6 +36,13 @@ export async function createQuote({ request }) {
   } catch {
     // 저장 실패 무시
   }
+
+  // 알림 추가 — 클릭 시 입찰 비교 페이지로
+  addNotification({
+    type: 'quote',
+    message: '견적 신청이 접수되었습니다. 곧 업체들의 입찰이 시작됩니다.',
+    link: '/quote/bids',
+  })
 
   return redirect('/quote/done')
 }
