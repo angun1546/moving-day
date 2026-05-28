@@ -8,16 +8,24 @@ function QuoteDonePage() {
         이사 견적 신청이 완료되었습니다
       </h1>
       <p className="mt-4 leading-relaxed text-gray-600">
-        입력해 주신 연락처로 검증된 업체의 견적을 전달드릴게요.
+        검증된 이사업체들이 곧 입찰을 시작합니다.
         <br />
-        보통 1영업일 이내에 연락드립니다.
+        들어온 입찰을 비교하고 가장 좋은 조건을 선택하세요.
       </p>
-      <Link
-        to="/"
-        className="mt-8 inline-block rounded-full bg-brand px-7 py-3 font-semibold text-white transition hover:bg-brand-dark"
-      >
-        홈으로 돌아가기
-      </Link>
+      <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <Link
+          to="/quote/bids"
+          className="inline-block rounded-full bg-brand px-7 py-3 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark"
+        >
+          들어온 입찰 비교하기
+        </Link>
+        <Link
+          to="/"
+          className="inline-block rounded-full border border-gray-300 bg-white px-7 py-3 font-semibold text-gray-700 transition hover:border-brand hover:text-brand"
+        >
+          홈으로 돌아가기
+        </Link>
+      </div>
     </section>
   )
 }
