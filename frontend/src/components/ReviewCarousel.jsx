@@ -57,6 +57,12 @@ function ReviewCard({ review }) {
       <blockquote className="mt-4 flex-1 leading-relaxed text-gray-700">
         “{review.text}”
       </blockquote>
+      {review.company && (
+        <p className="mt-3 text-xs text-gray-500">
+          이용 업체:{' '}
+          <span className="font-semibold text-gray-700">{review.company}</span>
+        </p>
+      )}
       <figcaption className="mt-5 flex items-center justify-between text-sm">
         <span className="font-semibold text-gray-900">{review.name}</span>
         <span className="font-inter text-gray-400">{review.date}</span>

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ActivityCard from '../components/ActivityCard'
+import { useLocalState } from '../hooks/useLocalState'
 
 function Info({ label, value }) {
   return (
@@ -13,6 +14,10 @@ function Info({ label, value }) {
 
 function MyPage() {
   const { user, logout } = useAuth()
+  // 실제 활동 카운트 — 페이지 마운트 시점에 localStorage에서 읽음
+  const [reviews] = useLocalState('movingday_user_reviews', [])
+  const [questions] = useLocalState('movingday_user_qa', [])
+  const [quoteCount] = useLocalState('movingday_user_quote_count', 0)
 
   if (!user) {
     return (
@@ -50,9 +55,13 @@ function MyPage() {
       {/* 활동 내역 — 클릭 시 해당 페이지로 이동 */}
       <h2 className="mt-10 text-lg font-bold text-gray-900">활동 내역</h2>
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <ActivityCard to="/quote" label="견적 신청" count={0} />
-        <ActivityCard to="/reviews" label="작성 리뷰" count={0} />
-        <ActivityCard to="/faq" label="내 질문" count={0} />
+        <ActivityCard to="/quote" label="견적 신청" count={quoteCount} />
+        <ActivityCard
+          to="/reviews"
+          label="작성 리뷰"
+          count={reviews.length}
+        />
+        <ActivityCard to="/faq" label="내 질문" count={questions.length} />
       </div>
 
       {/* 액션 */}

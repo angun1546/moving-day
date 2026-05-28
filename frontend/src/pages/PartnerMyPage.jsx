@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ActivityCard from '../components/ActivityCard'
+import { useLocalState } from '../hooks/useLocalState'
 
 function Info({ label, value }) {
   return (
@@ -13,6 +14,10 @@ function Info({ label, value }) {
 
 function PartnerMyPage() {
   const { user, logout } = useAuth()
+  // 실제 활동 카운트
+  const [stories] = useLocalState('movingday_partner_stories', [])
+  const [questions] = useLocalState('movingday_partner_qa', [])
+  const [bidCount] = useLocalState('movingday_partner_bid_count', 0)
 
   if (!user) {
     return (
@@ -50,13 +55,21 @@ function PartnerMyPage() {
       {/* 활동 내역 — 클릭 시 해당 페이지로 이동 */}
       <h2 className="mt-10 text-lg font-bold text-gray-900">활동 내역</h2>
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <ActivityCard to="/partner/dashboard" label="받은 입찰" count={0} />
+        <ActivityCard
+          to="/partner/dashboard"
+          label="받은 입찰"
+          count={bidCount}
+        />
         <ActivityCard
           to="/partner/story"
           label="작성 파트너 스토리"
-          count={0}
+          count={stories.length}
         />
-        <ActivityCard to="/partner/faq" label="내 질문" count={0} />
+        <ActivityCard
+          to="/partner/faq"
+          label="내 질문"
+          count={questions.length}
+        />
       </div>
 
       {/* 액션 */}

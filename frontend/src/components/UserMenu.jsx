@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import gsap from 'gsap'
+import { useAuth } from '../context/AuthContext'
 
 // 로그인 시 사용자 메뉴 — 닉네임/이름 클릭 → 마이페이지·회원정보 수정·로그아웃 (유저/파트너 헤더 공용)
 function UserMenu({ user, logout }) {
   const { pathname } = useLocation()
+  const { headerMode } = useAuth()
+  // 헤더 표시 이름 — 회원정보 수정에서 선택한 모드대로
+  const headerName =
+    headerMode === 'real' ? user.name : user.nickname || user.name
   // 파트너 영역에서 진입하면 파트너 마이페이지로 분기
   const myPagePath = pathname.startsWith('/partner')
     ? '/partner/mypage'
@@ -56,7 +61,7 @@ function UserMenu({ user, logout }) {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        {user.nickname || user.name}님 ▾
+        {headerName}님 ▾
       </button>
       <div
         ref={dropdownRef}

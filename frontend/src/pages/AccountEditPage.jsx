@@ -7,7 +7,7 @@ const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
 
 function AccountEditPage() {
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, headerMode, setHeaderMode } = useAuth()
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const currentMode = getDisplayMode()
@@ -48,6 +48,7 @@ function AccountEditPage() {
       phone: fd.get('phone')?.toString().trim() || user.phone,
     })
     setDisplayMode(fd.get('displayMode') || 'nickname')
+    setHeaderMode(fd.get('headerMode') || 'nickname')
     setSaved(true)
   }
 
@@ -96,6 +97,38 @@ function AccountEditPage() {
             className={inputClass}
           />
         </label>
+
+        {/* 헤더 표시 이름 (닉네임 / 실명) */}
+        <div>
+          <span className="text-sm font-semibold text-gray-800">
+            헤더 표시 이름
+          </span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <label className="cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition has-[:checked]:bg-brand has-[:checked]:text-white">
+              <input
+                type="radio"
+                name="headerMode"
+                value="nickname"
+                defaultChecked={headerMode !== 'real'}
+                className="sr-only"
+              />
+              닉네임
+            </label>
+            <label className="cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition has-[:checked]:bg-brand has-[:checked]:text-white">
+              <input
+                type="radio"
+                name="headerMode"
+                value="real"
+                defaultChecked={headerMode === 'real'}
+                className="sr-only"
+              />
+              실명
+            </label>
+          </div>
+          <p className="mt-2 text-xs text-gray-400">
+            헤더 사용자 메뉴(○○○님 ▾)에 표시되는 이름입니다.
+          </p>
+        </div>
 
         {/* 리뷰·FAQ 표시 방식 */}
         <div>

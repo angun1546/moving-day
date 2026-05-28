@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Link, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
 import MenuIcon from './MenuIcon'
@@ -20,16 +20,19 @@ const NAV = [
 function PartnerLayout() {
   const { user, logout } = useAuth()
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
   const panelRef = useRef(null)
 
-  // 파트너 메인에서 로고를 누르면 이동 대신 맨 위로 부드럽게 스크롤
+  // 파트너 로고는 무조건 파트너 메인('/partner')만 이동. 같은 페이지면 스크롤 업
   function onLogoClick(e) {
+    e.preventDefault()
     close()
     if (pathname === '/partner') {
-      e.preventDefault()
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      navigate('/partner')
     }
   }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { REGION_TREE } from '../data/regions'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -15,18 +16,6 @@ function Req() {
 function Opt() {
   return <span className="font-normal text-gray-400"> (선택)</span>
 }
-
-// 서비스 가능 지역 후보
-const REGIONS = [
-  '서울',
-  '경기',
-  '인천',
-  '강원',
-  '충청',
-  '전라',
-  '경상',
-  '제주',
-]
 
 function PartnerProfilePage() {
   const [saved, setSaved] = useState(false)
@@ -188,26 +177,53 @@ function PartnerProfilePage() {
           </label>
         </div>
 
-        {/* 서비스 가능 지역 (필수, 모바일 퍼스트 칩) */}
+        {/* 서비스 가능 지역 (필수, 권역 클릭 → 시·도 → 시·군·구 펼침) */}
         <div>
           <span className="text-sm font-semibold text-gray-800">
             서비스 가능 지역
             <Req />
           </span>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {REGIONS.map((rg) => (
-              <label
-                key={rg}
-                className="cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 transition has-[:checked]:bg-brand has-[:checked]:text-white"
+          <p className="mt-1 text-xs text-gray-400">
+            권역을 펼쳐 세부 시·군·구를 선택하세요.
+          </p>
+          <div className="mt-3 space-y-2">
+            {Object.entries(REGION_TREE).map(([group, sidoMap]) => (
+              <details
+                key={group}
+                className="group rounded-2xl border border-gray-100 bg-white"
               >
-                <input
-                  type="checkbox"
-                  name="regions"
-                  value={rg}
-                  className="sr-only"
-                />
-                {rg}
-              </label>
+                <summary className="flex cursor-pointer items-center justify-between px-4 py-3 font-semibold text-gray-800 transition hover:text-brand">
+                  {group}
+                  <span className="text-brand transition group-open:rotate-180">
+                    ▾
+                  </span>
+                </summary>
+                <div className="space-y-4 border-t border-gray-100 px-4 py-4">
+                  {Object.entries(sidoMap).map(([sido, sgs]) => (
+                    <div key={sido}>
+                      <p className="text-xs font-semibold text-gray-500">
+                        {sido}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {sgs.map((sg) => (
+                          <label
+                            key={`${sido}-${sg}`}
+                            className="cursor-pointer rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 transition has-[:checked]:bg-brand has-[:checked]:text-white"
+                          >
+                            <input
+                              type="checkbox"
+                              name="regions"
+                              value={`${sido} ${sg}`}
+                              className="sr-only"
+                            />
+                            {sg}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
             ))}
           </div>
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}

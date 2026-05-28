@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
 import MenuIcon from './MenuIcon'
@@ -15,16 +15,18 @@ const NAV = [
   { to: '/faq', label: 'FAQ' },
 ]
 
-// 헤더 로고 (PNG)
+// 헤더 로고 (PNG) — 클릭하면 무조건 유저 메인('/')만 이동, 홈에 있으면 스크롤 업
 function Logo({ onClick }) {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
 
-  // 홈에서 로고를 누르면 이동 대신 맨 위로 부드럽게 스크롤
   function handle(e) {
+    e.preventDefault()
     onClick?.()
     if (pathname === '/') {
-      e.preventDefault()
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      navigate('/')
     }
   }
 

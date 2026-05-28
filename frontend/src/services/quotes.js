@@ -25,5 +25,16 @@ export async function createQuote({ request }) {
     return { error: err.message ?? '신청에 실패했습니다. 잠시 후 다시 시도해 주세요.' }
   }
 
+  // 마이페이지 활동 내역 카운트 (목업: 클라이언트 단순 카운트)
+  try {
+    const cur = parseInt(
+      localStorage.getItem('movingday_user_quote_count') || '0',
+      10,
+    )
+    localStorage.setItem('movingday_user_quote_count', String(cur + 1))
+  } catch {
+    // 저장 실패 무시
+  }
+
   return redirect('/quote/done')
 }

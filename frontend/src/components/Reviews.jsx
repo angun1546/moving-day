@@ -1,18 +1,20 @@
 import { Link } from 'react-router-dom'
 import ReviewCarousel from './ReviewCarousel'
 import { useLocalState } from '../hooks/useLocalState'
+import { maskName } from '../utils/userDisplay'
 
 // 메인 리뷰 섹션 — 작성된 리뷰가 있으면 캐러셀, 없으면 빈 상태
 function Reviews() {
   const [reviews] = useLocalState('movingday_user_reviews', [])
 
-  // 캐러셀 카드 데이터로 변환 (작성 시 마스킹된 이름이 그대로 노출됨)
+  // 캐러셀 카드 데이터로 변환 — 메인 노출 시점에 일괄 마스킹(프라이버시 보호)
   const display = reviews.map((r) => ({
     id: r.id,
-    name: r.name,
+    name: maskName(r.name),
     rating: r.rating,
     tag: r.moveType || '리뷰',
     text: r.text,
+    company: r.company || '',
     date: r.date || '',
   }))
 

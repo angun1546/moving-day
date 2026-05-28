@@ -15,6 +15,16 @@ function PartnerDashboardPage() {
     e.preventDefault()
     setDoneIds((prev) => [...prev, id])
     setOpenId(null)
+    // 파트너 마이페이지 활동 내역 카운트
+    try {
+      const cur = parseInt(
+        localStorage.getItem('movingday_partner_bid_count') || '0',
+        10,
+      )
+      localStorage.setItem('movingday_partner_bid_count', String(cur + 1))
+    } catch {
+      // 저장 실패 무시
+    }
   }
 
   return (

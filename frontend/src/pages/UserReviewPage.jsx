@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getDisplayName } from '../utils/userDisplay'
 import { useLocalState } from '../hooks/useLocalState'
@@ -6,6 +6,9 @@ import { todayString } from '../utils/date'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
+
+const fileClass =
+  'block w-full text-sm text-gray-600 file:mr-3 file:rounded-full file:border-0 file:bg-brand-light file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand hover:file:bg-brand-light/70'
 
 // 이사 종류 (리뷰 카드 tag로 사용)
 const MOVE_TYPES = [
@@ -46,8 +49,9 @@ function EditReviewForm({ review, onSave, onCancel }) {
     const fd = new FormData(e.currentTarget)
     const name = fd.get('name')?.toString().trim()
     const text = fd.get('text')?.toString().trim()
+    const company = fd.get('company')?.toString().trim()
     if (!name || !text) return
-    onSave({ rating, name, text })
+    onSave({ rating, name, text, company })
   }
   return (
     <form onSubmit={submit} className="space-y-3">
@@ -62,6 +66,15 @@ function EditReviewForm({ review, onSave, onCancel }) {
           name="name"
           required
           defaultValue={review.name}
+          className={inputClass}
+        />
+      </label>
+      <label className="block">
+        <span className="text-sm font-semibold text-gray-800">이용 업체</span>
+        <input
+          type="text"
+          name="company"
+          defaultValue={review.company || ''}
           className={inputClass}
         />
       </label>
@@ -96,7 +109,7 @@ function EditReviewForm({ review, onSave, onCancel }) {
 
 function UserReviewPage() {
   const { user, isAdmin } = useAuth()
-  // localStorage에 영속화 (메인 캐러셀과 공유)
+  // localStorage에 영속화 (메인 캐러셀과 공유) — 텍스트 데이터만
   const [reviews, setReviews] = useLocalState('movingday_user_reviews', [])
   const [rating, setRating] = useState(5)
   const [editingId, setEditingId] = useState(null)
@@ -106,19 +119,44 @@ function UserReviewPage() {
     if (user) setAuthorName(getDisplayName(user))
   }, [user])
 
+  // 사진은 메모리 전용 — 새 사진 선택·언마운트 시 revoke로 누수 차단, localStorage 저장 X
+  const [photos, setPhotos] = useState([])
+  const [photosMap, setPhotosMap] = useState({}) // 등록된 리뷰 id → photos[]
+  const photosRef = useRef([])
+  photosRef.current = photos
+  useEffect(() => {
+    return () => {
+      photosRef.current.forEach((p) => URL.revokeObjectURL(p.url))
+    }
+  }, [])
+
+  function onPhotos(e) {
+    // 이전 미리보기 URL revoke
+    photos.forEach((p) => URL.revokeObjectURL(p.url))
+    const files = Array.from(e.target.files ?? []).slice(0, 5)
+    setPhotos(files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) })))
+  }
+
   function submit(e) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
     const name = (user ? authorName : fd.get('name')?.toString().trim()) || ''
     const text = fd.get('text')?.toString().trim()
     const moveType = fd.get('moveType')?.toString() || MOVE_TYPES[0]
+    const company = fd.get('company')?.toString().trim() || ''
     if (!name || !text) return
+    const id = Date.now()
     setReviews((prev) => [
-      { id: Date.now(), name, text, rating, moveType, date: todayString() },
+      { id, name, text, rating, moveType, company, date: todayString() },
       ...prev,
     ])
+    // 사진은 메모리 맵에만 저장 (localStorage 용량/직렬화 회피)
+    if (photos.length > 0) {
+      setPhotosMap((prev) => ({ ...prev, [id]: photos }))
+    }
     e.currentTarget.reset()
     setRating(5)
+    setPhotos([])
     if (!user) setAuthorName('')
   }
 
@@ -132,6 +170,16 @@ function UserReviewPage() {
   function remove(id) {
     if (!window.confirm('이 리뷰를 삭제할까요?')) return
     setReviews((prev) => prev.filter((r) => r.id !== id))
+    // 메모리 사진도 정리
+    const stored = photosMap[id]
+    if (stored) {
+      stored.forEach((p) => URL.revokeObjectURL(p.url))
+      setPhotosMap((prev) => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+    }
   }
 
   return (
@@ -185,6 +233,18 @@ function UserReviewPage() {
           </select>
         </label>
         <label className="block">
+          <span className="text-sm font-semibold text-gray-800">
+            이용 업체
+            <span className="font-normal text-gray-400"> (선택)</span>
+          </span>
+          <input
+            type="text"
+            name="company"
+            placeholder="예: 한솔이사"
+            className={inputClass}
+          />
+        </label>
+        <label className="block">
           <span className="text-sm font-semibold text-gray-800">리뷰 내용</span>
           <textarea
             name="text"
@@ -193,6 +253,32 @@ function UserReviewPage() {
             placeholder="이삿날을 이용한 경험을 솔직하게 적어주세요."
             className={inputClass}
           />
+        </label>
+        {/* 사진 첨부 (선택) — 메모리에만 보관, 새로고침 시 사진만 사라짐 */}
+        <label className="block">
+          <span className="text-sm font-semibold text-gray-800">
+            사진 첨부
+            <span className="font-normal text-gray-400"> (선택, 최대 5장)</span>
+          </span>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={onPhotos}
+            className={`${fileClass} mt-1`}
+          />
+          {photos.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {photos.map((p) => (
+                <img
+                  key={p.url}
+                  src={p.url}
+                  alt={p.name}
+                  className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
+                />
+              ))}
+            </div>
+          )}
         </label>
         <button
           type="submit"
@@ -248,6 +334,26 @@ function UserReviewPage() {
                     <blockquote className="mt-3 leading-relaxed text-gray-700">
                       “{r.text}”
                     </blockquote>
+                    {photosMap[r.id] && photosMap[r.id].length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {photosMap[r.id].map((p) => (
+                          <img
+                            key={p.url}
+                            src={p.url}
+                            alt={p.name}
+                            className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {r.company && (
+                      <p className="mt-3 text-xs text-gray-500">
+                        이용 업체:{' '}
+                        <span className="font-semibold text-gray-700">
+                          {r.company}
+                        </span>
+                      </p>
+                    )}
                     <figcaption className="mt-4 flex items-center justify-between text-sm">
                       <span className="font-semibold text-gray-900">{r.name}</span>
                       {r.date && (
