@@ -134,8 +134,40 @@ cd frontend && npm install && npm run dev                          # 5173
 
 ## 배포
 
-- **Frontend**: Vercel 자동 빌드 (GitHub `main` push 시 자동 배포, `frontend/dist`)
-- **Backend**: 미배포(로컬 dev 전용). 배포된 사이트의 리뷰/FAQ/입찰 등은 클라이언트 localStorage 기반 목업으로 동작 — 풀스택 단계에서 Render/Turso 연동 예정
+- **Frontend**: Vercel 자동 빌드 (GitHub `main` push 시 자동 배포, `frontend/dist`). `/api/*`·`/uploads/*`는 `vercel.json` rewrites로 Render 백엔드로 프록시
+- **Backend**: Render Web Service (`movingday-api`). DB는 Turso(libSQL), 견적 사진은 Cloudinary
+- **DB**: Turso (libSQL) — Prisma 7 `@prisma/adapter-libsql` 어댑터로 연결. 로컬 dev는 그대로 `better-sqlite3` (URL이 `file:...`면 자동 분기)
+- **사진 업로드**: Cloudinary — multer가 메모리에 받은 버퍼를 Cloudinary `upload_stream`으로 전송, `secure_url`을 DB에 저장
+
+### 백엔드(Render) 환경변수 — 시크릿은 절대 저장소에 두지 않음
+
+| 변수 | 설명 | 예시 |
+|---|---|---|
+| `DATABASE_URL` | Turso DB URL | `libsql://<db>.turso.io` |
+| `DATABASE_AUTH_TOKEN` | Turso 토큰 | (시크릿) |
+| `JWT_SECRET` | JWT 서명 키(긴 임의 문자열) | (시크릿) |
+| `FRONTEND_URL` | CORS 화이트리스트(콤마 다중) | `https://moving-day.vercel.app,http://localhost:5173` |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary 계정 이름 | `movingday` |
+| `CLOUDINARY_API_KEY` | (시크릿) | |
+| `CLOUDINARY_API_SECRET` | (시크릿) | |
+
+### Render Web Service 설정
+
+```
+Name              movingday-api
+Region            Singapore (Vercel과 가까운 곳)
+Root Directory    backend
+Build Command     npm install
+Start Command     npm start
+```
+
+### Turso 초기 스키마 적용 (한 번만)
+
+`backend/prisma/turso-init.sql`을 한 번 적용하면 됩니다 (이후 새 마이그레이션은 `prisma/migrations/<새 이름>/migration.sql`만 추가 적용).
+
+```bash
+turso db shell movingday-angun1546 < backend/prisma/turso-init.sql
+```
 
 ## 로드맵
 

@@ -1,28 +1,20 @@
 import { Router } from 'express'
 import multer from 'multer'
-import path from 'node:path'
-import fs from 'node:fs'
+import { v2 as cloudinary } from 'cloudinary'
 import { prisma } from '../db.ts'
 
 const router = Router()
 
-// 업로드 폴더 준비
-const UPLOAD_DIR = 'uploads'
-fs.mkdirSync(UPLOAD_DIR, { recursive: true })
-
-// 파일 저장 설정 (충돌 방지용 고유 파일명)
-const storage = multer.diskStorage({
-  destination: UPLOAD_DIR,
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname)
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
-    cb(null, `${unique}${ext}`)
-  },
+// Cloudinary 설정 — 환경변수만 참조 (코드/저장소에 키 절대 금지)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-// 이미지 파일만, 장당 최대 10MB, 최대 5장
+// 메모리 저장 (디스크 X) — 받은 버퍼를 Cloudinary로 바로 스트리밍 업로드
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024, files: 5 },
   fileFilter: (_req, file, cb) => {
     cb(null, file.mimetype.startsWith('image/'))
@@ -33,7 +25,21 @@ const upload = multer({
 const MOVE_TYPES = ['포장이사', '반포장이사', '일반이사', '사무실이사']
 const METHODS = ['방문견적', '사진견적', '전화상담']
 
-// 견적 신청 등록 (사진 첨부 가능)
+// 버퍼 1장을 Cloudinary에 올리고 secure_url 반환
+function uploadToCloudinary(buffer: Buffer): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'movingday/quotes', resource_type: 'image' },
+      (err, result) => {
+        if (err || !result) return reject(err ?? new Error('Cloudinary 업로드 실패'))
+        resolve(result.secure_url)
+      },
+    )
+    stream.end(buffer)
+  })
+}
+
+// 견적 신청 등록 (사진 첨부 가능 — Cloudinary에 업로드 후 URL을 DB에 저장)
 router.post('/', upload.array('photos', 5), async (req, res) => {
   const {
     name,
@@ -60,15 +66,23 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
     return res.status(400).json({ message: '견적 방식이 올바르지 않습니다.' })
   }
 
-  // 업로드된 사진 경로
   const files = (req.files as Express.Multer.File[]) ?? []
   // 사진 견적은 사진 1장 이상 필수
   if (method === '사진견적' && files.length === 0) {
     return res.status(400).json({ message: '사진 견적은 사진을 1장 이상 첨부해 주세요.' })
   }
-  const photos = files.length
-    ? JSON.stringify(files.map((f) => `/uploads/${f.filename}`))
-    : null
+
+  // Cloudinary 업로드 (사진이 있을 때만)
+  let photos: string | null = null
+  try {
+    if (files.length > 0) {
+      const urls = await Promise.all(files.map((f) => uploadToCloudinary(f.buffer)))
+      photos = JSON.stringify(urls)
+    }
+  } catch (err) {
+    console.error('Cloudinary 업로드 실패:', err)
+    return res.status(500).json({ message: '사진 업로드 중 오류가 발생했습니다.' })
+  }
 
   try {
     const quote = await prisma.quoteRequest.create({

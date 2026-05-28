@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import type { Request, Response, NextFunction } from 'express'
 
+// JWT_SECRET은 index.ts에서 시작 시점에 검증 — 여기서는 그대로 사용
 const SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-me'
 const EXPIRES_IN = 60 * 60 * 24 * 7 // 7일(초)
 
