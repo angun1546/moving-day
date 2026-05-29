@@ -9,7 +9,8 @@ import PageTransition from './PageTransition'
 import TopButton from './TopButton'
 
 const NAV = [
-  { to: '/partner/dashboard', label: '입찰 목록' },
+  { to: '/partner/dashboard', label: '견적 요청' },
+  { to: '/partner/bids', label: '내 입찰' },
   { to: '/partner/profile', label: '업체 정보' },
   { to: '/partner/story', label: '파트너 스토리' },
   { to: '/partner/faq', label: 'FAQ' },

@@ -29,3 +29,23 @@ export async function getMyBids(email) {
   if (!res.ok) throw new Error('입찰 조회에 실패했습니다.')
   return res.json()
 }
+
+// 낙찰 처리 (고객이 입찰 선택)
+export async function acceptBid(bidId) {
+  const res = await fetch(`${API}/${bidId}/accept`, { method: 'PATCH' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message ?? '낙찰 처리에 실패했습니다.')
+  }
+  return res.json()
+}
+
+// 낙찰 취소 (계약 전까지)
+export async function cancelBid(bidId) {
+  const res = await fetch(`${API}/${bidId}/cancel`, { method: 'PATCH' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message ?? '낙찰 취소에 실패했습니다.')
+  }
+  return res.json()
+}

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getBidsByQuote } from '../services/bids'
+import { getBidsByQuote, acceptBid, cancelBid } from '../services/bids'
+import { useConfirm } from '../context/ConfirmContext'
+import { addNotification } from '../utils/notifications'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 
@@ -24,6 +26,7 @@ function SortBtn({ on, onClick, children }) {
 }
 
 function BidComparePage() {
+  const confirm = useConfirm()
   const [sort, setSort] = useState('price')
   const [picked, setPicked] = useState(null)
   const [bids, setBids] = useState([])
@@ -37,15 +40,24 @@ function BidComparePage() {
     quoteId = ''
   }
 
-  useEffect(() => {
+  function load() {
     if (!quoteId) {
       setLoading(false)
       return
     }
     getBidsByQuote(quoteId)
-      .then((data) => setBids(Array.isArray(data) ? data : []))
+      .then((data) => {
+        const arr = Array.isArray(data) ? data : []
+        setBids(arr)
+        const accepted = arr.find((b) => b.status === '낙찰')
+        setPicked(accepted ? accepted.id : null)
+      })
       .catch(() => setBids([]))
       .finally(() => setLoading(false))
+  }
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quoteId])
 
   const lowest = bids.length ? Math.min(...bids.map((b) => b.price)) : null
@@ -66,6 +78,80 @@ function BidComparePage() {
 
   const pickedBid = bids.find((b) => b.id === picked)
 
+  // 낙찰 — 선택 입찰 낙찰·나머지 거절 + 파트너·관리자 알림
+  async function handlePick(b) {
+    const ok = await confirm({
+      title: '업체 선택',
+      message: `${b.company}로 낙찰하시겠어요? 선택하면 해당 업체에 알림이 전송됩니다.`,
+      confirmText: '낙찰하기',
+    })
+    if (!ok) return
+    try {
+      await acceptBid(b.id)
+      setPicked(b.id)
+      setBids((prev) =>
+        prev.map((x) =>
+          x.id === b.id
+            ? { ...x, status: '낙찰' }
+            : { ...x, status: '거절' },
+        ),
+      )
+      addNotification({
+        type: 'bid',
+        message: '🎉 낙찰되었습니다! 내 입찰 현황을 확인하세요.',
+        link: '/partner/bids',
+        to: b.bidderEmail,
+      })
+      addNotification({
+        type: 'bid',
+        message: `${b.company}가 낙찰되었습니다.`,
+        link: '/admin',
+        to: 'admin@movingday.com',
+      })
+    } catch (err) {
+      await confirm({
+        title: '낙찰 실패',
+        message: err.message || '낙찰 처리에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
+  }
+
+  // 낙찰 취소 (계약 전까지) — 입찰 전부 복원 + 알림
+  async function handleCancel() {
+    if (!pickedBid) return
+    const ok = await confirm({
+      title: '낙찰 취소',
+      message: '낙찰을 취소하시겠어요? 계약 전까지는 다시 업체를 선택할 수 있어요.',
+      confirmText: '낙찰 취소',
+      danger: true,
+    })
+    if (!ok) return
+    try {
+      await cancelBid(pickedBid.id)
+      addNotification({
+        type: 'bid',
+        message: '낙찰이 취소되었습니다.',
+        link: '/partner/bids',
+        to: pickedBid.bidderEmail,
+      })
+      addNotification({
+        type: 'bid',
+        message: `${pickedBid.company} 낙찰이 취소되었습니다.`,
+        link: '/admin',
+        to: 'admin@movingday.com',
+      })
+      setPicked(null)
+      setBids((prev) => prev.map((x) => ({ ...x, status: '입찰' })))
+    } catch (err) {
+      await confirm({
+        title: '취소 실패',
+        message: err.message || '낙찰 취소에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
+  }
+
   return (
     <section className="mx-auto max-w-3xl px-4 py-16">
       <Link
@@ -81,15 +167,22 @@ function BidComparePage() {
         검증된 이사업체들이 제시한 조건을 비교하고, 가장 좋은 곳을 선택하세요.
       </p>
 
-      {/* 선택 완료 배너 */}
+      {/* 낙찰 완료 배너 + 낙찰 취소 */}
       {pickedBid && (
         <div className="mt-6 rounded-2xl border border-brand-light bg-brand-bg px-5 py-4">
           <p className="font-semibold text-brand-dark">
             ✅ {pickedBid.company}를 선택하셨어요!
           </p>
           <p className="mt-1 text-sm text-gray-600">
-            선택하신 업체가 곧 연락드릴 예정입니다. 안심하고 기다려 주세요.
+            계약 전까지는 낙찰을 취소하고 다시 선택할 수 있어요.
           </p>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="mt-3 rounded-full border border-red-300 px-4 py-2 text-sm font-semibold text-red-500 transition hover:bg-red-50"
+          >
+            낙찰 취소
+          </button>
         </div>
       )}
 
@@ -138,11 +231,14 @@ function BidComparePage() {
             {pageItems.map((b) => {
               const isLowest = b.price === lowest
               const isPicked = picked === b.id
+              const hasPicked = !!picked
               return (
                 <article
                   key={b.id}
-                  className={`rounded-3xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md ${
-                    isPicked ? 'border-brand ring-2 ring-brand' : 'border-gray-100'
+                  className={`rounded-3xl border bg-white p-6 shadow-sm transition ${
+                    isPicked
+                      ? 'border-brand ring-2 ring-brand'
+                      : 'border-gray-100 hover:-translate-y-1 hover:shadow-md'
                   }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -174,11 +270,17 @@ function BidComparePage() {
 
                   <button
                     type="button"
-                    onClick={() => setPicked(b.id)}
-                    disabled={isPicked}
-                    className="mt-5 w-full rounded-full bg-brand px-6 py-3 font-semibold text-white transition hover:bg-brand-dark disabled:cursor-default disabled:bg-brand-dark"
+                    onClick={() => handlePick(b)}
+                    disabled={hasPicked}
+                    className={`mt-5 w-full rounded-full px-6 py-3 font-semibold text-white transition ${
+                      isPicked
+                        ? 'bg-brand-dark'
+                        : hasPicked
+                          ? 'cursor-default bg-gray-300'
+                          : 'bg-brand hover:bg-brand-dark'
+                    }`}
                   >
-                    {isPicked ? '선택됨 ✓' : '이 업체 선택'}
+                    {isPicked ? '낙찰됨 ✓' : hasPicked ? '마감' : '이 업체 선택'}
                   </button>
                 </article>
               )

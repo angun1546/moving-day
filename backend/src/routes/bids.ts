@@ -59,4 +59,52 @@ router.get('/mine/:email', async (req, res) => {
   }
 })
 
+// 낙찰 처리 (고객이 입찰 선택) — 선택 입찰 낙찰·나머지 거절·견적 완료
+router.patch('/:id/accept', async (req, res) => {
+  try {
+    const bid = await prisma.bid.findUnique({ where: { id: req.params.id } })
+    if (!bid) {
+      return res.status(404).json({ message: '입찰을 찾을 수 없습니다.' })
+    }
+    await prisma.bid.update({
+      where: { id: bid.id },
+      data: { status: '낙찰' },
+    })
+    await prisma.bid.updateMany({
+      where: { quoteRequestId: bid.quoteRequestId, id: { not: bid.id } },
+      data: { status: '거절' },
+    })
+    await prisma.quoteRequest.update({
+      where: { id: bid.quoteRequestId },
+      data: { status: '완료' },
+    })
+    res.json({ ok: true, bid: { ...bid, status: '낙찰' } })
+  } catch (err) {
+    console.error('낙찰 처리 실패:', err)
+    res.status(500).json({ message: '서버 오류로 낙찰 처리에 실패했습니다.' })
+  }
+})
+
+// 낙찰 취소 (계약 전까지) — 같은 견적 입찰 전부 '입찰' 복원·견적 '상담중'
+router.patch('/:id/cancel', async (req, res) => {
+  try {
+    const bid = await prisma.bid.findUnique({ where: { id: req.params.id } })
+    if (!bid) {
+      return res.status(404).json({ message: '입찰을 찾을 수 없습니다.' })
+    }
+    await prisma.bid.updateMany({
+      where: { quoteRequestId: bid.quoteRequestId },
+      data: { status: '입찰' },
+    })
+    await prisma.quoteRequest.update({
+      where: { id: bid.quoteRequestId },
+      data: { status: '상담중' },
+    })
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('낙찰 취소 실패:', err)
+    res.status(500).json({ message: '서버 오류로 낙찰 취소에 실패했습니다.' })
+  }
+})
+
 export default router
