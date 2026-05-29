@@ -163,7 +163,7 @@ cd frontend && npm install && npm run dev                          # 5173
 
 ```
 Name              movingday-api
-Region            Singapore (Vercel과 가까운 곳)
+Region            Oregon (US West) — Turso DB와 같은 리전으로 맞춰 쿼리 왕복 최소화
 Root Directory    backend
 Build Command     npm install
 Start Command     npm start
@@ -171,16 +171,17 @@ Start Command     npm start
 
 ### Turso 초기 스키마 적용 (한 번만)
 
-`backend/prisma/turso-init.sql`을 한 번 적용하면 됩니다 (이후 새 마이그레이션은 `prisma/migrations/<새 이름>/migration.sql`만 추가 적용).
+`backend/prisma/turso-init.sql`(최종 스키마 1:1, 빈 DB에 통째로 붙여넣기 가능)을 한 번 적용하면 됩니다.
 
-```bash
-turso db shell movingday-angun1546 < backend/prisma/turso-init.sql
-```
+- **웹 대시보드 (Windows 권장)**: Turso 대시보드 → DB → SQL 콘솔(Studio)에 `turso-init.sql` 내용을 붙여넣고 실행
+- **CLI (WSL/Mac/Linux)**: `turso db shell movingday-angun1546 < backend/prisma/turso-init.sql`
+
+이후 새 마이그레이션은 `prisma/migrations/<새 이름>/migration.sql`만 추가 적용합니다.
 
 ### 배포 순서 (처음 한 번)
 
 1. **Cloudinary** 가입 → Dashboard에서 `Cloud name` / `API Key` / `API Secret` 확보
-2. **Turso** CLI 설치 후 DB 생성 — `turso db create movingday-angun1546` → `turso db show movingday-angun1546`로 URL 확인, `turso db tokens create movingday-angun1546`로 토큰 발급, 위 명령으로 스키마 적용
+2. **Turso** 가입 후 DB 생성 (Windows는 CLI 공식 바이너리가 없어 **웹 대시보드 권장** — Create Database로 DB 생성, Region은 Render와 같은 Oregon, Database URL 복사 + Create Token으로 토큰 발급, SQL 콘솔에 `turso-init.sql` 적용). CLI 환경이면 `turso db create` / `turso db show` / `turso db tokens create` 사용
 3. **Render**에서 GitHub 저장소 연결해 위 표대로 Web Service 생성, Environment에 7개 환경변수 입력 → Deploy
 4. Render 도메인(예: `https://movingday-api.onrender.com`) 확정되면 `vercel.json`의 rewrite 대상 URL이 맞는지 확인 (필요 시 수정 후 push)
 5. **Vercel** 대시보드에서 자동 재배포 — 그 다음 `/api/health`가 `{ok:true}` 반환하면 연결 성공

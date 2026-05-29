@@ -1,5 +1,5 @@
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
-import { PrismaLibSQL } from '@prisma/adapter-libsql'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { PrismaClient } from './generated/prisma/client.ts'
 
 // 환경에 따라 어댑터 분기
@@ -14,7 +14,7 @@ const isRemote =
   url.startsWith('wss://')
 
 const adapter = isRemote
-  ? new PrismaLibSQL({ url, authToken })
+  ? new PrismaLibSql({ url, authToken })
   : new PrismaBetterSqlite3({ url })
 
 export const prisma = new PrismaClient({ adapter })
