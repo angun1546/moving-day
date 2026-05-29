@@ -4,6 +4,7 @@ import { getDisplayName, maskKoreanNamesInText } from '../utils/userDisplay'
 import { useLocalState } from '../hooks/useLocalState'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { useConfirm } from '../context/ConfirmContext'
 import { addNotification } from '../utils/notifications'
 
 const inputClass =
@@ -177,9 +178,11 @@ function QaCard({ qa, onAnswer, onDeleteAnswer, onDeleteQuestion, isAdmin }) {
 function UserFaqPage() {
   const { user, isAdmin, displayMode } = useAuth()
   const [questions, setQuestions] = useLocalState('movingday_user_qa', [])
+  // 숨김 처리된 질문은 사용자 화면에서 제외
+  const visibleQuestions = questions.filter((q) => !q.hidden)
   // Q&A 질문 페이지네이션 (5개씩)
   const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
-    usePagination(questions, 5)
+    usePagination(visibleQuestions, 5)
   // FAQ도 영속 — 관리자 작성·수정·삭제
   const [faqs, setFaqs] = useLocalState('movingday_user_faqs', DEFAULT_FAQS)
   const [faqOpen, setFaqOpen] = useState(false)
@@ -207,8 +210,10 @@ function UserFaqPage() {
     e.currentTarget.reset()
     setFaqOpen(false)
   }
-  function removeFaq(id) {
-    if (!window.confirm('이 FAQ를 삭제할까요?')) return
+  const confirm = useConfirm()
+  async function removeFaq(id) {
+    if (!(await confirm({ title: 'FAQ 삭제', message: '이 FAQ를 삭제할까요?', danger: true })))
+      return
     setFaqs((prev) => prev.filter((f) => f.id !== id))
   }
   function startEditFaq(f) {
@@ -262,8 +267,9 @@ function UserFaqPage() {
       prev.map((qa) => (qa.id === id ? { ...qa, a: '' } : qa)),
     )
   }
-  function deleteQuestion(id) {
-    if (!window.confirm('이 질문을 삭제할까요?')) return
+  async function deleteQuestion(id) {
+    if (!(await confirm({ title: '질문 삭제', message: '이 질문을 삭제할까요?', danger: true })))
+      return
     setQuestions((prev) => prev.filter((qa) => qa.id !== id))
   }
 
@@ -438,7 +444,7 @@ function UserFaqPage() {
 
       {/* 질문 목록 */}
       <div className="mt-8 space-y-4">
-        {questions.length === 0 ? (
+        {visibleQuestions.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center">
             <p className="text-3xl">💬</p>
             <p className="mt-3 font-semibold text-gray-700">

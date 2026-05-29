@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLocalState } from '../hooks/useLocalState'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { useConfirm } from '../context/ConfirmContext'
 import { maskKoreanNamesInText } from '../utils/userDisplay'
 import { addNotification } from '../utils/notifications'
 import { todayString } from '../utils/date'
@@ -20,7 +21,7 @@ const SECTIONS = [
 ]
 
 // 매칭/입찰 현황 (목업) — 풀스택 단계에서 API 응답으로 교체
-const BASE_MATCH = [
+const MATCH_DATA = [
   {
     id: 'r1',
     customer: '김O영',
@@ -64,23 +65,6 @@ const BASE_MATCH = [
     status: '입찰중',
   },
 ]
-
-// ⚠️ 페이지네이션 테스트용 추가 더미 — 백엔드 입찰 연동 시 제거
-const EXTRA_MATCH = Array.from({ length: 8 }, (_, i) => ({
-  id: `mx${i}`,
-  customer: ['김O수', '이O희', '박O철', '최O은'][i % 4],
-  moveType: ['포장이사', '반포장이사', '일반이사', '사무실이사'][i % 4],
-  from: ['서울 마포구', '경기 수원시', '인천 연수구', '서울 노원구'][i % 4],
-  to: ['경기 성남시', '서울 강서구', '인천 미추홀구', '서울 은평구'][i % 4],
-  moveDate: `2026-06-${String((i % 27) + 1).padStart(2, '0')}`,
-  bids: Array.from({ length: (i % 4) + 1 }, (_, j) => ({
-    company: ['한솔이사', '굿모닝이사', '으뜸이사'][j % 3],
-    price: 200000 + j * 30000 + i * 10000,
-  })),
-  status: i % 2 === 0 ? '입찰중' : '매칭완료',
-}))
-
-const MATCH_DATA = [...BASE_MATCH, ...EXTRA_MATCH]
 
 function StatCard({ label, value }) {
   return (
@@ -516,8 +500,10 @@ function AdminDashboardPage() {
     e.currentTarget.reset()
     setNoticeOpen(false)
   }
-  function removeNotice(id) {
-    if (!window.confirm('이 공지를 삭제할까요?')) return
+  const confirm = useConfirm()
+  async function removeNotice(id) {
+    if (!(await confirm({ title: '공지 삭제', message: '이 공지를 삭제할까요?', danger: true })))
+      return
     setNotices((prev) => prev.filter((n) => n.id !== id))
   }
   function startEditNotice(n) {

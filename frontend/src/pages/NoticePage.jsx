@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useConfirm } from '../context/ConfirmContext'
 import { useLocalState } from '../hooks/useLocalState'
 import { todayString } from '../utils/date'
 import { addNotification } from '../utils/notifications'
@@ -47,8 +48,10 @@ function NoticePage() {
     setOpen(false)
   }
 
-  function remove(id) {
-    if (!window.confirm('이 공지를 삭제할까요?')) return
+  const confirm = useConfirm()
+  async function remove(id) {
+    if (!(await confirm({ title: '공지 삭제', message: '이 공지를 삭제할까요?', danger: true })))
+      return
     setNotices((prev) => prev.filter((n) => n.id !== id))
   }
 

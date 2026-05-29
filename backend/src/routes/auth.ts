@@ -43,8 +43,12 @@ router.post('/signup', async (req, res) => {
   if (!EMAIL_RE.test(email)) {
     return res.status(400).json({ message: '올바른 이메일 형식이 아닙니다.' })
   }
-  if (String(password).length < 6) {
-    return res.status(400).json({ message: '비밀번호는 6자 이상이어야 합니다.' })
+  // 영문·숫자·특수문자 조합 8자 이상
+  const pwRule = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
+  if (!pwRule.test(String(password))) {
+    return res
+      .status(400)
+      .json({ message: '비밀번호는 영문·숫자·특수문자를 포함해 8자 이상이어야 합니다.' })
   }
   if (!GENDERS.includes(gender)) {
     return res.status(400).json({ message: '성별을 선택해 주세요.' })

@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { useConfirm } from '../context/ConfirmContext'
 
 // 다음(카카오) 우편번호 서비스 스크립트
 const SRC = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
@@ -23,13 +24,23 @@ function load() {
 
 // 주소 검색 팝업을 열고, 선택한 주소를 onSelect로 전달한다
 export function usePostcode() {
-  return useCallback((onSelect) => {
-    load()
-      .then(() => {
-        new window.daum.Postcode({
-          oncomplete: (data) => onSelect(data.address),
-        }).open()
-      })
-      .catch(() => alert('주소 검색을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'))
-  }, [])
+  const confirm = useConfirm()
+  return useCallback(
+    (onSelect) => {
+      load()
+        .then(() => {
+          new window.daum.Postcode({
+            oncomplete: (data) => onSelect(data.address),
+          }).open()
+        })
+        .catch(() =>
+          confirm({
+            title: '주소 검색 오류',
+            message: '주소 검색을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.',
+            alertOnly: true,
+          }),
+        )
+    },
+    [confirm],
+  )
 }

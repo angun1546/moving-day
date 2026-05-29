@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useLocalState } from '../hooks/useLocalState'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { useConfirm } from '../context/ConfirmContext'
 import { todayString } from '../utils/date'
 import { maskKoreanNamesInText } from '../utils/userDisplay'
 
@@ -97,9 +98,11 @@ function PartnerStoryPage() {
 
   // 검색 필터 (업체명·내용)
   const filtered = useMemo(() => {
+    // 숨김 처리된 후기는 사용자 화면에서 제외
+    const visible = reviews.filter((r) => !r.hidden)
     const s = q.trim().toLowerCase()
-    if (!s) return reviews
-    return reviews.filter(
+    if (!s) return visible
+    return visible.filter(
       (r) =>
         r.company.toLowerCase().includes(s) ||
         r.text.toLowerCase().includes(s),
@@ -144,8 +147,10 @@ function PartnerStoryPage() {
     )
     setEditingId(null)
   }
-  function remove(id) {
-    if (!window.confirm('이 후기를 삭제할까요?')) return
+  const confirm = useConfirm()
+  async function remove(id) {
+    if (!(await confirm({ title: '후기 삭제', message: '이 후기를 삭제할까요?', danger: true })))
+      return
     setReviews((prev) => prev.filter((r) => r.id !== id))
   }
 

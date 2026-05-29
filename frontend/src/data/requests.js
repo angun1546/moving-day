@@ -1,5 +1,5 @@
 // 업체 입찰용 목업 데이터 (들어온 고객 견적 요청)
-const BASE_REQUESTS = [
+export const REQUESTS = [
   {
     id: 'r1',
     moveType: '포장이사',
@@ -51,17 +51,3 @@ const BASE_REQUESTS = [
     lowestBid: 380000,
   },
 ]
-
-// ⚠️ 페이지네이션 테스트용 추가 더미 — 확인 후 EXTRA_REQUESTS와 합치기 제거
-const EXTRA_REQUESTS = Array.from({ length: 9 }, (_, i) => ({
-  id: `rx${i}`,
-  moveType: ['포장이사', '반포장이사', '일반이사', '사무실이사'][i % 4],
-  from: ['서울 마포구', '경기 수원시', '인천 연수구', '서울 노원구'][i % 4],
-  to: ['경기 성남시', '서울 강서구', '인천 미추홀구', '서울 은평구'][i % 4],
-  homeSize: ['원룸', '18평 빌라', '24평 아파트', '30평 사무실'][i % 4],
-  moveDate: `2026-06-${String((i % 27) + 1).padStart(2, '0')}`,
-  bidCount: i % 6,
-  lowestBid: 100000 + i * 25000,
-}))
-
-export const REQUESTS = [...BASE_REQUESTS, ...EXTRA_REQUESTS]

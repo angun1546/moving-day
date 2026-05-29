@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
+import { useConfirm } from '../context/ConfirmContext'
 import {
   NOTIFICATIONS_KEY,
   NOTIFICATIONS_EVENT,
@@ -139,8 +140,10 @@ function BellIcon({ size = 22 }) {
     })
   }
 
-  function clearAll() {
-    if (!window.confirm('모든 알림을 삭제할까요?')) return
+  const confirm = useConfirm()
+  async function clearAll() {
+    if (!(await confirm({ title: '알림 삭제', message: '모든 알림을 삭제할까요?', danger: true })))
+      return
     try {
       localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify([]))
     } catch {

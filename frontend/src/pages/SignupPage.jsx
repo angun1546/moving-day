@@ -37,6 +37,12 @@ function SignupPage() {
     const fd = new FormData(e.currentTarget)
     const password = fd.get('password')
     const passwordConfirm = fd.get('passwordConfirm')
+    // 영문·숫자·특수문자 조합 8자 이상
+    const pwRule = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
+    if (!pwRule.test(String(password))) {
+      setError('비밀번호는 영문·숫자·특수문자를 포함해 8자 이상이어야 합니다.')
+      return
+    }
     if (password !== passwordConfirm) {
       setError('비밀번호가 일치하지 않습니다.')
       return
@@ -215,15 +221,15 @@ function SignupPage() {
           name="password"
           type="password"
           required
-          minLength={6}
-          placeholder="비밀번호 (6자 이상)"
+          minLength={8}
+          placeholder="비밀번호 (영문·숫자·특수문자 8자 이상)"
           className={inputClass}
         />
         <input
           name="passwordConfirm"
           type="password"
           required
-          minLength={6}
+          minLength={8}
           placeholder="비밀번호 확인"
           className={inputClass}
         />

@@ -32,7 +32,9 @@ function Reviews() {
 
   // 본인 리뷰는 현재 displayMode 따라 동적 계산 → 회원정보 수정 즉시 반영
   // 그 외 리뷰는 작성 시 저장된 이름에 마스킹 안전망 (getReviewAuthorName)
-  const display = reviews.map((r) => ({
+  const display = reviews
+    .filter((r) => !r.hidden)
+    .map((r) => ({
     id: r.id,
     name: getReviewAuthorName(r, user, displayMode),
     rating: r.rating,

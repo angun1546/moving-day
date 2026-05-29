@@ -7,6 +7,7 @@ import {
 } from '../utils/userDisplay'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { useConfirm } from '../context/ConfirmContext'
 import { useLocalState } from '../hooks/useLocalState'
 import { todayString } from '../utils/date'
 
@@ -118,7 +119,8 @@ function UserReviewPage() {
   // localStorage에 영속화 (메인 캐러셀과 공유) — 텍스트 데이터만
   const [reviews, setReviews] = useLocalState('movingday_user_reviews', [])
   // 더미는 localStorage에 시드됨(main.jsx) — reviews에 이미 포함
-  const listReviews = reviews
+  // 관리자가 숨김 처리한 리뷰는 사용자 화면에서 제외
+  const listReviews = reviews.filter((r) => !r.hidden)
   const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
     usePagination(listReviews, 5)
   const [rating, setRating] = useState(5)
@@ -190,8 +192,10 @@ function UserReviewPage() {
     )
     setEditingId(null)
   }
-  function remove(id) {
-    if (!window.confirm('이 리뷰를 삭제할까요?')) return
+  const confirm = useConfirm()
+  async function remove(id) {
+    if (!(await confirm({ title: '리뷰 삭제', message: '이 리뷰를 삭제할까요?', danger: true })))
+      return
     setReviews((prev) => prev.filter((r) => r.id !== id))
     // 메모리 사진도 정리
     const stored = photosMap[id]
