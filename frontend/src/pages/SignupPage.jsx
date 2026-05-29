@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import DatePicker from '../components/DatePicker'
 
 const inputClass =
   'w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -141,11 +142,10 @@ function SignupPage() {
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <span className="text-xs font-medium text-gray-500">생년월일</span>
-            <input
+            <DatePicker
               name="birthDate"
-              type="date"
-              required
-              className={`${inputClass} mt-1`}
+              maxYear={new Date().getFullYear()}
+              placeholder="생년월일 선택"
             />
           </label>
           <label className="block">

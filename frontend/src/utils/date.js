@@ -5,3 +5,13 @@ export function todayString() {
   const day = String(d.getDate()).padStart(2, '0')
   return `${d.getFullYear()}.${m}.${day}`
 }
+
+// ISO 문자열 → 'YYYY-MM-DD HH:MM:SS' (등록 일시 표시용)
+export function formatDateTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(
+    d.getHours(),
+  )}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}

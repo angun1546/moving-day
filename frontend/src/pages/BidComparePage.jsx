@@ -5,6 +5,7 @@ import { useConfirm } from '../context/ConfirmContext'
 import { addNotification } from '../utils/notifications'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import { formatDateTime } from '../utils/date'
 
 const won = (n) => n.toLocaleString('ko-KR')
 
@@ -65,11 +66,11 @@ function BidComparePage() {
   // 선택 기준 정렬 (최저가 / 최신)
   const sorted = useMemo(() => {
     const arr = [...bids]
-    arr.sort((a, b) =>
-      sort === 'price'
-        ? a.price - b.price
-        : new Date(b.createdAt) - new Date(a.createdAt),
-    )
+    arr.sort((a, b) => {
+      if (sort === 'price') return a.price - b.price
+      if (sort === 'high') return b.price - a.price
+      return new Date(b.createdAt) - new Date(a.createdAt)
+    })
     return arr
   }, [bids, sort])
 
@@ -217,9 +218,12 @@ function BidComparePage() {
       ) : (
         <>
           {/* 정렬 토글 */}
-          <div className="mt-8 flex gap-2">
+          <div className="mt-8 flex flex-wrap gap-2">
             <SortBtn on={sort === 'price'} onClick={() => setSort('price')}>
               최저가순
+            </SortBtn>
+            <SortBtn on={sort === 'high'} onClick={() => setSort('high')}>
+              최고가순
             </SortBtn>
             <SortBtn on={sort === 'recent'} onClick={() => setSort('recent')}>
               최신순
@@ -267,6 +271,10 @@ function BidComparePage() {
                       {b.message}
                     </p>
                   )}
+
+                  <p className="mt-3 text-xs text-gray-300">
+                    {formatDateTime(b.createdAt)} 입찰
+                  </p>
 
                   <button
                     type="button"

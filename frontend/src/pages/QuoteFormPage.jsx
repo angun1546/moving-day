@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 import { findMethod, findType } from '../data/quoteOptions'
 import { useAuth } from '../context/AuthContext'
+import DatePicker from '../components/DatePicker'
 import { usePostcode } from '../hooks/usePostcode'
 import QuoteSteps from '../components/QuoteSteps'
 
@@ -197,7 +198,11 @@ function QuoteFormPage() {
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <Field label="이사 예정일">
-            <input type="date" name="moveDate" className={inputClass} />
+            <DatePicker
+              name="moveDate"
+              minYear={new Date().getFullYear()}
+              placeholder="이사 예정일 선택"
+            />
           </Field>
           <Field label="주거 형태 / 평형">
             <input

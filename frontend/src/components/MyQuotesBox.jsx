@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMyQuotes, deleteQuote, updateQuote } from '../services/quotes'
 import { useConfirm } from '../context/ConfirmContext'
+import { formatDateTime } from '../utils/date'
 import StageProgress from './StageProgress'
+import DatePicker from './DatePicker'
 
 const MOVE_TYPES = ['포장이사', '반포장이사', '일반이사', '사무실이사']
 
@@ -119,11 +121,11 @@ function MyQuotesBox({ email }) {
                     </option>
                   ))}
                 </select>
-                <input
-                  type="date"
+                <DatePicker
                   name="moveDate"
                   defaultValue={q.moveDate || ''}
-                  className={inputClass}
+                  minYear={new Date().getFullYear()}
+                  placeholder="이사 예정일 선택"
                 />
                 <input
                   name="homeSize"
@@ -177,14 +179,17 @@ function MyQuotesBox({ email }) {
                       {q.homeSize ? `${q.homeSize} · ` : ''}이사 예정{' '}
                       {q.moveDate || '미정'}
                     </p>
-                  </div>
-                  <div className="text-right text-sm">
-                    <p className="text-gray-400">입찰 {bidCount}건</p>
+                    <p className="mt-0.5 text-xs text-gray-300">
+                      {formatDateTime(q.createdAt)} 신청
+                    </p>
                     {accepted && (
-                      <p className="font-inter font-bold text-brand">
-                        {accepted.company} 낙찰
+                      <p className="mt-1 font-semibold break-keep text-brand">
+                        ✓ {accepted.company} 낙찰
                       </p>
                     )}
+                  </div>
+                  <div className="shrink-0 text-right text-sm">
+                    <p className="text-gray-400">입찰 {bidCount}건</p>
                   </div>
                 </div>
                 {/* 낙찰 후엔 진행 단계 표시, 미낙찰은 수정·취소 가능 */}
