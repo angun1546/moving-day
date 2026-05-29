@@ -79,6 +79,7 @@ Moving-day/
 - **페이지네이션**: 공용 `usePagination`/`Pagination` — 리뷰·Q&A·입찰·파트너 스토리·관리자 목록 전체, 페이지당 개수 선택(5/10/15/20/30/40)
 - **확인 모달**: 삭제·알림을 `window.confirm/alert` 대신 사이트 디자인 커스텀 모달(`useConfirm`)로 통일
 - **커스텀 달력**(`DatePicker`): 네이티브 date picker가 스크롤에 닫히는 문제 해결 — 외부 클릭에만 닫힘, 년·월 빠른 선택 (생년월일·이사 날짜)
+- **링크 미리보기**: `index.html`에 Open Graph·Twitter Card 메타 — 카카오톡·슬랙·페이스북 등에 URL 붙이면 제목·설명·이미지 썸네일 노출
 
 ## 실행 방법
 
