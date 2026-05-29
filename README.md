@@ -151,6 +151,14 @@ cd frontend && npm install && npm run dev                          # 5173
 | `CLOUDINARY_API_KEY` | (시크릿) | |
 | `CLOUDINARY_API_SECRET` | (시크릿) | |
 
+### 프론트엔드(Vercel) 환경변수 — 선택
+
+| 변수 | 설명 | 기본 동작 |
+|---|---|---|
+| `VITE_API_BASE` | 백엔드 절대 URL (선택) | 비워두면 `vercel.json` rewrites가 `/api/*`를 Render로 자동 프록시 |
+
+> `vercel.json`에 `/api/:path*` → `https://movingday-api.onrender.com/api/:path*` rewrite가 이미 설정돼 있어서 별도 지정 없이 동작합니다. 디버깅이나 다른 백엔드 도메인을 쓰고 싶을 때만 채우세요.
+
 ### Render Web Service 설정
 
 ```
@@ -168,6 +176,14 @@ Start Command     npm start
 ```bash
 turso db shell movingday-angun1546 < backend/prisma/turso-init.sql
 ```
+
+### 배포 순서 (처음 한 번)
+
+1. **Cloudinary** 가입 → Dashboard에서 `Cloud name` / `API Key` / `API Secret` 확보
+2. **Turso** CLI 설치 후 DB 생성 — `turso db create movingday-angun1546` → `turso db show movingday-angun1546`로 URL 확인, `turso db tokens create movingday-angun1546`로 토큰 발급, 위 명령으로 스키마 적용
+3. **Render**에서 GitHub 저장소 연결해 위 표대로 Web Service 생성, Environment에 7개 환경변수 입력 → Deploy
+4. Render 도메인(예: `https://movingday-api.onrender.com`) 확정되면 `vercel.json`의 rewrite 대상 URL이 맞는지 확인 (필요 시 수정 후 push)
+5. **Vercel** 대시보드에서 자동 재배포 — 그 다음 `/api/health`가 `{ok:true}` 반환하면 연결 성공
 
 ## 로드맵
 

@@ -1,4 +1,7 @@
-const API = '/api/auth'
+// 배포 환경에서는 VITE_API_BASE로 백엔드 절대 URL 주입 (예: https://moving-day-api.onrender.com)
+// 로컬은 비워두면 vite proxy(/api → :4000)가 그대로 처리한다.
+const BASE = import.meta.env.VITE_API_BASE ?? ''
+const API = `${BASE}/api/auth`
 const TOKEN_KEY = 'movingday_token'
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY)

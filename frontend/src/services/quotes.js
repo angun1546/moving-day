@@ -1,7 +1,9 @@
 import { redirect } from 'react-router-dom'
 import { addNotification } from '../utils/notifications'
 
-const API = '/api/quotes'
+// 배포는 VITE_API_BASE로 백엔드 절대 URL 주입, 로컬은 빈 문자열 → vite proxy 사용
+const BASE = import.meta.env.VITE_API_BASE ?? ''
+const API = `${BASE}/api/quotes`
 
 // 견적 신청 폼 제출 (React Router action)
 export async function createQuote({ request }) {
