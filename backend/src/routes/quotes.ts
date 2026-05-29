@@ -139,6 +139,21 @@ router.get('/mine/:email', async (req, res) => {
   }
 })
 
+// 낙찰 후 진행 단계 변경 (파트너/관리자)
+router.patch('/:id/stage', async (req, res) => {
+  const { stage } = req.body ?? {}
+  try {
+    const quote = await prisma.quoteRequest.update({
+      where: { id: req.params.id },
+      data: { stage },
+    })
+    res.json(quote)
+  } catch (err) {
+    console.error('단계 변경 실패:', err)
+    res.status(500).json({ message: '서버 오류로 단계 변경에 실패했습니다.' })
+  }
+})
+
 // 견적 수정 (제출된 값만 변경)
 router.patch('/:id', async (req, res) => {
   const { moveType, fromRegion, toRegion, moveDate, homeSize, memo } =

@@ -40,13 +40,13 @@ Moving-day/
 - **입찰 비교**(`/quote/bids`): 신청 견적에 들어온 **실제 입찰** 비교(가격·메시지·소요시간), **최저가 배지**, 정렬(최저가/최신), **낙찰 선택 + 계약 전 낙찰 취소**(파트너·관리자에 알림)
 - **고객 리뷰**(`/reviews`): 별점·이름(**실명 자동 마스킹**)·이사 종류·**이용 업체**·내용·사진 첨부(메모리), localStorage 영속화, **페이지네이션(개수 선택 5~40)**
 - **FAQ + 직접 질문**(`/faq`): **관리자가 직접 작성·수정·삭제하는 자주 묻는 질문** + 관리자 답변 Q&A. 전체보기 진입 시 작성 폼은 닫혀 있고 글 목록만 노출(토글), **Q&A 페이지네이션**
-- **마이페이지**(`/mypage`): 활동 카드(견적 신청·작성 리뷰·내 질문) + **내 견적 현황 박스**(신청 견적·입찰/낙찰 상태·견적 수정·취소·입찰 보기)
+- **마이페이지**(`/mypage`): 활동 카드(견적 신청·작성 리뷰·내 질문) + **내 견적 현황 박스**(신청 견적·입찰/낙찰 상태·**낙찰 후 7단계 진행 현황(택배식 타임라인)**·견적 수정·취소·입찰 보기)
 - **공지사항**(`/notice`): 관리자 작성·수정·삭제, 모든 사용자에게 알림 푸시
 
 ### 🏢 파트너 영역(`/partner/*`)
 - **메인 랜딩**(`/partner`): Hero(**큰 통합 검색창** + 통계)·혜택 벤토·시작 4단계·**파트너 스토리 캐러셀**·FAQ·CTA, 사이트 검색(`/partner/search`)
 - **견적 요청**(`/partner/dashboard`): 들어온 견적 요청 목록(백엔드 연동) + 입찰 제출 (업체명=업체정보, 로그인 필요)
-- **내 입찰 현황**(`/partner/bids`): 제출한 입찰과 낙찰/거절 상태 확인 (페이지네이션, 로그인 필요)
+- **내 입찰 현황**(`/partner/bids`): 제출한 입찰·낙찰/거절 + **낙찰건 이사 단계 진행**(낙찰완료→낙찰확인→계약완료→이사준비→이사중→이사완료, "다음 단계로" 버튼) (페이지네이션, 로그인 필요)
 - **업체 정보 등록**(`/partner/profile`): 프로필 사진·사업자 정보·**서비스 가능 지역**(권역 → 시·도 → 시·군·구 3단계 트리, 약 229개, **권역 전체 / 시·도별 전체 선택 지원**)·업체 사진·자격증 업로드, **localStorage 영속화로 재진입 시 기존 값 복원** (로그인 필요)
 - **파트너 스토리**(`/partner/story`): 후기 작성 + 검색·페이지네이션, 등록 폼 토글
 - **FAQ**(`/partner/faq`): **관리자 직접 편집** 자주 묻는 질문 + 관리자 답변 Q&A (전체보기 = 글만)
@@ -108,7 +108,7 @@ cd frontend && npm install && npm run dev                          # 5173
 ### 백엔드 (Prisma)
 | 모델 | 주요 필드 |
 |------|------|
-| `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, photos(JSON), visitDate, callTime, status, userEmail(회원 연결·nullable) |
+| `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, photos(JSON), visitDate, callTime, status, userEmail(회원 연결·nullable), stage(낙찰 후 진행 단계·nullable) |
 | `User` | id, email, password(bcrypt), name, birthDate, gender, phone, verified, createdAt |
 | `Bid` | id, quoteRequestId(FK→QuoteRequest, Cascade), bidderEmail, company, price, message, eta, status(입찰/낙찰/거절), createdAt |
 
@@ -139,6 +139,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | POST | `/api/quotes` | 견적 신청 (사진 Cloudinary 업로드) |
 | GET | `/api/quotes` | 견적 목록 (입찰 포함 — 파트너·관리자) |
 | GET | `/api/quotes/mine/:email` | 내 견적 목록 (입찰 포함 — 회원) |
+| PATCH | `/api/quotes/:id/stage` | 낙찰 후 진행 단계 변경 (파트너) |
 | PATCH | `/api/quotes/:id` | 견적 수정 |
 | DELETE | `/api/quotes/:id` | 견적 취소(삭제, 입찰 Cascade) |
 | POST | `/api/bids` | 입찰 생성 (파트너) |

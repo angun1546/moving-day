@@ -20,7 +20,8 @@ CREATE TABLE "QuoteRequest" (
     "visitDate" TEXT,
     "callTime" TEXT,
     "status" TEXT NOT NULL DEFAULT '접수',
-    "userEmail" TEXT
+    "userEmail" TEXT,
+    "stage" TEXT
 );
 CREATE INDEX "QuoteRequest_createdAt_idx" ON "QuoteRequest"("createdAt");
 

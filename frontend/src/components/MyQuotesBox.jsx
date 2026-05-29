@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMyQuotes, deleteQuote, updateQuote } from '../services/quotes'
 import { useConfirm } from '../context/ConfirmContext'
+import StageProgress from './StageProgress'
 
 const MOVE_TYPES = ['포장이사', '반포장이사', '일반이사', '사무실이사']
 
@@ -186,6 +187,8 @@ function MyQuotesBox({ email }) {
                     )}
                   </div>
                 </div>
+                {/* 낙찰 후엔 진행 단계 표시, 미낙찰은 수정·취소 가능 */}
+                {q.stage && <StageProgress stage={q.stage} />}
                 <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold">
                   <button
                     type="button"
@@ -194,20 +197,24 @@ function MyQuotesBox({ email }) {
                   >
                     입찰 보기 →
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditId(q.id)}
-                    className="text-gray-500 hover:text-brand"
-                  >
-                    수정
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(q)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    견적 취소
-                  </button>
+                  {!q.stage && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditId(q.id)}
+                        className="text-gray-500 hover:text-brand"
+                      >
+                        수정
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remove(q)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        견적 취소
+                      </button>
+                    </>
+                  )}
                 </div>
               </>
             )}

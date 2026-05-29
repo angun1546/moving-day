@@ -80,6 +80,17 @@ export async function deleteQuote(id) {
   return res.json()
 }
 
+// 낙찰 후 진행 단계 변경
+export async function updateQuoteStage(id, stage) {
+  const res = await fetch(`${API}/${id}/stage`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stage }),
+  })
+  if (!res.ok) throw new Error('단계 변경에 실패했습니다.')
+  return res.json()
+}
+
 // 견적 수정
 export async function updateQuote(id, data) {
   const res = await fetch(`${API}/${id}`, {

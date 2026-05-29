@@ -76,7 +76,7 @@ router.patch('/:id/accept', async (req, res) => {
     })
     await prisma.quoteRequest.update({
       where: { id: bid.quoteRequestId },
-      data: { status: '완료' },
+      data: { status: '완료', stage: '낙찰완료' },
     })
     res.json({ ok: true, bid: { ...bid, status: '낙찰' } })
   } catch (err) {
@@ -98,7 +98,7 @@ router.patch('/:id/cancel', async (req, res) => {
     })
     await prisma.quoteRequest.update({
       where: { id: bid.quoteRequestId },
-      data: { status: '상담중' },
+      data: { status: '상담중', stage: null },
     })
     res.json({ ok: true })
   } catch (err) {
