@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import HeroSearch from './HeroSearch'
+import { USER_SUGGESTIONS } from '../data/searchIndex'
 
 const STATS = [
   { value: '12,000+', label: '누적 견적 신청' },
@@ -10,6 +12,11 @@ function HeroSection() {
   return (
     <section className="bg-gradient-to-b from-brand-light/40 to-transparent">
       <div className="mx-auto max-w-6xl px-4 py-20 md:py-28">
+        {/* 큰 검색창 — 섹션 최상단, 가운데 정렬 */}
+        <div className="mb-12">
+          <HeroSearch scope="user" suggestions={USER_SUGGESTIONS} centered />
+        </div>
+
         <span className="inline-flex items-center rounded-full bg-brand-light px-3 py-1 font-inter text-xs font-semibold tracking-wider text-brand uppercase">
           Trusted Moving Platform
         </span>

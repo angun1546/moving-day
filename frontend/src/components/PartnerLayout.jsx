@@ -3,7 +3,6 @@ import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router-do
 import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
 import MenuIcon from './MenuIcon'
-import SearchBox from './SearchBox'
 import BellIcon from './BellIcon'
 import UserMenu from './UserMenu'
 import PageTransition from './PageTransition'
@@ -75,10 +74,6 @@ function PartnerLayout() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <SearchBox
-              placeholder="견적 요청 검색"
-              className="hidden w-44 py-1.5 md:flex"
-            />
             {user ? (
               <UserMenu user={user} logout={logout} />
             ) : (
@@ -114,10 +109,6 @@ function PartnerLayout() {
           className="invisible h-0 overflow-hidden rounded-b-2xl border-t border-white/30 bg-white/60 shadow-sm backdrop-blur-xl"
         >
           <div className="mx-auto max-w-6xl space-y-1 px-4 py-3">
-            <SearchBox
-              placeholder="견적 요청 검색"
-              className="mb-2 py-2 md:hidden"
-            />
             {NAV.map((n) => (
               <NavLink key={n.to} to={n.to} onClick={close} className={navClass}>
                 {n.label}

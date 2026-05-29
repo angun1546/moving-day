@@ -34,6 +34,16 @@ export function getDisplayName(user, mode) {
   return user.nickname || user.name
 }
 
+// 리뷰 작성자 표시명 — 본인 리뷰는 현재 displayMode 따라 동적,
+// 타인 리뷰는 저장된 이름에 마스킹 안전망(실명 노출 방지)
+export function getReviewAuthorName(review, user, mode) {
+  if (review?.authorEmail && user && review.authorEmail === user.email) {
+    const m = mode || getDisplayMode()
+    return m === 'real' ? maskName(user.name) : user.nickname || user.name
+  }
+  return maskName(review?.name)
+}
+
 // 답변 텍스트 자동 마스킹 — 호칭(님/씨) 앞에 오는 한국 이름만 골라 마스킹
 // 일반 단어("정말", "김치를" 등)는 호칭이 없어 자동으로 제외됨
 const KOREAN_FAMILY_NAMES = [

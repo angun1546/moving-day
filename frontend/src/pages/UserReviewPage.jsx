@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getDisplayName, maskKoreanNamesInText } from '../utils/userDisplay'
+import {
+  getDisplayName,
+  maskKoreanNamesInText,
+  getReviewAuthorName,
+} from '../utils/userDisplay'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 import { useLocalState } from '../hooks/useLocalState'
 import { todayString } from '../utils/date'
 
@@ -111,6 +117,10 @@ function UserReviewPage() {
   const { user, isAdmin, displayMode } = useAuth()
   // localStorage에 영속화 (메인 캐러셀과 공유) — 텍스트 데이터만
   const [reviews, setReviews] = useLocalState('movingday_user_reviews', [])
+  // 더미는 localStorage에 시드됨(main.jsx) — reviews에 이미 포함
+  const listReviews = reviews
+  const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
+    usePagination(listReviews, 5)
   const [rating, setRating] = useState(5)
   const [editingId, setEditingId] = useState(null)
   // 전체보기 화살표로 진입 시 글 목록만 — 작성은 토글로
@@ -317,7 +327,7 @@ function UserReviewPage() {
       <div className="mt-10">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-900">
-            등록된 리뷰 {reviews.length > 0 && `(${reviews.length})`}
+            등록된 리뷰 {listReviews.length > 0 && `(${listReviews.length})`}
           </h2>
           <button
             type="button"
@@ -327,7 +337,7 @@ function UserReviewPage() {
             {showForm ? '폼 닫기' : '+ 리뷰 등록'}
           </button>
         </div>
-        {reviews.length === 0 ? (
+        {listReviews.length === 0 ? (
           <div className="mt-4 rounded-3xl border border-dashed border-gray-300 bg-white p-10 text-center">
             <p className="text-3xl">✍️</p>
             <p className="mt-3 font-semibold text-gray-700">
@@ -339,7 +349,7 @@ function UserReviewPage() {
           </div>
         ) : (
           <div className="mt-4 space-y-4">
-            {reviews.map((r) => (
+            {pageItems.map((r) => (
               <figure
                 key={r.id}
                 className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
@@ -389,7 +399,9 @@ function UserReviewPage() {
                       </p>
                     )}
                     <figcaption className="mt-4 flex items-center justify-between text-sm">
-                      <span className="font-semibold text-gray-900">{r.name}</span>
+                      <span className="font-semibold text-gray-900">
+                        {getReviewAuthorName(r, user, displayMode)}
+                      </span>
                       {r.date && (
                         <span className="font-inter text-gray-400">{r.date}</span>
                       )}
@@ -428,6 +440,13 @@ function UserReviewPage() {
             ))}
           </div>
         )}
+        <Pagination
+          page={page}
+          setPage={setPage}
+          totalPages={totalPages}
+          perPage={perPage}
+          setPerPage={setPerPage}
+        />
       </div>
     </section>
   )

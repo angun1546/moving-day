@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getDisplayName, maskKoreanNamesInText } from '../utils/userDisplay'
 import { useLocalState } from '../hooks/useLocalState'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 import { addNotification } from '../utils/notifications'
 
 const inputClass =
@@ -175,6 +177,9 @@ function QaCard({ qa, onAnswer, onDeleteAnswer, onDeleteQuestion, isAdmin }) {
 function UserFaqPage() {
   const { user, isAdmin, displayMode } = useAuth()
   const [questions, setQuestions] = useLocalState('movingday_user_qa', [])
+  // Q&A 질문 페이지네이션 (5개씩)
+  const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
+    usePagination(questions, 5)
   // FAQ도 영속 — 관리자 작성·수정·삭제
   const [faqs, setFaqs] = useLocalState('movingday_user_faqs', DEFAULT_FAQS)
   const [faqOpen, setFaqOpen] = useState(false)
@@ -444,7 +449,7 @@ function UserFaqPage() {
             </p>
           </div>
         ) : (
-          questions.map((qa) => (
+          pageItems.map((qa) => (
             <QaCard
               key={qa.id}
               qa={qa}
@@ -456,6 +461,13 @@ function UserFaqPage() {
           ))
         )}
       </div>
+      <Pagination
+        page={page}
+        setPage={setPage}
+        totalPages={totalPages}
+        perPage={perPage}
+        setPerPage={setPerPage}
+      />
     </section>
   )
 }

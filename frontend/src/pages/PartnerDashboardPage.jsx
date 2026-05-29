@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { REQUESTS } from '../data/requests'
 import { addNotification } from '../utils/notifications'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 const won = (n) => n.toLocaleString('ko-KR')
 
@@ -10,6 +12,9 @@ const inputClass =
 function PartnerDashboardPage() {
   const [openId, setOpenId] = useState(null) // 입찰 폼을 펼친 요청
   const [doneIds, setDoneIds] = useState([]) // 입찰을 제출한 요청
+  // 견적 요청 목록 페이지네이션 (5개씩)
+  const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
+    usePagination(REQUESTS, 5)
 
   // 입찰 제출 (목업: 실제 저장 없이 완료 처리)
   function submit(e, id) {
@@ -46,7 +51,7 @@ function PartnerDashboardPage() {
       </p>
 
       <div className="mt-8 space-y-4">
-        {REQUESTS.map((r) => {
+        {pageItems.map((r) => {
           const done = doneIds.includes(r.id)
           const open = openId === r.id
           return (
@@ -138,6 +143,13 @@ function PartnerDashboardPage() {
           )
         })}
       </div>
+      <Pagination
+        page={page}
+        setPage={setPage}
+        totalPages={totalPages}
+        perPage={perPage}
+        setPerPage={setPerPage}
+      />
     </section>
   )
 }

@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
 import MenuIcon from './MenuIcon'
-import SearchBox from './SearchBox'
 import BellIcon from './BellIcon'
 import UserMenu from './UserMenu'
 
@@ -85,11 +84,6 @@ function Header() {
         <Logo onClick={close} />
 
         <div className="flex items-center gap-2">
-          {/* 검색창 (견적 받기 왼쪽) */}
-          <SearchBox
-            placeholder="이사 서비스 검색"
-            className="hidden w-36 py-1.5 md:flex"
-          />
           <Link
             to="/quote"
             className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
@@ -145,10 +139,6 @@ function Header() {
         className="invisible h-0 overflow-hidden rounded-b-2xl border-t border-white/30 bg-white/60 opacity-0 shadow-sm backdrop-blur-xl"
       >
         <div className="mx-auto max-w-6xl space-y-1 px-4 py-3">
-          <SearchBox
-            placeholder="이사 서비스 검색"
-            className="mb-2 py-2 md:hidden"
-          />
           {NAV.map((n) =>
             n.to ? (
               <Link

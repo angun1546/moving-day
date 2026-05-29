@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BIDS } from '../data/bids'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 
 // 천 단위 콤마
 const won = (n) => n.toLocaleString('ko-KR')
@@ -38,6 +40,10 @@ function BidComparePage() {
     )
     return arr
   }, [sort])
+
+  // 입찰 목록 페이지네이션 (5개씩)
+  const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
+    usePagination(sorted, 5)
 
   const pickedBid = BIDS.find((b) => b.id === picked)
 
@@ -80,7 +86,7 @@ function BidComparePage() {
 
       {/* 입찰 목록 */}
       <div className="mt-6 space-y-4">
-        {sorted.map((b) => {
+        {pageItems.map((b) => {
           const isLowest = b.price === lowest
           const isTop = b.rating === topRating
           const isPicked = picked === b.id
@@ -145,6 +151,13 @@ function BidComparePage() {
           )
         })}
       </div>
+      <Pagination
+        page={page}
+        setPage={setPage}
+        totalPages={totalPages}
+        perPage={perPage}
+        setPerPage={setPerPage}
+      />
     </section>
   )
 }

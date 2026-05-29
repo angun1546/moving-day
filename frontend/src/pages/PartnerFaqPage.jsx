@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useLocalState } from '../hooks/useLocalState'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 import { maskKoreanNamesInText } from '../utils/userDisplay'
 import { addNotification } from '../utils/notifications'
 
@@ -175,6 +177,9 @@ function QaCard({ qa, onAnswer, onDeleteAnswer, onDeleteQuestion, isAdmin }) {
 function PartnerFaqPage() {
   const { user, isAdmin } = useAuth()
   const [questions, setQuestions] = useLocalState('movingday_partner_qa', [])
+  // Q&A 질문 페이지네이션 (5개씩)
+  const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
+    usePagination(questions, 5)
   // 파트너 FAQ — 관리자 작성·수정·삭제
   const [faqs, setFaqs] = useLocalState('movingday_partner_faqs', DEFAULT_FAQS)
   const [faqOpen, setFaqOpen] = useState(false)
@@ -429,7 +434,7 @@ function PartnerFaqPage() {
             </p>
           </div>
         ) : (
-          questions.map((qa) => (
+          pageItems.map((qa) => (
             <QaCard
               key={qa.id}
               qa={qa}
@@ -441,6 +446,13 @@ function PartnerFaqPage() {
           ))
         )}
       </div>
+      <Pagination
+        page={page}
+        setPage={setPage}
+        totalPages={totalPages}
+        perPage={perPage}
+        setPerPage={setPerPage}
+      />
     </section>
   )
 }

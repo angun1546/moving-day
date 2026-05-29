@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useLocalState } from '../hooks/useLocalState'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 import { maskKoreanNamesInText } from '../utils/userDisplay'
 import { addNotification } from '../utils/notifications'
 import { todayString } from '../utils/date'
@@ -9,8 +11,16 @@ const inputClass =
 
 const won = (n) => n.toLocaleString('ko-KR')
 
+// 관리자 대시보드 카테고리 (왼쪽 사이드바)
+const SECTIONS = [
+  { key: 'match', label: '매칭·입찰' },
+  { key: 'reviews', label: '리뷰 관리' },
+  { key: 'qa', label: 'Q&A 답변' },
+  { key: 'notice', label: '공지사항' },
+]
+
 // 매칭/입찰 현황 (목업) — 풀스택 단계에서 API 응답으로 교체
-const MATCH_DATA = [
+const BASE_MATCH = [
   {
     id: 'r1',
     customer: '김O영',
@@ -55,6 +65,23 @@ const MATCH_DATA = [
   },
 ]
 
+// ⚠️ 페이지네이션 테스트용 추가 더미 — 백엔드 입찰 연동 시 제거
+const EXTRA_MATCH = Array.from({ length: 8 }, (_, i) => ({
+  id: `mx${i}`,
+  customer: ['김O수', '이O희', '박O철', '최O은'][i % 4],
+  moveType: ['포장이사', '반포장이사', '일반이사', '사무실이사'][i % 4],
+  from: ['서울 마포구', '경기 수원시', '인천 연수구', '서울 노원구'][i % 4],
+  to: ['경기 성남시', '서울 강서구', '인천 미추홀구', '서울 은평구'][i % 4],
+  moveDate: `2026-06-${String((i % 27) + 1).padStart(2, '0')}`,
+  bids: Array.from({ length: (i % 4) + 1 }, (_, j) => ({
+    company: ['한솔이사', '굿모닝이사', '으뜸이사'][j % 3],
+    price: 200000 + j * 30000 + i * 10000,
+  })),
+  status: i % 2 === 0 ? '입찰중' : '매칭완료',
+}))
+
+const MATCH_DATA = [...BASE_MATCH, ...EXTRA_MATCH]
+
 function StatCard({ label, value }) {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -74,7 +101,7 @@ function Empty() {
 }
 
 // 리뷰 카드 — 통합 객체(_kind, type, author, ...) 받아 처리
-function ReviewItem({ review, onToggleHide, onRemove, onReply, onClearReply }) {
+function ReviewItem({ review, onToggleHide, onReply, onClearReply }) {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
   const [editing, setEditing] = useState(false)
@@ -132,13 +159,6 @@ function ReviewItem({ review, onToggleHide, onRemove, onReply, onClearReply }) {
             className="rounded-full border border-gray-300 px-3 py-1.5 font-semibold text-gray-600 transition hover:border-brand hover:text-brand"
           >
             {review.hidden ? '노출' : '숨김'}
-          </button>
-          <button
-            type="button"
-            onClick={() => onRemove(review)}
-            className="rounded-full border border-red-300 px-3 py-1.5 font-semibold text-red-500 transition hover:bg-red-50"
-          >
-            삭제
           </button>
         </div>
       </div>
@@ -236,7 +256,7 @@ function ReviewItem({ review, onToggleHide, onRemove, onReply, onClearReply }) {
 }
 
 // Q&A 문의 카드 — status는 a 유무로 자동 계산
-function InquiryCard({ inquiry, onAnswer, onClear, onRemove }) {
+function InquiryCard({ inquiry, onAnswer, onClear, onToggleHide }) {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
   const status = inquiry.a ? '답변완료' : '대기'
@@ -249,7 +269,11 @@ function InquiryCard({ inquiry, onAnswer, onClear, onRemove }) {
   }
 
   return (
-    <article className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <article
+      className={`rounded-2xl border bg-white p-5 shadow-sm ${
+        inquiry.hidden ? 'border-gray-200 opacity-60' : 'border-gray-100'
+      }`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -265,16 +289,21 @@ function InquiryCard({ inquiry, onAnswer, onClear, onRemove }) {
             >
               {status}
             </span>
+            {inquiry.hidden && (
+              <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-600">
+                숨김
+              </span>
+            )}
           </div>
           <p className="mt-2 font-medium text-gray-900">Q. {inquiry.q}</p>
           <p className="mt-1 text-xs text-gray-400">{inquiry.author}</p>
         </div>
         <button
           type="button"
-          onClick={() => onRemove(inquiry)}
-          className="text-xs font-semibold text-red-500 hover:text-red-700"
+          onClick={() => onToggleHide(inquiry)}
+          className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-brand hover:text-brand"
         >
-          삭제
+          {inquiry.hidden ? '노출' : '숨김'}
         </button>
       </div>
 
@@ -347,6 +376,7 @@ function AdminDashboardPage() {
   const [notices, setNotices] = useLocalState('movingday_notices', [])
   const [noticeOpen, setNoticeOpen] = useState(false)
   const [editingNoticeId, setEditingNoticeId] = useState(null)
+  const [tab, setTab] = useState('match') // 사이드바 선택 카테고리
   const editingNotice = editingNoticeId
     ? notices.find((n) => n.id === editingNoticeId)
     : null
@@ -388,6 +418,11 @@ function AdminDashboardPage() {
     ].sort((a, b) => b.id - a.id)
   }, [userQa, partnerQa])
 
+  // 매칭·리뷰·Q&A 목록 페이지네이션 (5개씩)
+  const matchPage = usePagination(MATCH_DATA, 5)
+  const reviewPage = usePagination(allReviews, 5)
+  const qaPage = usePagination(allInquiries, 5)
+
   // 통계
   const inProgress = MATCH_DATA.filter((m) => m.status === '입찰중').length
   const totalBids = MATCH_DATA.reduce((sum, m) => sum + m.bids.length, 0)
@@ -400,12 +435,6 @@ function AdminDashboardPage() {
       prev.map((r) => (r.id === item.id ? { ...r, hidden: !r.hidden } : r))
     if (item._kind === 'user') setUserReviews(updater)
     else setPartnerStories(updater)
-  }
-  function removeReview(item) {
-    if (!window.confirm('이 리뷰를 삭제할까요?')) return
-    const filter = (prev) => prev.filter((r) => r.id !== item.id)
-    if (item._kind === 'user') setUserReviews(filter)
-    else setPartnerStories(filter)
   }
   function replyReview(item, text) {
     const updater = (prev) =>
@@ -447,11 +476,11 @@ function AdminDashboardPage() {
     if (item._kind === 'user') setUserQa(updater)
     else setPartnerQa(updater)
   }
-  function removeInquiry(item) {
-    if (!window.confirm('이 문의를 삭제할까요?')) return
-    const filter = (prev) => prev.filter((q) => q.id !== item.id)
-    if (item._kind === 'user') setUserQa(filter)
-    else setPartnerQa(filter)
+  function toggleHideInquiry(item) {
+    const updater = (prev) =>
+      prev.map((q) => (q.id === item.id ? { ...q, hidden: !q.hidden } : q))
+    if (item._kind === 'user') setUserQa(updater)
+    else setPartnerQa(updater)
   }
 
   // 공지 액션 — 작성·수정·삭제 (전체 사용자 알림, 관리자 본인 제외 X = 전체에게)
@@ -519,13 +548,38 @@ function AdminDashboardPage() {
         <StatCard label="공지" value={notices.length} />
       </dl>
 
+      <div className="mt-10 flex flex-col gap-6 md:flex-row">
+        {/* 카테고리 사이드바 */}
+        <aside className="md:w-44 md:shrink-0">
+          <nav className="flex gap-2 overflow-x-auto pb-2 md:flex-col md:gap-1 md:pb-0">
+            {SECTIONS.map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => setTab(s.key)}
+                className={`shrink-0 rounded-xl px-4 py-2 text-left text-sm font-semibold transition ${
+                  tab === s.key
+                    ? 'bg-brand text-white'
+                    : 'text-gray-600 hover:bg-brand-bg hover:text-brand'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        {/* 본문 — 선택된 카테고리만 표시 */}
+        <div className="min-w-0 flex-1">
+          {tab === 'match' && (
+            <>
       {/* ① 매칭/입찰 현황 */}
       <h2 className="mt-12 text-xl font-bold text-gray-900">매칭·입찰 현황</h2>
       <p className="mt-2 text-sm text-gray-500">
         진행 중인 견적 요청과 받은 입찰을 모니터링합니다.
       </p>
       <div className="mt-4 space-y-4">
-        {MATCH_DATA.map((m) => (
+        {matchPage.pageItems.map((m) => (
           <article
             key={m.id}
             className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
@@ -580,7 +634,17 @@ function AdminDashboardPage() {
           </article>
         ))}
       </div>
-
+      <Pagination
+        page={matchPage.page}
+        setPage={matchPage.setPage}
+        totalPages={matchPage.totalPages}
+        perPage={matchPage.perPage}
+        setPerPage={matchPage.setPerPage}
+      />
+            </>
+          )}
+          {tab === 'reviews' && (
+            <>
       {/* ② 리뷰 관리 — user/partner 통합 */}
       <h2 className="mt-12 text-xl font-bold text-gray-900">리뷰 관리</h2>
       <p className="mt-2 text-sm text-gray-500">
@@ -591,19 +655,28 @@ function AdminDashboardPage() {
         {allReviews.length === 0 ? (
           <Empty />
         ) : (
-          allReviews.map((r) => (
+          reviewPage.pageItems.map((r) => (
             <ReviewItem
               key={`${r._kind}-${r.id}`}
               review={r}
               onToggleHide={toggleHide}
-              onRemove={removeReview}
               onReply={replyReview}
               onClearReply={clearReply}
             />
           ))
         )}
       </div>
-
+      <Pagination
+        page={reviewPage.page}
+        setPage={reviewPage.setPage}
+        totalPages={reviewPage.totalPages}
+        perPage={reviewPage.perPage}
+        setPerPage={reviewPage.setPerPage}
+      />
+            </>
+          )}
+          {tab === 'qa' && (
+            <>
       {/* ③ Q&A 답변 — user/partner 통합 */}
       <h2 className="mt-12 text-xl font-bold text-gray-900">Q&A 답변</h2>
       <p className="mt-2 text-sm text-gray-500">
@@ -614,18 +687,28 @@ function AdminDashboardPage() {
         {allInquiries.length === 0 ? (
           <Empty />
         ) : (
-          allInquiries.map((i) => (
+          qaPage.pageItems.map((i) => (
             <InquiryCard
               key={`${i._kind}-${i.id}`}
               inquiry={i}
               onAnswer={answer}
               onClear={clearAnswer}
-              onRemove={removeInquiry}
+              onToggleHide={toggleHideInquiry}
             />
           ))
         )}
       </div>
-
+      <Pagination
+        page={qaPage.page}
+        setPage={qaPage.setPage}
+        totalPages={qaPage.totalPages}
+        perPage={qaPage.perPage}
+        setPerPage={qaPage.setPerPage}
+      />
+            </>
+          )}
+          {tab === 'notice' && (
+            <>
       {/* ④ 공지사항 — NoticePage와 동일 키 공유 */}
       <div className="mt-12 flex items-end justify-between">
         <div>
@@ -735,6 +818,10 @@ function AdminDashboardPage() {
             </article>
           ))
         )}
+      </div>
+            </>
+          )}
+        </div>
       </div>
     </section>
   )

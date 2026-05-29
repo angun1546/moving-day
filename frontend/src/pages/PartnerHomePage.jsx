@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ReviewCarousel from '../components/ReviewCarousel'
+import HeroSearch from '../components/HeroSearch'
+import { PARTNER_SUGGESTIONS } from '../data/searchIndex'
 import { useLocalState } from '../hooks/useLocalState'
 
 const STATS = [
@@ -80,6 +82,15 @@ function PartnerHomePage() {
       {/* Hero */}
       <section className="bg-gradient-to-b from-brand-light/40 to-transparent">
         <div className="mx-auto max-w-6xl px-4 py-20 md:py-24">
+          {/* 큰 검색창 — 섹션 최상단, 가운데 정렬 (유저와 동일) */}
+          <div className="mb-12">
+            <HeroSearch
+              scope="partner"
+              suggestions={PARTNER_SUGGESTIONS}
+              centered
+            />
+          </div>
+
           <div className="max-w-2xl">
             <span className="inline-flex items-center rounded-full bg-accent px-3 py-1 font-inter text-xs font-bold tracking-wider text-brand-dark uppercase">
               For Partners

@@ -1,5 +1,5 @@
 // 입찰 비교 목업 데이터 (실제 API 연동 전까지 가짜 업체 입찰)
-export const BIDS = [
+const BASE_BIDS = [
   {
     id: 'b1',
     company: '한솔이사',
@@ -61,3 +61,17 @@ export const BIDS = [
     message: '풀패키지 올인원 서비스. 손 하나 까딱 않고 이사 끝.',
   },
 ]
+
+// ⚠️ 페이지네이션 테스트용 추가 더미 — 확인 후 EXTRA_BIDS와 합치기 제거
+const EXTRA_BIDS = Array.from({ length: 8 }, (_, i) => ({
+  id: `bx${i}`,
+  company: ['믿음이사', '행복무빙', '튼튼이사', '쾌속이사', '다온이사'][i % 5],
+  rating: Number((4 + (i % 10) / 10).toFixed(1)),
+  reviews: 100 + i * 37,
+  price: 250000 + i * 15000,
+  eta: `${3 + (i % 3)}시간`,
+  services: ['포장', '파손보상'],
+  message: `합리적인 가격과 친절한 서비스로 모시겠습니다. (테스트 ${i + 1})`,
+}))
+
+export const BIDS = [...BASE_BIDS, ...EXTRA_BIDS]

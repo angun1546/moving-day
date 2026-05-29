@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useLocalState } from '../hooks/useLocalState'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 import { todayString } from '../utils/date'
 import { maskKoreanNamesInText } from '../utils/userDisplay'
-
-const PAGE_SIZE = 5
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -93,7 +93,6 @@ function PartnerStoryPage() {
   const [rating, setRating] = useState(5)
   const [showForm, setShowForm] = useState(false)
   const [q, setQ] = useState('')
-  const [page, setPage] = useState(1)
   const [editingId, setEditingId] = useState(null)
 
   // 검색 필터 (업체명·내용)
@@ -107,12 +106,8 @@ function PartnerStoryPage() {
     )
   }, [reviews, q])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const pageItems = filtered.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE,
-  )
+  const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
+    usePagination(filtered, 5)
 
   function onSearch(e) {
     setQ(e.target.value)
@@ -292,8 +287,15 @@ function PartnerStoryPage() {
           ))
         )}
       </div>
+      <Pagination
+        page={page}
+        setPage={setPage}
+        totalPages={totalPages}
+        perPage={perPage}
+        setPerPage={setPerPage}
+      />
 
-      {/* 하단 컨트롤 바: 검색 · 페이지 · 등록 버튼 */}
+      {/* 하단 컨트롤 바: 검색 · 등록 버튼 */}
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center rounded-full border border-gray-300 bg-white px-3 py-1.5">
           <input
@@ -319,25 +321,6 @@ function PartnerStoryPage() {
             <path d="m21 21-4.3-4.3" />
           </svg>
         </div>
-
-        {filtered.length > PAGE_SIZE && (
-          <div className="flex gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setPage(n)}
-                className={`h-8 w-8 rounded-full text-sm font-semibold transition ${
-                  n === safePage
-                    ? 'bg-brand text-white'
-                    : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:text-brand'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        )}
 
         <button
           type="button"
