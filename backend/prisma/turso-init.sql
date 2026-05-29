@@ -36,3 +36,18 @@ CREATE TABLE "User" (
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- 업체 입찰
+CREATE TABLE "Bid" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "quoteRequestId" TEXT NOT NULL,
+    "bidderEmail" TEXT NOT NULL,
+    "company" TEXT NOT NULL,
+    "price" INTEGER NOT NULL,
+    "message" TEXT,
+    "eta" TEXT,
+    "status" TEXT NOT NULL DEFAULT '입찰',
+    CONSTRAINT "Bid_quoteRequestId_fkey" FOREIGN KEY ("quoteRequestId") REFERENCES "QuoteRequest" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE INDEX "Bid_quoteRequestId_idx" ON "Bid"("quoteRequestId");

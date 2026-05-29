@@ -113,6 +113,7 @@ router.get('/', async (_req, res) => {
   try {
     const quotes = await prisma.quoteRequest.findMany({
       orderBy: { createdAt: 'desc' },
+      include: { bids: true },
     })
     res.json(quotes)
   } catch (err) {

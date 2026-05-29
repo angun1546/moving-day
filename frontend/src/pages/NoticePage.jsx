@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useConfirm } from '../context/ConfirmContext'
 import { useLocalState } from '../hooks/useLocalState'
+import { usePagination } from '../hooks/usePagination'
+import Pagination from '../components/Pagination'
 import { todayString } from '../utils/date'
 import { addNotification } from '../utils/notifications'
 
@@ -12,6 +14,9 @@ const inputClass =
 function NoticePage() {
   const { isAdmin } = useAuth()
   const [notices, setNotices] = useLocalState('movingday_notices', [])
+  // 공지 목록 페이지네이션 (5개씩)
+  const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
+    usePagination(notices, 5)
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
 
@@ -136,7 +141,7 @@ function NoticePage() {
             )}
           </div>
         ) : (
-          notices.map((n) => (
+          pageItems.map((n) => (
             <article
               key={n.id}
               className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
@@ -172,6 +177,13 @@ function NoticePage() {
           ))
         )}
       </div>
+      <Pagination
+        page={page}
+        setPage={setPage}
+        totalPages={totalPages}
+        perPage={perPage}
+        setPerPage={setPerPage}
+      />
 
       {/* 작성 토글 버튼 (관리자만) */}
       {isAdmin && !open && (

@@ -28,6 +28,16 @@ export async function createQuote({ request }) {
     return { error: err.message ?? '신청에 실패했습니다. 잠시 후 다시 시도해 주세요.' }
   }
 
+  // 방금 신청한 견적 id 저장 → 입찰 비교 페이지에서 사용
+  const quote = await res.json().catch(() => null)
+  if (quote?.id) {
+    try {
+      localStorage.setItem('movingday_last_quote_id', quote.id)
+    } catch {
+      // 저장 실패 무시
+    }
+  }
+
   // 마이페이지 활동 내역 카운트 (목업: 클라이언트 단순 카운트)
   try {
     const cur = parseInt(
@@ -47,4 +57,11 @@ export async function createQuote({ request }) {
   })
 
   return redirect('/quote/done')
+}
+
+// 견적 목록 (파트너 입찰용·관리자 모니터링 — 입찰 포함)
+export async function getQuotes() {
+  const res = await fetch(API)
+  if (!res.ok) throw new Error('견적 조회에 실패했습니다.')
+  return res.json()
 }

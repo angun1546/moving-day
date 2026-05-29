@@ -34,6 +34,8 @@ model QuoteRequest {
 
   status String @default("접수") // 접수 / 상담중 / 완료
 
+  bids Bid[] // 이 견적에 들어온 업체 입찰
+
   @@index([createdAt])
 }
 
@@ -48,4 +50,22 @@ model User {
   phone     String? // 전화번호
   verified  Boolean  @default(false) // 휴대폰 본인인증 여부 (추후 CI/DI 연동)
   createdAt DateTime @default(now())
+}
+
+// 업체(파트너) 입찰 — 견적 요청에 대한 제안
+model Bid {
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  quoteRequestId String
+  quoteRequest   QuoteRequest @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+
+  bidderEmail String // 입찰한 파트너 이메일
+  company     String // 업체명
+  price       Int // 입찰가(원)
+  message     String? // 고객에게 한마디
+  eta         String? // 예상 소요시간
+
+  status String @default("입찰") // 입찰 / 낙찰 / 거절
+
+  @@index([quoteRequestId])
 }

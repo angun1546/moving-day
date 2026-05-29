@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocalState } from '../hooks/useLocalState'
+import { getQuotes } from '../services/quotes'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 import { useConfirm } from '../context/ConfirmContext'
@@ -18,52 +19,6 @@ const SECTIONS = [
   { key: 'reviews', label: '리뷰 관리' },
   { key: 'qa', label: 'Q&A 답변' },
   { key: 'notice', label: '공지사항' },
-]
-
-// 매칭/입찰 현황 (목업) — 풀스택 단계에서 API 응답으로 교체
-const MATCH_DATA = [
-  {
-    id: 'r1',
-    customer: '김O영',
-    moveType: '포장이사',
-    from: '서울 마포구',
-    to: '경기 고양시',
-    moveDate: '2026-06-15',
-    bids: [
-      { company: '한솔이사', price: 290000 },
-      { company: '굿모닝이사', price: 275000 },
-      { company: '으뜸이사', price: 305000 },
-    ],
-    status: '입찰중',
-  },
-  {
-    id: 'r2',
-    customer: '이O준',
-    moveType: '사무실이사',
-    from: '서울 강남구',
-    to: '서울 성동구',
-    moveDate: '2026-06-20',
-    bids: [
-      { company: '스마트무빙', price: 540000 },
-      { company: '프로무빙', price: 580000 },
-      { company: '디딤돌이사', price: 565000 },
-      { company: '한솔이사', price: 520000 },
-    ],
-    status: '매칭완료',
-  },
-  {
-    id: 'r3',
-    customer: '박O은',
-    moveType: '반포장이사',
-    from: '인천 부평구',
-    to: '인천 남동구',
-    moveDate: '2026-06-18',
-    bids: [
-      { company: '한솔이사', price: 180000 },
-      { company: '굿모닝이사', price: 195000 },
-    ],
-    status: '입찰중',
-  },
 ]
 
 function StatCard({ label, value }) {
@@ -361,6 +316,14 @@ function AdminDashboardPage() {
   const [noticeOpen, setNoticeOpen] = useState(false)
   const [editingNoticeId, setEditingNoticeId] = useState(null)
   const [tab, setTab] = useState('match') // 사이드바 선택 카테고리
+
+  // 견적·입찰 현황 (백엔드 — 입찰 포함)
+  const [quotes, setQuotes] = useState([])
+  useEffect(() => {
+    getQuotes()
+      .then((d) => setQuotes(Array.isArray(d) ? d : []))
+      .catch(() => setQuotes([]))
+  }, [])
   const editingNotice = editingNoticeId
     ? notices.find((n) => n.id === editingNoticeId)
     : null
@@ -402,14 +365,15 @@ function AdminDashboardPage() {
     ].sort((a, b) => b.id - a.id)
   }, [userQa, partnerQa])
 
-  // 매칭·리뷰·Q&A 목록 페이지네이션 (5개씩)
-  const matchPage = usePagination(MATCH_DATA, 5)
+  // 매칭·리뷰·Q&A·공지 목록 페이지네이션 (5개씩)
+  const matchPage = usePagination(quotes, 5)
   const reviewPage = usePagination(allReviews, 5)
   const qaPage = usePagination(allInquiries, 5)
+  const noticePage = usePagination(notices, 5)
 
   // 통계
-  const inProgress = MATCH_DATA.filter((m) => m.status === '입찰중').length
-  const totalBids = MATCH_DATA.reduce((sum, m) => sum + m.bids.length, 0)
+  const inProgress = quotes.filter((m) => m.status !== '완료').length
+  const totalBids = quotes.reduce((sum, m) => sum + (m.bids?.length ?? 0), 0)
   const hiddenReviews = allReviews.filter((r) => r.hidden).length
   const pendingQa = allInquiries.filter((i) => !i.a).length
 
@@ -578,7 +542,7 @@ function AdminDashboardPage() {
                   </span>
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      m.status === '매칭완료'
+                      m.status === '완료'
                         ? 'bg-gray-100 text-gray-600'
                         : 'bg-amber-100 text-amber-700'
                     }`}
@@ -587,10 +551,10 @@ function AdminDashboardPage() {
                   </span>
                 </div>
                 <h3 className="mt-3 text-lg font-bold text-gray-900">
-                  {m.from} → {m.to}
+                  {m.fromRegion} → {m.toRegion}
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  {m.customer} · 이사 예정 {m.moveDate}
+                  {m.name} · 이사 예정 {m.moveDate || '미정'}
                 </p>
               </div>
               <div className="text-right text-sm">
@@ -769,7 +733,7 @@ function AdminDashboardPage() {
         {notices.length === 0 ? (
           <Empty />
         ) : (
-          notices.map((n) => (
+          noticePage.pageItems.map((n) => (
             <article
               key={n.id}
               className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
@@ -805,6 +769,13 @@ function AdminDashboardPage() {
           ))
         )}
       </div>
+      <Pagination
+        page={noticePage.page}
+        setPage={noticePage.setPage}
+        totalPages={noticePage.totalPages}
+        perPage={noticePage.perPage}
+        setPerPage={noticePage.setPerPage}
+      />
             </>
           )}
         </div>

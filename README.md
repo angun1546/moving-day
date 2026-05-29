@@ -109,6 +109,7 @@ cd frontend && npm install && npm run dev                          # 5173
 |------|------|
 | `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, photos(JSON), visitDate, callTime, status |
 | `User` | id, email, password(bcrypt), name, birthDate, gender, phone, verified, createdAt |
+| `Bid` | id, quoteRequestId(FK→QuoteRequest, Cascade), bidderEmail, company, price, message, eta, status(입찰/낙찰/거절), createdAt |
 
 ### 클라이언트 localStorage 키 (영속화)
 | 키 | 용도 |
@@ -124,6 +125,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | `movingday_header_mode` / `movingday_display_mode` | 헤더 표시 방식 / 리뷰·FAQ 표시 방식 |
 | `movingday_partner_profile` | 파트너 업체정보(지역·사진·자격증 등) |
 | `partnerProfileSaved` | 파트너 업체정보 등록 플래그(입찰 시작 게이트) |
+| `movingday_last_quote_id` | 방금 신청한 견적 id(고객 입찰 비교 조회용) |
 
 ## 주요 API
 
@@ -133,6 +135,11 @@ cd frontend && npm install && npm run dev                          # 5173
 | POST | `/api/auth/signup` | 회원가입 → JWT 토큰 |
 | POST | `/api/auth/login` | 로그인 → JWT 토큰 |
 | GET | `/api/auth/me` | 내 정보 (Authorization: Bearer) |
+| POST | `/api/quotes` | 견적 신청 (사진 Cloudinary 업로드) |
+| GET | `/api/quotes` | 견적 목록 (입찰 포함 — 파트너·관리자) |
+| POST | `/api/bids` | 입찰 생성 (파트너) |
+| GET | `/api/bids/quote/:id` | 견적별 입찰 목록 (고객 비교) |
+| GET | `/api/bids/mine/:email` | 파트너 본인 입찰 |
 | POST | `/api/quotes` | 견적 신청 등록 (multipart/form-data, 사진 첨부 가능) |
 | GET | `/api/quotes` | 견적 신청 목록 (관리용) |
 
@@ -195,5 +202,5 @@ Start Command     npm start
 1. ✅ **프론트 멀티테넌시 골격** (완료) — 경로 기반 고객/파트너/관리자 분리
 2. 🔧 **풀스택 role 시스템** — `User.role(customer/partner/admin)` + `partner_profiles` 1:1 + 회원가입 시 역할 선택 + role 기반 가드/리다이렉트
 3. 🔧 **사진·자격증 업로드 백엔드 연동** (기존 multer 재사용 + S3/디스크)
-4. 🔧 **입찰·매칭 실제 DB 연동** (`Bid`·`Company` 모델 추가)
+4. ✅ **입찰 실제 DB 연동** (`Bid` 모델 — 파트너 입찰 제출·고객 입찰 비교·관리자 매칭현황 백엔드 연동)
 5. 📅 **실시간 알림** (웹소켓·알림톡) — MVP 외, 나중
