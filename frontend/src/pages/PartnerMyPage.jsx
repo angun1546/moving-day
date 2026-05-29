@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ActivityCard from '../components/ActivityCard'
+import PartnerBidsList from '../components/PartnerBidsList'
 import { useLocalState } from '../hooks/useLocalState'
 
 function Info({ label, value }) {
@@ -154,6 +155,12 @@ function PartnerMyPage() {
           label="내 질문"
           count={questions.length}
         />
+      </div>
+
+      {/* 내 입찰 현황 — 낙찰건 이사 단계 진행 */}
+      <h2 className="mt-10 text-lg font-bold text-gray-900">내 입찰 현황</h2>
+      <div className="mt-4">
+        <PartnerBidsList email={user.email} />
       </div>
 
       {/* 액션 */}

@@ -4,6 +4,7 @@ import { useConfirm } from '../context/ConfirmContext'
 import { getQuotes } from '../services/quotes'
 import { createBid } from '../services/bids'
 import { addNotification } from '../utils/notifications'
+import { formatDateTime } from '../utils/date'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 
@@ -144,6 +145,9 @@ function PartnerDashboardPage() {
                       <p className="mt-1 text-sm text-gray-500">
                         {r.homeSize || '주거형태 미입력'} · 이사 예정{' '}
                         {r.moveDate || '미정'}
+                      </p>
+                      <p className="mt-0.5 text-xs text-gray-300">
+                        {formatDateTime(r.createdAt)} 신청
                       </p>
                     </div>
                     <div className="text-right text-sm">
