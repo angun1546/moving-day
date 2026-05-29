@@ -4,6 +4,7 @@ import { getBidsByQuote, acceptBid, cancelBid } from '../services/bids'
 import { useConfirm } from '../context/ConfirmContext'
 import { addNotification } from '../utils/notifications'
 import { usePagination } from '../hooks/usePagination'
+import { useLocalState } from '../hooks/useLocalState'
 import Pagination from '../components/Pagination'
 import { formatDateTime } from '../utils/date'
 
@@ -32,6 +33,13 @@ function BidComparePage() {
   const [picked, setPicked] = useState(null)
   const [bids, setBids] = useState([])
   const [loading, setLoading] = useState(true)
+  // 업체 평점 = 고객 리뷰(이용 업체명 일치)의 별점 평균
+  const [reviews] = useLocalState('movingday_user_reviews', [])
+  function companyRating(company) {
+    const rs = reviews.filter((r) => r.company === company && r.rating)
+    if (!rs.length) return 0
+    return rs.reduce((s, r) => s + r.rating, 0) / rs.length
+  }
 
   // 방금 신청한 견적 id (견적 신청 시 저장됨)
   let quoteId = ''
@@ -69,10 +77,15 @@ function BidComparePage() {
     arr.sort((a, b) => {
       if (sort === 'price') return a.price - b.price
       if (sort === 'high') return b.price - a.price
+      if (sort === 'ratingHigh')
+        return companyRating(b.company) - companyRating(a.company)
+      if (sort === 'ratingLow')
+        return companyRating(a.company) - companyRating(b.company)
       return new Date(b.createdAt) - new Date(a.createdAt)
     })
     return arr
-  }, [bids, sort])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bids, sort, reviews])
 
   const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
     usePagination(sorted, 5)
@@ -225,6 +238,18 @@ function BidComparePage() {
             <SortBtn on={sort === 'high'} onClick={() => setSort('high')}>
               최고가순
             </SortBtn>
+            <SortBtn
+              on={sort === 'ratingHigh'}
+              onClick={() => setSort('ratingHigh')}
+            >
+              평점 높은순
+            </SortBtn>
+            <SortBtn
+              on={sort === 'ratingLow'}
+              onClick={() => setSort('ratingLow')}
+            >
+              평점 낮은순
+            </SortBtn>
             <SortBtn on={sort === 'recent'} onClick={() => setSort('recent')}>
               최신순
             </SortBtn>
@@ -250,6 +275,11 @@ function BidComparePage() {
                       <h2 className="text-lg font-bold text-gray-900">
                         {b.company}
                       </h2>
+                      {companyRating(b.company) > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-sm font-semibold text-amber-500">
+                          ★ {companyRating(b.company).toFixed(1)}
+                        </span>
+                      )}
                       {isLowest && (
                         <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-brand-dark">
                           최저가
