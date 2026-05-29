@@ -8,8 +8,9 @@ generator client {
 }
 
 datasource db {
+  // Prisma 7: url은 schema에 두지 않음 (prisma.config.ts의 datasource.url 사용)
+  // 런타임 연결은 src/db.ts의 드라이버 어댑터(better-sqlite3 / libSQL)가 담당
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 // 이사 견적 신청
