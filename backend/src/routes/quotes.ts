@@ -130,7 +130,7 @@ router.get('/mine/:email', async (req, res) => {
     const quotes = await prisma.quoteRequest.findMany({
       where: { userEmail: req.params.email },
       orderBy: { createdAt: 'desc' },
-      include: { bids: true },
+      include: { bids: true, stageLogs: { orderBy: { createdAt: 'asc' } } },
     })
     res.json(quotes)
   } catch (err) {
@@ -147,6 +147,11 @@ router.patch('/:id/stage', async (req, res) => {
       where: { id: req.params.id },
       data: { stage },
     })
+    if (stage) {
+      await prisma.stageLog.create({
+        data: { quoteRequestId: req.params.id, stage },
+      })
+    }
     res.json(quote)
   } catch (err) {
     console.error('단계 변경 실패:', err)

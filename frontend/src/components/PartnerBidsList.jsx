@@ -145,7 +145,7 @@ function PartnerBidsList({ email }) {
                   <p className="text-sm font-semibold text-gray-800">
                     이사 진행 단계
                   </p>
-                  <StageProgress stage={q.stage} />
+                  <StageProgress stage={q.stage} logs={q.stageLogs || []} />
                   {MOVE_STAGES.indexOf(q.stage) < MOVE_STAGES.length - 1 ? (
                     <button
                       type="button"

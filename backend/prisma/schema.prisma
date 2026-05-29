@@ -37,7 +37,8 @@ model QuoteRequest {
   userEmail String? // 신청한 회원 이메일 (비회원은 null)
   stage     String? // 낙찰 후 진행 단계 (낙찰완료~이사완료, 미낙찰은 null)
 
-  bids Bid[] // 이 견적에 들어온 업체 입찰
+  bids      Bid[] // 이 견적에 들어온 업체 입찰
+  stageLogs StageLog[] // 진행 단계 변경 이력
 
   @@index([createdAt])
 }
@@ -69,6 +70,17 @@ model Bid {
   eta         String? // 예상 소요시간
 
   status String @default("입찰") // 입찰 / 낙찰 / 거절
+
+  @@index([quoteRequestId])
+}
+
+// 진행 단계 변경 이력 (택배식 타임라인 로그)
+model StageLog {
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  quoteRequestId String
+  quoteRequest   QuoteRequest @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  stage          String
 
   @@index([quoteRequestId])
 }

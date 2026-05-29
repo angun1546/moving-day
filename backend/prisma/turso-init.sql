@@ -53,3 +53,13 @@ CREATE TABLE "Bid" (
     CONSTRAINT "Bid_quoteRequestId_fkey" FOREIGN KEY ("quoteRequestId") REFERENCES "QuoteRequest" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 CREATE INDEX "Bid_quoteRequestId_idx" ON "Bid"("quoteRequestId");
+
+-- 진행 단계 이력
+CREATE TABLE "StageLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "quoteRequestId" TEXT NOT NULL,
+    "stage" TEXT NOT NULL,
+    CONSTRAINT "StageLog_quoteRequestId_fkey" FOREIGN KEY ("quoteRequestId") REFERENCES "QuoteRequest" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE INDEX "StageLog_quoteRequestId_idx" ON "StageLog"("quoteRequestId");

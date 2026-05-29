@@ -50,7 +50,11 @@ router.get('/mine/:email', async (req, res) => {
     const bids = await prisma.bid.findMany({
       where: { bidderEmail: req.params.email },
       orderBy: { createdAt: 'desc' },
-      include: { quoteRequest: true },
+      include: {
+        quoteRequest: {
+          include: { stageLogs: { orderBy: { createdAt: 'asc' } } },
+        },
+      },
     })
     res.json(bids)
   } catch (err) {
@@ -78,6 +82,9 @@ router.patch('/:id/accept', async (req, res) => {
       where: { id: bid.quoteRequestId },
       data: { status: '완료', stage: '낙찰완료' },
     })
+    await prisma.stageLog.create({
+      data: { quoteRequestId: bid.quoteRequestId, stage: '낙찰완료' },
+    })
     res.json({ ok: true, bid: { ...bid, status: '낙찰' } })
   } catch (err) {
     console.error('낙찰 처리 실패:', err)
@@ -99,6 +106,10 @@ router.patch('/:id/cancel', async (req, res) => {
     await prisma.quoteRequest.update({
       where: { id: bid.quoteRequestId },
       data: { status: '상담중', stage: null },
+    })
+    // 낙찰 취소 시 진행 이력 초기화
+    await prisma.stageLog.deleteMany({
+      where: { quoteRequestId: bid.quoteRequestId },
     })
     res.json({ ok: true })
   } catch (err) {

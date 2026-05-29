@@ -193,7 +193,9 @@ function MyQuotesBox({ email }) {
                   </div>
                 </div>
                 {/* 낙찰 후엔 진행 단계 표시, 미낙찰은 수정·취소 가능 */}
-                {q.stage && <StageProgress stage={q.stage} />}
+                {q.stage && (
+                  <StageProgress stage={q.stage} logs={q.stageLogs || []} />
+                )}
                 <div className="mt-3 flex flex-wrap gap-3 text-xs font-semibold">
                   <button
                     type="button"
