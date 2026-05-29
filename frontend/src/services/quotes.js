@@ -65,3 +65,28 @@ export async function getQuotes() {
   if (!res.ok) throw new Error('견적 조회에 실패했습니다.')
   return res.json()
 }
+
+// 내 견적 목록 (회원 — 입찰 포함)
+export async function getMyQuotes(email) {
+  const res = await fetch(`${API}/mine/${encodeURIComponent(email)}`)
+  if (!res.ok) throw new Error('내 견적 조회에 실패했습니다.')
+  return res.json()
+}
+
+// 견적 취소(삭제)
+export async function deleteQuote(id) {
+  const res = await fetch(`${API}/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('견적 취소에 실패했습니다.')
+  return res.json()
+}
+
+// 견적 수정
+export async function updateQuote(id, data) {
+  const res = await fetch(`${API}/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('견적 수정에 실패했습니다.')
+  return res.json()
+}

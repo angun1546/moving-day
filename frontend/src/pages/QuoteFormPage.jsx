@@ -7,6 +7,7 @@ import {
   useParams,
 } from 'react-router-dom'
 import { findMethod, findType } from '../data/quoteOptions'
+import { useAuth } from '../context/AuthContext'
 import { usePostcode } from '../hooks/usePostcode'
 import QuoteSteps from '../components/QuoteSteps'
 
@@ -60,6 +61,7 @@ function AddressField({ label, name, value, detail, onSearch, onDetail }) {
 }
 
 function QuoteFormPage() {
+  const { user } = useAuth()
   const { method, type } = useParams()
   const m = findMethod(method)
   const t = findType(type)
@@ -124,6 +126,8 @@ function QuoteFormPage() {
         {/* 견적 방식 / 이사 종류 (한글 라벨로 전송) */}
         <input type="hidden" name="method" value={m.label} />
         <input type="hidden" name="moveType" value={t.label} />
+        {/* 로그인 회원이면 견적을 계정과 연결 */}
+        <input type="hidden" name="userEmail" value={user?.email || ''} />
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <Field label="이름" required>

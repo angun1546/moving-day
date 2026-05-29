@@ -40,7 +40,7 @@ Moving-day/
 - **입찰 비교**(`/quote/bids`): 신청 견적에 들어온 **실제 입찰** 비교(가격·메시지·소요시간), **최저가 배지**, 정렬(최저가/최신), **낙찰 선택 + 계약 전 낙찰 취소**(파트너·관리자에 알림)
 - **고객 리뷰**(`/reviews`): 별점·이름(**실명 자동 마스킹**)·이사 종류·**이용 업체**·내용·사진 첨부(메모리), localStorage 영속화, **페이지네이션(개수 선택 5~40)**
 - **FAQ + 직접 질문**(`/faq`): **관리자가 직접 작성·수정·삭제하는 자주 묻는 질문** + 관리자 답변 Q&A. 전체보기 진입 시 작성 폼은 닫혀 있고 글 목록만 노출(토글), **Q&A 페이지네이션**
-- **마이페이지**(`/mypage`): 활동 카드(견적 신청·작성 리뷰·내 질문) → 클릭 시 해당 페이지
+- **마이페이지**(`/mypage`): 활동 카드(견적 신청·작성 리뷰·내 질문) + **내 견적 현황 박스**(신청 견적·입찰/낙찰 상태·견적 수정·취소·입찰 보기)
 - **공지사항**(`/notice`): 관리자 작성·수정·삭제, 모든 사용자에게 알림 푸시
 
 ### 🏢 파트너 영역(`/partner/*`)
@@ -108,7 +108,7 @@ cd frontend && npm install && npm run dev                          # 5173
 ### 백엔드 (Prisma)
 | 모델 | 주요 필드 |
 |------|------|
-| `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, photos(JSON), visitDate, callTime, status |
+| `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, photos(JSON), visitDate, callTime, status, userEmail(회원 연결·nullable) |
 | `User` | id, email, password(bcrypt), name, birthDate, gender, phone, verified, createdAt |
 | `Bid` | id, quoteRequestId(FK→QuoteRequest, Cascade), bidderEmail, company, price, message, eta, status(입찰/낙찰/거절), createdAt |
 
@@ -138,6 +138,9 @@ cd frontend && npm install && npm run dev                          # 5173
 | GET | `/api/auth/me` | 내 정보 (Authorization: Bearer) |
 | POST | `/api/quotes` | 견적 신청 (사진 Cloudinary 업로드) |
 | GET | `/api/quotes` | 견적 목록 (입찰 포함 — 파트너·관리자) |
+| GET | `/api/quotes/mine/:email` | 내 견적 목록 (입찰 포함 — 회원) |
+| PATCH | `/api/quotes/:id` | 견적 수정 |
+| DELETE | `/api/quotes/:id` | 견적 취소(삭제, 입찰 Cascade) |
 | POST | `/api/bids` | 입찰 생성 (파트너) |
 | GET | `/api/bids/quote/:id` | 견적별 입찰 목록 (고객 비교) |
 | GET | `/api/bids/mine/:email` | 파트너 본인 입찰 |

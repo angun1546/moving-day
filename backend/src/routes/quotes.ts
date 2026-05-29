@@ -53,6 +53,7 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
     method,
     visitDate,
     callTime,
+    userEmail,
   } = req.body ?? {}
 
   // 필수값 검증
@@ -99,6 +100,7 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
         method,
         visitDate,
         callTime,
+        userEmail: userEmail || null,
       },
     })
     res.status(201).json(quote)
@@ -119,6 +121,48 @@ router.get('/', async (_req, res) => {
   } catch (err) {
     console.error('견적 조회 실패:', err)
     res.status(500).json({ message: '서버 오류로 조회에 실패했습니다.' })
+  }
+})
+
+// 내 견적 목록 (회원 — 입찰 포함, 최신순)
+router.get('/mine/:email', async (req, res) => {
+  try {
+    const quotes = await prisma.quoteRequest.findMany({
+      where: { userEmail: req.params.email },
+      orderBy: { createdAt: 'desc' },
+      include: { bids: true },
+    })
+    res.json(quotes)
+  } catch (err) {
+    console.error('내 견적 조회 실패:', err)
+    res.status(500).json({ message: '서버 오류로 조회에 실패했습니다.' })
+  }
+})
+
+// 견적 수정 (제출된 값만 변경)
+router.patch('/:id', async (req, res) => {
+  const { moveType, fromRegion, toRegion, moveDate, homeSize, memo } =
+    req.body ?? {}
+  try {
+    const quote = await prisma.quoteRequest.update({
+      where: { id: req.params.id },
+      data: { moveType, fromRegion, toRegion, moveDate, homeSize, memo },
+    })
+    res.json(quote)
+  } catch (err) {
+    console.error('견적 수정 실패:', err)
+    res.status(500).json({ message: '서버 오류로 수정에 실패했습니다.' })
+  }
+})
+
+// 견적 취소(삭제) — 연결된 입찰도 Cascade로 함께 삭제
+router.delete('/:id', async (req, res) => {
+  try {
+    await prisma.quoteRequest.delete({ where: { id: req.params.id } })
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('견적 삭제 실패:', err)
+    res.status(500).json({ message: '서버 오류로 삭제에 실패했습니다.' })
   }
 })
 

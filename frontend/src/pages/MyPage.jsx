@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ActivityCard from '../components/ActivityCard'
+import MyQuotesBox from '../components/MyQuotesBox'
 import { useLocalState } from '../hooks/useLocalState'
 
 function Info({ label, value }) {
@@ -63,6 +64,10 @@ function MyPage() {
         />
         <ActivityCard to="/faq" label="내 질문" count={questions.length} />
       </div>
+
+      {/* 내 견적 현황 */}
+      <h2 className="mt-10 text-lg font-bold text-gray-900">내 견적 현황</h2>
+      <MyQuotesBox email={user.email} />
 
       {/* 액션 */}
       <div className="mt-10 flex flex-col gap-3 sm:flex-row">
