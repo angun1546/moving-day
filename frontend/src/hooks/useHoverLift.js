@@ -20,8 +20,8 @@ export function useHoverLift(ref) {
       gsap.to(el, {
         y: -6,
         boxShadow: '0 14px 30px rgba(0,0,0,0.12)',
-        duration: 0.18,
-        ease: 'power2.out',
+        duration: 0.12,
+        ease: 'power1.out',
         overwrite: 'auto',
       })
     }
@@ -34,8 +34,8 @@ export function useHoverLift(ref) {
       gsap.to(el, {
         y: 0,
         boxShadow: '0 0 0 rgba(0,0,0,0)',
-        duration: 0.18,
-        ease: 'power2.out',
+        duration: 0.12,
+        ease: 'power1.out',
         clearProps: 'boxShadow,transform',
         overwrite: 'auto',
       })
