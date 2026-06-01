@@ -6,14 +6,23 @@ import MenuIcon from './MenuIcon'
 import BellIcon from './BellIcon'
 import UserMenu from './UserMenu'
 
-// 햄버거 패널 메뉴 (앵커 + 라우트 혼합)
+// 햄버거 패널 메뉴 — 메인 섹션(hash)은 어느 페이지에서든 메인으로 이동 후 스크롤
 const NAV = [
-  { href: '#services', label: '서비스' },
-  { href: '#steps', label: '이용 절차' },
-  { href: '#reviews', label: '고객 후기' },
-  { to: '/faq', label: 'FAQ' },
+  { hash: '#hero', label: '서비스' },
+  { hash: '#steps', label: '이용 절차' },
+  { hash: '#reviews', label: '고객 후기' },
+  { hash: '#faq', label: 'FAQ' },
   { to: '/notice', label: '공지사항' },
 ]
+
+// 메인 섹션으로 스크롤 (#hero는 최상단)
+function scrollToHash(hash) {
+  if (hash === '#hero') {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } else {
+    document.querySelector(hash)?.scrollIntoView({ behavior: 'smooth' })
+  }
+}
 
 // 헤더 로고 (PNG) — 자기 사이트 메인으로만 이동, 같은 페이지면 스크롤 업
 // ?role=partner로 진입한 경우(파트너에서 로그인/회원가입 들어옴): 경로·로고 모두 파트너 스타일로
@@ -62,9 +71,21 @@ function Logo({ onClick }) {
 
 function Header() {
   const { user, isAdmin, logout } = useAuth()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
   const panelRef = useRef(null)
+
+  // 메인 섹션 메뉴 — 메인이면 바로 스크롤, 아니면 메인으로 이동 후 스크롤
+  function onNav(hash) {
+    close()
+    if (pathname === '/') {
+      scrollToHash(hash)
+    } else {
+      navigate('/', { state: { scrollTo: hash } })
+    }
+  }
 
   // 메뉴 패널 부드럽게 펼침/접힘
   useEffect(() => {
@@ -150,14 +171,14 @@ function Header() {
                 {n.label}
               </Link>
             ) : (
-              <a
+              <button
                 key={n.label}
-                href={n.href}
-                onClick={close}
-                className="block rounded-lg px-3 py-2 font-medium text-gray-700 transition hover:bg-brand-bg hover:text-brand"
+                type="button"
+                onClick={() => onNav(n.hash)}
+                className="block w-full rounded-lg px-3 py-2 text-left font-medium text-gray-700 transition hover:bg-brand-bg hover:text-brand"
               >
                 {n.label}
-              </a>
+              </button>
             ),
           )}
 

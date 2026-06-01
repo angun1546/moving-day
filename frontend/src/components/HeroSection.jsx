@@ -10,7 +10,10 @@ const STATS = [
 
 function HeroSection() {
   return (
-    <section className="bg-gradient-to-b from-brand-light/40 to-transparent">
+    <section
+      id="hero"
+      className="scroll-mt-20 bg-gradient-to-b from-brand-light/40 to-transparent"
+    >
       <div className="mx-auto max-w-6xl px-4 py-20 md:py-28">
         {/* 큰 검색창 — 섹션 최상단, 가운데 정렬 */}
         <div className="mb-12">
