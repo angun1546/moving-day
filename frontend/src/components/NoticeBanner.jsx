@@ -8,6 +8,7 @@ function NoticeBanner() {
   const [notices, setNotices] = useState([])
   const [idx, setIdx] = useState(0)
   const textRef = useRef(null)
+  const first = useRef(true)
 
   useEffect(() => {
     getNotices()
@@ -24,9 +25,13 @@ function NoticeBanner() {
     return () => clearInterval(t)
   }, [notices])
 
-  // 공지 바뀔 때 페이드+슬라이드
+  // 첫 표시는 즉시(딜레이 없음), 이후 릴레이 전환만 페이드+슬라이드
   useEffect(() => {
     if (!textRef.current) return
+    if (first.current) {
+      first.current = false
+      return
+    }
     gsap.fromTo(
       textRef.current,
       { autoAlpha: 0, y: 10 },
@@ -41,7 +46,7 @@ function NoticeBanner() {
     <Link
       to="/notice"
       data-no-lift
-      className="mx-auto mb-10 flex max-w-2xl items-center gap-3 rounded-full border border-brand-light bg-white/80 px-5 py-3 shadow-sm backdrop-blur transition hover:border-brand"
+      className="mx-auto flex max-w-2xl items-center gap-3 rounded-full border border-brand-light bg-white/80 px-5 py-3 shadow-sm backdrop-blur transition hover:border-brand"
     >
       <span className="shrink-0 rounded-full bg-brand px-2.5 py-1 text-xs font-bold text-white">
         공지
