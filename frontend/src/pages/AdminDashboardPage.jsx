@@ -6,7 +6,8 @@ import Pagination from '../components/Pagination'
 import { useConfirm } from '../context/ConfirmContext'
 import { maskKoreanNamesInText } from '../utils/userDisplay'
 import { addNotification } from '../utils/notifications'
-import { todayString } from '../utils/date'
+import { todayString, formatDate } from '../utils/date'
+import { getReviews, updateReview } from '../services/reviews'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -88,7 +89,7 @@ function ReviewItem({ review, onToggleHide, onReply, onClearReply }) {
           </div>
           <p className="mt-2 leading-relaxed text-gray-700">{review.text}</p>
           <p className="mt-2 text-xs text-gray-400">
-            {review.author} · {review.createdAt || ''}
+            {review.author} · {review.displayDate || ''}
           </p>
         </div>
         <div className="flex gap-2 text-xs">
@@ -300,11 +301,14 @@ function InquiryCard({ inquiry, onAnswer, onClear, onToggleHide }) {
 }
 
 function AdminDashboardPage() {
-  // 사용자 페이지와 같은 키 공유 — 양방향 동기화
-  const [userReviews, setUserReviews] = useLocalState(
-    'movingday_user_reviews',
-    [],
-  )
+  // 고객 리뷰는 서버에서 로드 (UserReviewPage·평점 집계와 같은 원천)
+  const [userReviews, setUserReviews] = useState([])
+  useEffect(() => {
+    getReviews()
+      .then((d) => setUserReviews(Array.isArray(d) ? d : []))
+      .catch(() => setUserReviews([]))
+  }, [])
+  // 파트너 스토리는 아직 localStorage (별도 작업)
   const [partnerStories, setPartnerStories] = useLocalState(
     'movingday_partner_stories',
     [],
@@ -336,16 +340,18 @@ function AdminDashboardPage() {
         _kind: 'user',
         type: '고객',
         author: r.name,
-        createdAt: r.date || '',
+        _sort: new Date(r.createdAt).getTime() || 0,
+        displayDate: formatDate(r.createdAt),
       })),
       ...partnerStories.map((r) => ({
         ...r,
         _kind: 'partner',
         type: '파트너',
         author: r.company,
-        createdAt: r.date || '',
+        _sort: typeof r.id === 'number' ? r.id : 0,
+        displayDate: r.date || '',
       })),
-    ].sort((a, b) => b.id - a.id)
+    ].sort((a, b) => b._sort - a._sort)
   }, [userReviews, partnerStories])
 
   const allInquiries = useMemo(() => {
@@ -378,17 +384,38 @@ function AdminDashboardPage() {
   const pendingQa = allInquiries.filter((i) => !i.a).length
 
   // 리뷰 액션 — 어느 큐인지 _kind로 분기해 같은 키에 반영
-  function toggleHide(item) {
-    const updater = (prev) =>
-      prev.map((r) => (r.id === item.id ? { ...r, hidden: !r.hidden } : r))
-    if (item._kind === 'user') setUserReviews(updater)
-    else setPartnerStories(updater)
+  // 고객 리뷰(_kind==='user')는 서버 반영, 파트너 스토리는 기존 localStorage
+  async function toggleHide(item) {
+    if (item._kind === 'user') {
+      try {
+        const updated = await updateReview(item.id, { hidden: !item.hidden })
+        setUserReviews((prev) =>
+          prev.map((r) => (r.id === item.id ? updated : r)),
+        )
+      } catch {
+        // 무시
+      }
+    } else {
+      setPartnerStories((prev) =>
+        prev.map((r) => (r.id === item.id ? { ...r, hidden: !r.hidden } : r)),
+      )
+    }
   }
-  function replyReview(item, text) {
-    const updater = (prev) =>
-      prev.map((r) => (r.id === item.id ? { ...r, reply: text } : r))
-    if (item._kind === 'user') setUserReviews(updater)
-    else setPartnerStories(updater)
+  async function replyReview(item, text) {
+    if (item._kind === 'user') {
+      try {
+        const updated = await updateReview(item.id, { reply: text })
+        setUserReviews((prev) =>
+          prev.map((r) => (r.id === item.id ? updated : r)),
+        )
+      } catch {
+        // 무시
+      }
+    } else {
+      setPartnerStories((prev) =>
+        prev.map((r) => (r.id === item.id ? { ...r, reply: text } : r)),
+      )
+    }
     // 답변은 작성자 본인에게만 (관리자 자신 포함 다른 사용자에겐 노출 X)
     addNotification({
       type: 'reply',
@@ -397,11 +424,21 @@ function AdminDashboardPage() {
       to: item.authorEmail || '',
     })
   }
-  function clearReply(item) {
-    const updater = (prev) =>
-      prev.map((r) => (r.id === item.id ? { ...r, reply: '' } : r))
-    if (item._kind === 'user') setUserReviews(updater)
-    else setPartnerStories(updater)
+  async function clearReply(item) {
+    if (item._kind === 'user') {
+      try {
+        const updated = await updateReview(item.id, { reply: '' })
+        setUserReviews((prev) =>
+          prev.map((r) => (r.id === item.id ? updated : r)),
+        )
+      } catch {
+        // 무시
+      }
+    } else {
+      setPartnerStories((prev) =>
+        prev.map((r) => (r.id === item.id ? { ...r, reply: '' } : r)),
+      )
+    }
   }
 
   // Q&A 액션

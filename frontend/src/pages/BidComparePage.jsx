@@ -4,7 +4,7 @@ import { getBidsByQuote, acceptBid, cancelBid } from '../services/bids'
 import { useConfirm } from '../context/ConfirmContext'
 import { addNotification } from '../utils/notifications'
 import { usePagination } from '../hooks/usePagination'
-import { useLocalState } from '../hooks/useLocalState'
+import { getRatings } from '../services/reviews'
 import Pagination from '../components/Pagination'
 import { formatDateTime } from '../utils/date'
 
@@ -33,12 +33,16 @@ function BidComparePage() {
   const [picked, setPicked] = useState(null)
   const [bids, setBids] = useState([])
   const [loading, setLoading] = useState(true)
-  // 업체 평점 = 고객 리뷰(이용 업체명 일치)의 별점 평균
-  const [reviews] = useLocalState('movingday_user_reviews', [])
+  // 업체 평점 = 서버 집계(고객 리뷰 이용 업체명 기준 평균, 숨김 제외)
+  const [ratings, setRatings] = useState([])
+  useEffect(() => {
+    getRatings()
+      .then((d) => setRatings(Array.isArray(d) ? d : []))
+      .catch(() => setRatings([]))
+  }, [])
   function companyRating(company) {
-    const rs = reviews.filter((r) => r.company === company && r.rating)
-    if (!rs.length) return 0
-    return rs.reduce((s, r) => s + r.rating, 0) / rs.length
+    const r = ratings.find((x) => x.company === company)
+    return r ? r.avg : 0
   }
 
   // 방금 신청한 견적 id (견적 신청 시 저장됨)
@@ -85,7 +89,7 @@ function BidComparePage() {
     })
     return arr
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bids, sort, reviews])
+  }, [bids, sort, ratings])
 
   const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
     usePagination(sorted, 5)

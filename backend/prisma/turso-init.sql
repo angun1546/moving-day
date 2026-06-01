@@ -64,6 +64,22 @@ CREATE TABLE "StageLog" (
 );
 CREATE INDEX "StageLog_quoteRequestId_idx" ON "StageLog"("quoteRequestId");
 
+-- 고객 리뷰 (업체별 평점 집계 원천)
+CREATE TABLE "Review" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "name" TEXT NOT NULL,
+    "text" TEXT NOT NULL,
+    "rating" INTEGER NOT NULL,
+    "moveType" TEXT,
+    "company" TEXT,
+    "authorEmail" TEXT,
+    "hidden" BOOLEAN NOT NULL DEFAULT false,
+    "reply" TEXT
+);
+CREATE INDEX "Review_company_idx" ON "Review"("company");
+CREATE INDEX "Review_createdAt_idx" ON "Review"("createdAt");
+
 -- 사용자 알림 (서버 거래 이벤트 — 폴링 조회)
 CREATE TABLE "Notification" (
     "id" TEXT NOT NULL PRIMARY KEY,

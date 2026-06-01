@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ActivityCard from '../components/ActivityCard'
 import MyQuotesBox from '../components/MyQuotesBox'
 import { useLocalState } from '../hooks/useLocalState'
+import { getReviews } from '../services/reviews'
 
 function Info({ label, value }) {
   return (
@@ -15,8 +17,13 @@ function Info({ label, value }) {
 
 function MyPage() {
   const { user, logout } = useAuth()
-  // 실제 활동 카운트 — 페이지 마운트 시점에 localStorage에서 읽음
-  const [reviews] = useLocalState('movingday_user_reviews', [])
+  // 작성 리뷰는 서버에서 로드(본인 것만 카운트), 나머지는 localStorage 활동 카운트
+  const [reviews, setReviews] = useState([])
+  useEffect(() => {
+    getReviews()
+      .then((d) => setReviews(Array.isArray(d) ? d : []))
+      .catch(() => setReviews([]))
+  }, [])
   const [questions] = useLocalState('movingday_user_qa', [])
   const [quoteCount] = useLocalState('movingday_user_quote_count', 0)
 
@@ -60,7 +67,7 @@ function MyPage() {
         <ActivityCard
           to="/reviews"
           label="작성 리뷰"
-          count={reviews.length}
+          count={reviews.filter((r) => r.authorEmail === user.email).length}
         />
         <ActivityCard to="/faq" label="내 질문" count={questions.length} />
       </div>

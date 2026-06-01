@@ -37,8 +37,8 @@ Moving-day/
 - **메인 랜딩**: Hero(**큰 통합 검색창** + 통계 카드)·이사 종류 벤토·이용 절차 3단계·**고객 리뷰 캐러셀**·FAQ·CTA
 - **사이트 검색**(`/search`): Hero 검색창에 키워드 입력 → 연관 페이지(견적·리뷰·FAQ·공지 등) 카드 안내 + 추천 검색어 칩
 - **견적 신청 3단계**: 방식 선택(방문/사진/전화) → 이사 종류 → 신청 폼 (출발·도착지 다음 우편번호 검색 + 상세주소)
-- **입찰 비교**(`/quote/bids`): 신청 견적에 들어온 **실제 입찰** 비교(가격·메시지·소요시간), **최저가 배지**, 정렬(최저가/최고가/평점 높은순·낮은순/최신)·업체 평점(고객 리뷰 별점 집계)·입찰 등록일시, **낙찰 선택 + 계약 전 낙찰 취소**(파트너·관리자에 알림)
-- **고객 리뷰**(`/reviews`): 별점·이름(**실명 자동 마스킹**)·이사 종류·**이용 업체**·내용·사진 첨부(메모리), localStorage 영속화, **페이지네이션(개수 선택 5~40)**
+- **입찰 비교**(`/quote/bids`): 신청 견적에 들어온 **실제 입찰** 비교(가격·메시지·소요시간), **최저가 배지**, 정렬(최저가/최고가/평점 높은순·낮은순/최신)·업체 평점(고객 리뷰 별점 **서버 집계** — 이용 업체명 기준)·입찰 등록일시, **낙찰 선택 + 계약 전 낙찰 취소**(파트너·관리자에 알림)
+- **고객 리뷰**(`/reviews`): 별점·이름(**실명 자동 마스킹**)·이사 종류·**이용 업체**·내용·사진 첨부(메모리), **백엔드 저장(`Review` 모델 — 입찰 비교 평점의 원천)**, **페이지네이션(개수 선택 5~40)**
 - **FAQ + 직접 질문**(`/faq`): **관리자가 직접 작성·수정·삭제하는 자주 묻는 질문** + 관리자 답변 Q&A. 전체보기 진입 시 작성 폼은 닫혀 있고 글 목록만 노출(토글), **Q&A 페이지네이션**
 - **마이페이지**(`/mypage`): 활동 카드(견적 신청·작성 리뷰·내 질문) + **내 견적 현황 박스**(신청 견적·입찰/낙찰 상태·**낙찰 후 7단계 진행 현황(택배식 타임라인 + 단계별 도달 시각)**·견적 수정·취소·입찰 보기)
 - **공지사항**(`/notice`): 관리자 작성·수정·삭제, 모든 사용자에게 알림 푸시
@@ -117,11 +117,11 @@ cd frontend && npm install && npm run dev                          # 5173
 | `Bid` | id, quoteRequestId(FK→QuoteRequest, Cascade), bidderEmail, company, price, message, eta, status(입찰/낙찰/거절), createdAt |
 | `StageLog` | id, quoteRequestId(FK→QuoteRequest, Cascade), stage, createdAt — 단계 변경 이력(택배식 타임라인) |
 | `Notification` | id, toEmail(수신자), type(bid/award/reject/stage), message, link, read, createdAt — 서버 거래 이벤트 알림(폴링 조회) |
+| `Review` | id, name, text, rating(1~5), moveType, company(이용 업체·평점 집계 키), authorEmail, hidden(관리자 숨김), reply(관리자 답변), createdAt — 고객 리뷰·업체 평점 원천 |
 
 ### 클라이언트 localStorage 키 (영속화)
 | 키 | 용도 |
 |---|---|
-| `movingday_user_reviews` | 고객 리뷰 (작성자 식별용 `authorEmail` 포함) |
 | `movingday_partner_stories` | 파트너 스토리 (`authorEmail` 포함) |
 | `movingday_user_qa` / `movingday_partner_qa` | 사용자/파트너 Q&A (관리자 답변 + `authorEmail`) |
 | `movingday_user_faqs` / `movingday_partner_faqs` | 자주 묻는 질문(관리자 편집) |
@@ -156,6 +156,11 @@ cd frontend && npm install && npm run dev                          # 5173
 | GET | `/api/notifications/:email` | 내 알림 목록 (최신순 50건 — 폴링) |
 | PATCH | `/api/notifications/:email/read` | 내 알림 모두 읽음 처리 |
 | DELETE | `/api/notifications/:email` | 내 알림 모두 비우기 |
+| GET | `/api/reviews` | 리뷰 목록 (최신순, 숨김 포함 — 화면별 필터) |
+| GET | `/api/reviews/ratings` | 업체별 평점 집계 `[{company, avg, count}]` (숨김 제외) |
+| POST | `/api/reviews` | 리뷰 작성 |
+| PATCH | `/api/reviews/:id` | 리뷰 수정·숨김 토글·관리자 답변 |
+| DELETE | `/api/reviews/:id` | 리뷰 삭제 |
 
 ## 배포
 
@@ -203,6 +208,8 @@ Start Command     npm start
 
 이후 새 마이그레이션은 `prisma/migrations/<새 이름>/migration.sql`만 추가 적용합니다.
 
+데모용 더미 리뷰가 필요하면 `npm run db:seed`(빈 DB일 때만 6건 삽입, 멱등)를 실행합니다. 로컬은 `DATABASE_URL=file:./prisma/dev.db npm run db:seed`, Turso는 `.env`가 설정된 상태에서 `npm run db:seed`.
+
 ### 배포 순서 (처음 한 번)
 
 1. **Cloudinary** 가입 → Dashboard에서 `Cloud name` / `API Key` / `API Secret` 확보
@@ -217,5 +224,5 @@ Start Command     npm start
 2. **풀스택 role 시스템** (예정) — `User.role(customer/partner/admin)` + `partner_profiles` 1:1 + 회원가입 시 역할 선택 + role 기반 가드/리다이렉트
 3. **사진·자격증 업로드 백엔드 연동** (예정) — 기존 multer 재사용 + S3/디스크
 4. **입찰 실제 DB 연동** (완료) — `Bid` 모델 + 파트너 입찰·고객 비교·관리자 매칭 + 낙찰/낙찰 취소 + 7단계 진행 추적
-5. **업체 평점 시스템** (예정) — 파트너 리뷰 백엔드화 + 평점 집계 → 입찰 평점순 정렬
+5. **업체 평점 시스템** (완료) — 고객 리뷰 백엔드화(`Review` 모델 + CRUD) + 업체별 평점 집계 API(`/api/reviews/ratings`) → 입찰 비교에서 실제 평점 데이터로 정렬. 리뷰 작성·관리자 숨김/답변·메인 캐러셀·마이페이지 카운트 전부 서버 연동(리뷰 사진은 메모리 유지)
 6. **실시간 알림** (핵심 완료) — 서버 `Notification` 테이블 + 거래 이벤트(입찰·낙찰·거절·단계변경) 20초 폴링 알림. 향후 웹소켓·알림톡으로 확장

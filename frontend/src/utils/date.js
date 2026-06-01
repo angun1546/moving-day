@@ -6,6 +6,14 @@ export function todayString() {
   return `${d.getFullYear()}.${m}.${day}`
 }
 
+// ISO 문자열 → 'YYYY.MM.DD' (리뷰 등록일 표시용)
+export function formatDate(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}`
+}
+
 // ISO 문자열 → 'YYYY-MM-DD HH:MM:SS' (등록 일시 표시용)
 export function formatDateTime(iso) {
   if (!iso) return ''

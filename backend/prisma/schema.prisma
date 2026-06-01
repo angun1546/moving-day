@@ -85,6 +85,23 @@ model StageLog {
   @@index([quoteRequestId])
 }
 
+// 고객 리뷰 — 업체별 평점 집계의 원천(이용 업체명 기준)
+model Review {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  name        String // 작성자 표시명(닉네임/마스킹된 실명)
+  text        String
+  rating      Int // 1~5
+  moveType    String? // 이사 종류 태그
+  company     String? // 이용 업체명 — 평점 집계 키
+  authorEmail String? // 작성자 식별(본인 리뷰 동적 표시용)
+  hidden      Boolean  @default(false) // 관리자 숨김
+  reply       String? // 관리자 답변
+
+  @@index([company])
+  @@index([createdAt])
+}
+
 // 사용자 알림 — 서버 거래 이벤트(입찰·낙찰·거절·단계변경)에서 생성, 프론트가 폴링으로 조회
 model Notification {
   id        String   @id @default(cuid())

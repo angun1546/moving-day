@@ -8,8 +8,13 @@ import {
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 import { useConfirm } from '../context/ConfirmContext'
-import { useLocalState } from '../hooks/useLocalState'
-import { todayString } from '../utils/date'
+import { formatDate } from '../utils/date'
+import {
+  getReviews,
+  createReview,
+  updateReview,
+  deleteReview,
+} from '../services/reviews'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -116,9 +121,14 @@ function EditReviewForm({ review, onSave, onCancel }) {
 
 function UserReviewPage() {
   const { user, isAdmin, displayMode } = useAuth()
-  // localStorage에 영속화 (메인 캐러셀과 공유) — 텍스트 데이터만
-  const [reviews, setReviews] = useLocalState('movingday_user_reviews', [])
-  // 더미는 localStorage에 시드됨(main.jsx) — reviews에 이미 포함
+  const confirm = useConfirm()
+  // 서버에서 리뷰 로드 (업체 평점 집계와 같은 원천)
+  const [reviews, setReviews] = useState([])
+  useEffect(() => {
+    getReviews()
+      .then((d) => setReviews(Array.isArray(d) ? d : []))
+      .catch(() => setReviews([]))
+  }, [])
   // 관리자가 숨김 처리한 리뷰는 사용자 화면에서 제외
   const listReviews = reviews.filter((r) => !r.hidden)
   const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
@@ -151,52 +161,73 @@ function UserReviewPage() {
     setPhotos(files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) })))
   }
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    const fd = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const fd = new FormData(form)
     const name = (user ? authorName : fd.get('name')?.toString().trim()) || ''
     const text = fd.get('text')?.toString().trim()
     const moveType = fd.get('moveType')?.toString() || MOVE_TYPES[0]
     const company = fd.get('company')?.toString().trim() || ''
     if (!name || !text) return
-    const id = Date.now()
-    setReviews((prev) => [
-      {
-        id,
+    const curPhotos = photos // 사진은 await 전에 캡처
+    try {
+      // 작성자 식별(authorEmail) — 본인 리뷰는 캐러셀에서 displayMode 따라 동적 표시
+      const review = await createReview({
         name,
         text,
         rating,
         moveType,
         company,
-        date: todayString(),
-        // 작성자 식별 — 본인 리뷰는 메인 캐러셀에서 displayMode 따라 동적 표시
         authorEmail: user?.email || '',
-      },
-      ...prev,
-    ])
-    // 사진은 메모리 맵에만 저장 (localStorage 용량/직렬화 회피)
-    if (photos.length > 0) {
-      setPhotosMap((prev) => ({ ...prev, [id]: photos }))
+      })
+      setReviews((prev) => [review, ...prev])
+      // 사진은 메모리 맵에만 저장 (localStorage/서버 미전송)
+      if (curPhotos.length > 0) {
+        setPhotosMap((prev) => ({ ...prev, [review.id]: curPhotos }))
+      }
+      form.reset()
+      setRating(5)
+      setPhotos([])
+      setShowForm(false)
+      if (!user) setAuthorName('')
+    } catch (err) {
+      await confirm({
+        title: '등록 실패',
+        message: err.message || '리뷰 등록에 실패했습니다.',
+        alertOnly: true,
+      })
     }
-    e.currentTarget.reset()
-    setRating(5)
-    setPhotos([])
-    setShowForm(false)
-    if (!user) setAuthorName('')
   }
 
-  // 관리자: 수정/삭제
-  function update(id, updates) {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, ...updates } : r)),
-    )
+  // 관리자: 수정/삭제 (서버 반영)
+  async function update(id, updates) {
+    try {
+      const updated = await updateReview(id, updates)
+      setReviews((prev) => prev.map((r) => (r.id === id ? updated : r)))
+    } catch (err) {
+      await confirm({
+        title: '수정 실패',
+        message: err.message || '리뷰 수정에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
     setEditingId(null)
   }
-  const confirm = useConfirm()
   async function remove(id) {
     if (!(await confirm({ title: '리뷰 삭제', message: '이 리뷰를 삭제할까요?', danger: true })))
       return
-    setReviews((prev) => prev.filter((r) => r.id !== id))
+    try {
+      await deleteReview(id)
+      setReviews((prev) => prev.filter((r) => r.id !== id))
+    } catch (err) {
+      await confirm({
+        title: '삭제 실패',
+        message: err.message || '리뷰 삭제에 실패했습니다.',
+        alertOnly: true,
+      })
+      return
+    }
     // 메모리 사진도 정리
     const stored = photosMap[id]
     if (stored) {
@@ -406,8 +437,10 @@ function UserReviewPage() {
                       <span className="font-semibold text-gray-900">
                         {getReviewAuthorName(r, user, displayMode)}
                       </span>
-                      {r.date && (
-                        <span className="font-inter text-gray-400">{r.date}</span>
+                      {r.createdAt && (
+                        <span className="font-inter text-gray-400">
+                          {formatDate(r.createdAt)}
+                        </span>
                       )}
                     </figcaption>
                     {r.reply && (
