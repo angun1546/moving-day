@@ -31,6 +31,7 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'customer',
     "birthDate" TEXT,
     "gender" TEXT,
     "phone" TEXT,

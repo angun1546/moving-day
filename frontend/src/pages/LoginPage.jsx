@@ -20,9 +20,9 @@ function LoginPage() {
     const fd = new FormData(e.currentTarget)
     try {
       const u = await login(fd.get('email'), fd.get('password'))
-      // 관리자는 대시보드, 파트너 컨텍스트 진입이면 파트너 메인, 그 외 유저 메인
-      if (u?.email === 'admin@movingday.com') navigate('/admin')
-      else if (isPartner) navigate('/partner')
+      // 역할 기준 이동 (admin → 대시보드, partner → 파트너 메인, 그 외 유저 메인)
+      if (u?.role === 'admin') navigate('/admin')
+      else if (u?.role === 'partner') navigate('/partner')
       else navigate('/')
     } catch (err) {
       setError(err.message)

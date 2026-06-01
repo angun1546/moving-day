@@ -62,7 +62,8 @@ function SignupPage() {
 
     setLoading(true)
     try {
-      await signup({
+      // 진입 경로로 역할 결정 (admin 이메일은 서버가 admin으로 보정)
+      const u = await signup({
         name: fd.get('name'),
         nickname: fd.get('nickname'),
         birthDate: fd.get('birthDate'),
@@ -70,9 +71,11 @@ function SignupPage() {
         phone: fd.get('phone'),
         email,
         password,
+        role: isPartner ? 'partner' : 'customer',
       })
-      // 파트너 컨텍스트에서 가입했으면 파트너 메인으로
-      navigate(isPartner ? '/partner' : '/')
+      // 역할 기준 이동
+      if (u?.role === 'admin') navigate('/admin')
+      else navigate(u?.role === 'partner' ? '/partner' : '/')
     } catch (err) {
       setError(err.message)
     } finally {

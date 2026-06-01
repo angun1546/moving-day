@@ -21,7 +21,7 @@ import PartnerStoryPage from '../pages/PartnerStoryPage'
 import PartnerFaqPage from '../pages/PartnerFaqPage'
 import PartnerMyPage from '../pages/PartnerMyPage'
 import PartnerBidsPage from '../pages/PartnerBidsPage'
-import RequireAuth from '../components/RequireAuth'
+import RequirePartner from '../components/RequirePartner'
 import RequireAdmin from '../components/RequireAdmin'
 import AdminDashboardPage from '../pages/AdminDashboardPage'
 import SearchResultsPage from '../pages/SearchResultsPage'
@@ -80,26 +80,26 @@ export const router = createBrowserRouter([
       {
         path: 'dashboard',
         element: (
-          <RequireAuth>
+          <RequirePartner>
             <PartnerDashboardPage />
-          </RequireAuth>
+          </RequirePartner>
         ),
       },
       // 내 입찰 현황 (제출한 입찰)
       {
         path: 'bids',
         element: (
-          <RequireAuth>
+          <RequirePartner>
             <PartnerBidsPage />
-          </RequireAuth>
+          </RequirePartner>
         ),
       },
       {
         path: 'profile',
         element: (
-          <RequireAuth>
+          <RequirePartner>
             <PartnerProfilePage />
-          </RequireAuth>
+          </RequirePartner>
         ),
       },
       { path: 'story', element: <PartnerStoryPage /> },

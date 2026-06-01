@@ -3,8 +3,6 @@ import * as auth from '../services/auth'
 
 const AuthContext = createContext(null)
 
-// 관리자 식별 이메일 (풀스택 단계에서 user.role === 'admin' 체크로 교체)
-const ADMIN_EMAIL = 'admin@movingday.com'
 const HEADER_KEY = 'movingday_header_mode'
 const DISPLAY_KEY = 'movingday_display_mode'
 
@@ -72,13 +70,15 @@ export function AuthProvider({ children }) {
       .finally(() => setReady(true))
   }, [])
 
-  // 로그인 계정 기반 관리자 판별 (목업: 특정 이메일이면 admin)
-  const isAdmin = user?.email === ADMIN_EMAIL
+  // 역할 기반 판별 (백엔드 User.role)
+  const isAdmin = user?.role === 'admin'
+  const isPartner = user?.role === 'partner'
 
   const value = {
     user,
     ready,
     isAdmin,
+    isPartner,
     headerMode,
     setHeaderMode,
     displayMode,

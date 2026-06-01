@@ -11,12 +11,14 @@ const router = Router()
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const GENDERS = ['남', '여']
+const ADMIN_EMAIL = 'admin@movingday.com'
 
 // 외부에 노출할 사용자 정보 (비밀번호 제외)
 function publicUser(u: {
   id: string
   email: string
   name: string
+  role: string
   birthDate: string | null
   gender: string | null
   phone: string | null
@@ -26,6 +28,7 @@ function publicUser(u: {
     id: u.id,
     email: u.email,
     name: u.name,
+    role: u.role,
     birthDate: u.birthDate,
     gender: u.gender,
     phone: u.phone,
@@ -35,7 +38,8 @@ function publicUser(u: {
 
 // 회원가입
 router.post('/signup', async (req, res) => {
-  const { name, email, password, birthDate, gender, phone } = req.body ?? {}
+  const { name, email, password, birthDate, gender, phone, role } =
+    req.body ?? {}
 
   if (!name || !email || !password || !birthDate || !gender || !phone) {
     return res.status(400).json({ message: '모든 항목을 입력해 주세요.' })
@@ -59,11 +63,20 @@ router.post('/signup', async (req, res) => {
     if (exists) {
       return res.status(409).json({ message: '이미 가입된 이메일입니다.' })
     }
+    // 역할 결정 — admin은 이메일로만(클라 입력 무시), 그 외엔 진입 경로(partner) 신뢰
+    const resolvedRole =
+      email === ADMIN_EMAIL
+        ? 'admin'
+        : role === 'partner'
+          ? 'partner'
+          : 'customer'
+
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: await hashPassword(password),
+        role: resolvedRole,
         birthDate,
         gender,
         phone,

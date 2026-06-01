@@ -60,11 +60,12 @@ Moving-day/
 - **Q&A 답변**: 사용자/파트너 문의 통합, **숨김 토글**(삭제 불가)·답변/수정 (자동 마스킹)·페이지네이션
 - **공지사항 관리**: 작성·수정·삭제 — `/notice`·`/partner/notice`와 동일 데이터 즉시 양방향 동기화
 - **자동 통계**: 진행 중 견적·누적 입찰·숨김 리뷰·미답변 Q&A·공지 카드
-- `isAdmin` 판별: 현재 `user.email === 'admin@movingday.com'` (풀스택 단계에서 `user.role === 'admin'`로 한 줄 교체)
+- `isAdmin` 판별: `user.role === 'admin'` (백엔드 `User.role` 기반). admin 권한은 `admin@movingday.com` 가입 시 서버가 자동 부여
 
 ### 인증·회원
 - **회원가입**: 이메일 도메인 분리(직접 입력 포함)·닉네임(15자)·**비밀번호(영문+숫자+특수문자 8자 이상, 프론트·백엔드 검증)**·비밀번호 확인·표시 방식 선택(닉네임/실명 마스킹)
-- **로그인**: 파트너 컨텍스트(`?role=partner`) 분기, 로그인 후 자동 리다이렉트(/admin·/partner·/)
+- **로그인**: 로그인 후 **`user.role` 기준 자동 리다이렉트**(admin→/admin, partner→/partner, customer→/)
+- **역할(role) 분리**: 가입 진입 경로로 역할 자동 결정(파트너 사이트 가입→partner, 일반→customer, `admin@movingday.com`→admin·서버 부여). **파트너 영역(입찰·대시보드·업체정보)은 `RequirePartner` 가드로 partner/admin만 접근**(고객 계정은 파트너 랜딩으로). admin 위장 입력은 서버가 이메일로 검증해 차단
 - **회원정보 수정**(`/account`): 닉네임·전화번호·**헤더 표시 방식**(닉네임/실명)·리뷰/FAQ 표시 방식·**비밀번호 변경(영문+숫자+특수문자 8자 이상, 회원가입과 동일 룰)** — 마이페이지·헤더에 즉시 반영
 - **클라이언트 오버라이드**: 이메일 키 기반 localStorage로 닉네임/전화 영속화(백엔드 컬럼 추가 전까지)
 
@@ -113,7 +114,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | 모델 | 주요 필드 |
 |------|------|
 | `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, photos(JSON), visitDate, callTime, status, userEmail(회원 연결·nullable), stage(낙찰 후 진행 단계·nullable) |
-| `User` | id, email, password(bcrypt), name, birthDate, gender, phone, verified, createdAt |
+| `User` | id, email, password(bcrypt), name, **role(customer/partner/admin)**, birthDate, gender, phone, verified, createdAt |
 | `Bid` | id, quoteRequestId(FK→QuoteRequest, Cascade), bidderEmail, company, price, message, eta, status(입찰/낙찰/거절), createdAt |
 | `StageLog` | id, quoteRequestId(FK→QuoteRequest, Cascade), stage, createdAt — 단계 변경 이력(택배식 타임라인) |
 | `Notification` | id, toEmail(수신자), type(bid/award/reject/stage), message, link, read, createdAt — 서버 거래 이벤트 알림(폴링 조회) |
@@ -223,7 +224,7 @@ Start Command     npm start
 ## 로드맵
 
 1. **프론트 멀티테넌시 골격** (완료) — 경로 기반 고객/파트너/관리자 분리
-2. **풀스택 role 시스템** (예정) — `User.role(customer/partner/admin)` + `partner_profiles` 1:1 + 회원가입 시 역할 선택 + role 기반 가드/리다이렉트
+2. **풀스택 role 시스템** (완료) — `User.role(customer/partner/admin)` + 진입 경로로 역할 자동 결정 + role 기반 가드(`RequirePartner`)·리다이렉트. admin은 이메일 자동 부여(서버 검증)
 3. **사진·자격증 업로드 백엔드 연동** (완료) — `PartnerProfile` 모델 + `/api/partners`(GET·PUT upsert). 공용 Cloudinary 헬퍼(`src/cloudinary.ts`)로 프로필 사진·업체 사진·자격증(이미지+PDF) 업로드, 새로 올리면 교체·아니면 기존 URL 유지. PartnerProfilePage·PartnerMyPage 서버 연동(리뷰 사진은 별도로 아직 메모리)
 4. **입찰 실제 DB 연동** (완료) — `Bid` 모델 + 파트너 입찰·고객 비교·관리자 매칭 + 낙찰/낙찰 취소 + 7단계 진행 추적
 5. **업체 평점 시스템** (완료) — 고객 리뷰 백엔드화(`Review` 모델 + CRUD) + 업체별 평점 집계 API(`/api/reviews/ratings`) → 입찰 비교에서 실제 평점 데이터로 정렬. 리뷰 작성·관리자 숨김/답변·메인 캐러셀·마이페이지 카운트 전부 서버 연동(리뷰 사진은 메모리 유지)
