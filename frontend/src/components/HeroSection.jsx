@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import HeroSearch from './HeroSearch'
+import NoticeBanner from './NoticeBanner'
 import { USER_SUGGESTIONS } from '../data/searchIndex'
 
 const STATS = [
@@ -15,6 +16,9 @@ function HeroSection() {
       className="scroll-mt-20 bg-gradient-to-b from-brand-light/40 to-transparent"
     >
       <div className="mx-auto max-w-6xl px-4 py-20 md:py-28">
+        {/* 최근 공지 릴레이 배너 — 헤더 아래·검색창 위 */}
+        <NoticeBanner />
+
         {/* 큰 검색창 — 섹션 최상단, 가운데 정렬 */}
         <div className="mb-12">
           <HeroSearch scope="user" suggestions={USER_SUGGESTIONS} centered />

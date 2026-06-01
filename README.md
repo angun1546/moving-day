@@ -42,7 +42,7 @@ Moving-day/
 - **FAQ + 직접 질문**(`/faq`): **관리자가 직접 작성·수정·삭제하는 자주 묻는 질문** + 관리자 답변 Q&A. 전체보기 진입 시 작성 폼은 닫혀 있고 글 목록만 노출(토글), **Q&A 페이지네이션**
 - **마이페이지**(`/mypage`): 활동 카드(견적 신청·작성 리뷰·내 질문) — "견적 신청" 카드 클릭 시 견적 현황 페이지로 이동
 - **내 견적 현황**(`/mypage/quotes`): 신청 견적·입찰/낙찰 상태·**낙찰 후 7단계 진행 현황(택배식 타임라인 + 단계별 도달 시각)**·견적 수정·취소·입찰 보기
-- **공지사항**(`/notice`): 관리자 작성·수정·삭제, 모든 사용자에게 알림 푸시
+- **공지사항**(`/notice`): 관리자 작성·수정·삭제(**`Notice` 백엔드 저장 — 고객·파트너·관리자 실시간 공유**), 작성 시 알림 푸시. 메인 상단에 **최근 공지 릴레이 배너**(GSAP 순환)
 
 ### 파트너 영역(`/partner/*`)
 - **메인 랜딩**(`/partner`): Hero(**큰 통합 검색창** + 통계)·혜택 벤토·시작 4단계·**파트너 스토리 캐러셀**·FAQ·CTA, 사이트 검색(`/partner/search`)
@@ -122,6 +122,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | `Bid` | id, quoteRequestId(FK→QuoteRequest, Cascade), bidderEmail, company, price, message, eta, status(입찰/낙찰/거절), createdAt |
 | `StageLog` | id, quoteRequestId(FK→QuoteRequest, Cascade), stage, createdAt — 단계 변경 이력(택배식 타임라인) |
 | `Notification` | id, toEmail(수신자), type(bid/award/reject/stage), message, link, read, createdAt — 서버 거래 이벤트 알림(폴링 조회) |
+| `Notice` | id, title, body, createdAt — 공지사항(관리자 작성, 고객·파트너 공유) |
 | `Review` | id, name, text, rating(1~5), moveType, company(이용 업체·평점 집계 키), authorEmail, hidden(관리자 숨김), reply(관리자 답변), createdAt — 고객 리뷰·업체 평점 원천 |
 | `PartnerProfile` | id, email(파트너 1:1 unique), company, bizNo, ceo, phone, trucks, intro, regions(JSON), profileImg(URL), workPhotos(JSON URL), certs(JSON [{url,name,isImage}]), createdAt, updatedAt — 업체 프로필·사진·자격증 |
 
@@ -131,7 +132,6 @@ cd frontend && npm install && npm run dev                          # 5173
 | `movingday_partner_stories` | 파트너 스토리 (`authorEmail` 포함) |
 | `movingday_user_qa` / `movingday_partner_qa` | 사용자/파트너 Q&A (관리자 답변 + `authorEmail`) |
 | `movingday_user_faqs` / `movingday_partner_faqs` | 자주 묻는 질문(관리자 편집) |
-| `movingday_notices` | 공지사항 (고객·파트너 공유) |
 | `movingday_notifications` | 알림 큐(수신자 `to` 필드로 필터) |
 | `movingday_user_quote_count` / `movingday_partner_bid_count` | 활동 카운트 |
 | `movingday_user_overrides_{email}` | 회원정보 클라이언트 오버라이드(닉네임·전화) |
@@ -168,6 +168,10 @@ cd frontend && npm install && npm run dev                          # 5173
 | DELETE | `/api/reviews/:id` | 리뷰 삭제 |
 | GET | `/api/partners/:email` | 내 업체 프로필 조회 (없으면 null) |
 | PUT | `/api/partners` | 업체 프로필 저장 (multipart — 사진/자격증 Cloudinary, upsert) |
+| GET | `/api/notices` | 공지 목록 (최신순) |
+| POST | `/api/notices` | 공지 작성 |
+| PATCH | `/api/notices/:id` | 공지 수정 |
+| DELETE | `/api/notices/:id` | 공지 삭제 |
 
 ## 배포
 

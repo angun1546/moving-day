@@ -10,13 +10,31 @@ const SEED = [
   { name: '한지민', rating: 4, moveType: '반포장이사', company: null, text: '필요한 짐만 포장해 주셔서 비용을 많이 아꼈어요. 추천합니다.', createdAt: new Date('2026-04-28') },
 ]
 
+// 데모용 더미 공지 (배너 릴레이 노출용)
+const NOTICES = [
+  { title: '이삿날 정식 오픈 안내', body: '검증된 이사업체들의 입찰 경쟁으로 합리적인 견적을 받아보세요.', createdAt: new Date('2026-05-26') },
+  { title: '6월 이사 성수기 사전 예약 이벤트', body: '6월 이사 예약 시 포장 자재를 무료로 제공해 드립니다.', createdAt: new Date('2026-05-28') },
+  { title: '안전 이사 보장제 시행', body: '이사 중 파손이 발생하면 플랫폼이 보상을 책임집니다.', createdAt: new Date('2026-05-30') },
+]
+
 const count = await prisma.review.count()
 if (count > 0) {
-  console.log(`이미 리뷰 ${count}건 존재 — 시드 생략`)
-  process.exit(0)
+  console.log(`이미 리뷰 ${count}건 존재 — 리뷰 시드 생략`)
+} else {
+  for (const r of SEED) {
+    await prisma.review.create({ data: r })
+  }
+  console.log(`리뷰 ${SEED.length}건 시드 완료`)
 }
-for (const r of SEED) {
-  await prisma.review.create({ data: r })
+
+const noticeCount = await prisma.notice.count()
+if (noticeCount > 0) {
+  console.log(`이미 공지 ${noticeCount}건 존재 — 공지 시드 생략`)
+} else {
+  for (const n of NOTICES) {
+    await prisma.notice.create({ data: n })
+  }
+  console.log(`공지 ${NOTICES.length}건 시드 완료`)
 }
-console.log(`리뷰 ${SEED.length}건 시드 완료`)
+
 process.exit(0)

@@ -6,8 +6,14 @@ import Pagination from '../components/Pagination'
 import { useConfirm } from '../context/ConfirmContext'
 import { maskKoreanNamesInText } from '../utils/userDisplay'
 import { addNotification } from '../utils/notifications'
-import { todayString, formatDate } from '../utils/date'
+import { formatDate } from '../utils/date'
 import { getReviews, updateReview } from '../services/reviews'
+import {
+  getNotices,
+  createNotice,
+  updateNotice,
+  deleteNotice,
+} from '../services/notices'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -316,7 +322,12 @@ function AdminDashboardPage() {
   const [userQa, setUserQa] = useLocalState('movingday_user_qa', [])
   const [partnerQa, setPartnerQa] = useLocalState('movingday_partner_qa', [])
   // 공지 — NoticePage와 동일 키 (즉시 양방향 동기화)
-  const [notices, setNotices] = useLocalState('movingday_notices', [])
+  const [notices, setNotices] = useState([])
+  useEffect(() => {
+    getNotices()
+      .then((d) => setNotices(Array.isArray(d) ? d : []))
+      .catch(() => setNotices([]))
+  }, [])
   const [noticeOpen, setNoticeOpen] = useState(false)
   const [editingNoticeId, setEditingNoticeId] = useState(null)
   const [tab, setTab] = useState('match') // 사이드바 선택 카테고리
@@ -469,43 +480,58 @@ function AdminDashboardPage() {
   }
 
   // 공지 액션 — 작성·수정·삭제 (전체 사용자 알림, 관리자 본인 제외 X = 전체에게)
-  function submitNotice(e) {
+  const confirm = useConfirm()
+  async function submitNotice(e) {
     e.preventDefault()
-    const fd = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const fd = new FormData(form)
     const title = fd.get('title')?.toString().trim()
     const body = fd.get('body')?.toString().trim()
     if (!title || !body) return
-    if (editingNoticeId) {
-      setNotices((prev) =>
-        prev.map((n) =>
-          n.id === editingNoticeId ? { ...n, title, body } : n,
-        ),
-      )
-      addNotification({
-        type: 'notice',
-        message: `공지가 수정되었어요: ${title}`,
-        link: '/notice',
-      })
-      setEditingNoticeId(null)
-    } else {
-      setNotices((prev) => [
-        { id: Date.now(), title, body, date: todayString() },
-        ...prev,
-      ])
-      addNotification({
-        type: 'notice',
-        message: `새 공지: ${title}`,
-        link: '/notice',
+    try {
+      if (editingNoticeId) {
+        const updated = await updateNotice(editingNoticeId, { title, body })
+        setNotices((prev) =>
+          prev.map((n) => (n.id === editingNoticeId ? updated : n)),
+        )
+        addNotification({
+          type: 'notice',
+          message: `공지가 수정되었어요: ${title}`,
+          link: '/notice',
+        })
+        setEditingNoticeId(null)
+      } else {
+        const created = await createNotice({ title, body })
+        setNotices((prev) => [created, ...prev])
+        addNotification({
+          type: 'notice',
+          message: `새 공지: ${title}`,
+          link: '/notice',
+        })
+      }
+      form.reset()
+      setNoticeOpen(false)
+    } catch (err) {
+      await confirm({
+        title: '저장 실패',
+        message: err.message || '공지 저장에 실패했습니다.',
+        alertOnly: true,
       })
     }
-    e.currentTarget.reset()
-    setNoticeOpen(false)
   }
-  const confirm = useConfirm()
   async function removeNotice(id) {
     if (!(await confirm({ title: '공지 삭제', message: '이 공지를 삭제할까요?', danger: true })))
       return
-    setNotices((prev) => prev.filter((n) => n.id !== id))
+    try {
+      await deleteNotice(id)
+      setNotices((prev) => prev.filter((n) => n.id !== id))
+    } catch (err) {
+      await confirm({
+        title: '삭제 실패',
+        message: err.message || '공지 삭제에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
   }
   function startEditNotice(n) {
     setEditingNoticeId(n.id)
@@ -780,7 +806,9 @@ function AdminDashboardPage() {
                   <h3 className="text-lg font-bold text-gray-900">
                     {n.title}
                   </h3>
-                  <p className="mt-1 text-xs text-gray-400">{n.date}</p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    {formatDate(n.createdAt)}
+                  </p>
                 </div>
                 <div className="flex gap-2 text-xs">
                   <button

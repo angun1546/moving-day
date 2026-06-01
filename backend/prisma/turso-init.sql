@@ -81,6 +81,15 @@ CREATE TABLE "Review" (
 CREATE INDEX "Review_company_idx" ON "Review"("company");
 CREATE INDEX "Review_createdAt_idx" ON "Review"("createdAt");
 
+-- 공지사항 (관리자 작성, 고객·파트너 공유)
+CREATE TABLE "Notice" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "title" TEXT NOT NULL,
+    "body" TEXT NOT NULL
+);
+CREATE INDEX "Notice_createdAt_idx" ON "Notice"("createdAt");
+
 -- 파트너(업체) 프로필 (이메일 1:1, 사진/자격증은 Cloudinary URL)
 CREATE TABLE "PartnerProfile" (
     "id" TEXT NOT NULL PRIMARY KEY,

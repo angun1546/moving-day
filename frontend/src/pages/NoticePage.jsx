@@ -1,11 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useConfirm } from '../context/ConfirmContext'
-import { useLocalState } from '../hooks/useLocalState'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
-import { todayString } from '../utils/date'
+import { formatDate } from '../utils/date'
 import { addNotification } from '../utils/notifications'
+import {
+  getNotices,
+  createNotice,
+  updateNotice,
+  deleteNotice,
+} from '../services/notices'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -13,7 +18,13 @@ const inputClass =
 // 공지사항 — 관리자만 작성/수정/삭제, 모든 사용자는 읽기 (유저/파트너 사이트 공유)
 function NoticePage() {
   const { isAdmin } = useAuth()
-  const [notices, setNotices] = useLocalState('movingday_notices', [])
+  const confirm = useConfirm()
+  const [notices, setNotices] = useState([])
+  useEffect(() => {
+    getNotices()
+      .then((d) => setNotices(Array.isArray(d) ? d : []))
+      .catch(() => setNotices([]))
+  }, [])
   // 공지 목록 페이지네이션 (5개씩)
   const { page, setPage, totalPages, perPage, setPerPage, pageItems } =
     usePagination(notices, 5)
@@ -22,42 +33,56 @@ function NoticePage() {
 
   const editing = editingId ? notices.find((n) => n.id === editingId) : null
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    const fd = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const fd = new FormData(form)
     const title = fd.get('title')?.toString().trim()
     const body = fd.get('body')?.toString().trim()
     if (!title || !body) return
-    if (editingId) {
-      setNotices((prev) =>
-        prev.map((n) => (n.id === editingId ? { ...n, title, body } : n)),
-      )
-      setEditingId(null)
-      addNotification({
-        type: 'notice',
-        message: `공지가 수정되었어요: ${title}`,
-        link: '/notice',
-      })
-    } else {
-      setNotices((prev) => [
-        { id: Date.now(), title, body, date: todayString() },
-        ...prev,
-      ])
-      addNotification({
-        type: 'notice',
-        message: `새 공지: ${title}`,
-        link: '/notice',
+    try {
+      if (editingId) {
+        const updated = await updateNotice(editingId, { title, body })
+        setNotices((prev) => prev.map((n) => (n.id === editingId ? updated : n)))
+        setEditingId(null)
+        addNotification({
+          type: 'notice',
+          message: `공지가 수정되었어요: ${title}`,
+          link: '/notice',
+        })
+      } else {
+        const created = await createNotice({ title, body })
+        setNotices((prev) => [created, ...prev])
+        addNotification({
+          type: 'notice',
+          message: `새 공지: ${title}`,
+          link: '/notice',
+        })
+      }
+      form.reset()
+      setOpen(false)
+    } catch (err) {
+      await confirm({
+        title: '저장 실패',
+        message: err.message || '공지 저장에 실패했습니다.',
+        alertOnly: true,
       })
     }
-    e.currentTarget.reset()
-    setOpen(false)
   }
 
-  const confirm = useConfirm()
   async function remove(id) {
     if (!(await confirm({ title: '공지 삭제', message: '이 공지를 삭제할까요?', danger: true })))
       return
-    setNotices((prev) => prev.filter((n) => n.id !== id))
+    try {
+      await deleteNotice(id)
+      setNotices((prev) => prev.filter((n) => n.id !== id))
+    } catch (err) {
+      await confirm({
+        title: '삭제 실패',
+        message: err.message || '공지 삭제에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
   }
 
   function startEdit(notice) {
@@ -149,7 +174,9 @@ function NoticePage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-gray-900">{n.title}</h3>
-                  <p className="mt-1 text-xs text-gray-400">{n.date}</p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    {formatDate(n.createdAt)}
+                  </p>
                 </div>
                 {isAdmin && (
                   <div className="flex gap-2 text-xs">
