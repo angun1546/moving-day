@@ -77,7 +77,7 @@ Moving-day/
   - **로컬 알림**(`addNotification({ type, message, link, to })`): 공지(`notice`)·관리자 답변(`reply`)·본인 견적 접수(`quote`) 등 비거래 알림은 기존 localStorage 큐 유지. `to` 지정 시 그 사용자에게만(`!to || to === user.email` 필터)
 - **TOP 버튼**: 우하단 고정, 300px 스크롤 이상에서 페이드인
 - **페이지 전환**: 모든 라우트에 GSAP fade+slide-in(0.5s, y 16) + 스크롤 최상단 리셋
-- **마이크로 인터랙션**: 전역 탭 피드백(`useTapFeedback` — 모든 버튼·링크 누르면 미세 scale 0.95→1, `data-no-tap`으로 제외) + 캐러셀 카드 stagger 등장(GSAP). design.md 톤 반영
+- **마이크로 인터랙션**: 전역 탭 피드백(`useTapFeedback` — 모든 버튼·링크 누르면 미세 scale 0.95→1, `data-no-tap`으로 제외) + 캐러셀 카드 stagger 등장 + **메인 페이지 호버 리프트**(`useHoverLift` — 박스·버튼에 마우스 올리면 살짝 떠오르며 그림자, 이벤트 위임이라 동적 카드도 커버). 모두 GSAP, design.md 톤 반영
 - **활동 내역 실시간 카운트**(마이페이지): 견적 신청은 서버 실제 건수(`getMyQuotes`), 작성 리뷰·내 질문은 본인 것만 집계(페이지 진입 시 최신 반영)
 - **메인 캐러셀**: `snap-x` + 화살표 + 터치 스와이프 + 모바일 1개/태블릿 2개/데스크톱 3개, "전체 보기 →" 링크
 - **반응형**(모바일 퍼스트): 모든 페이지 sm/md/lg 브레이크포인트, `break-keep`로 한국어 줄바꿈 안전
