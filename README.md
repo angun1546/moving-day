@@ -49,7 +49,7 @@ Moving-day/
 - **견적 요청**(`/partner/dashboard`): 들어온 견적 요청 목록(백엔드 연동) + 입찰 제출 (업체명=업체정보, 로그인 필요)
 - **내 입찰 현황**(`/partner/bids`): 제출한 입찰·낙찰/거절 + **낙찰건 이사 단계 진행**(낙찰완료→낙찰확인→계약완료→이사준비→이사중→이사완료, "다음 단계로" 버튼) (페이지네이션, 로그인 필요)
 - **업체 정보 등록**(`/partner/profile`): 프로필 사진·사업자 정보·**서비스 가능 지역**(권역 → 시·도 → 시·군·구 3단계 트리, 약 229개, **권역 전체 / 시·도별 전체 선택 지원**)·업체 사진(최대 8장)·자격증(이미지+PDF, 최대 5개) 업로드, **백엔드 저장(`PartnerProfile` 모델 + 사진/자격증 Cloudinary, 이메일 1:1 upsert)으로 재진입·다른 기기에서 복원** (로그인 필요)
-- **파트너 스토리**(`/partner/story`): 후기 작성 + 검색·페이지네이션, 등록 폼 토글
+- **파트너 스토리**(`/partner/story`): 후기 작성 + 검색·페이지네이션, 등록 폼 토글 (**`PartnerStory` 백엔드 저장**)
 - **FAQ**(`/partner/faq`): **관리자 직접 편집** 자주 묻는 질문 + 관리자 답변 Q&A (전체보기 = 글만)
 - **파트너 마이페이지**(`/partner/mypage`): 활동 카드 + **내 업체 정보** 요약 + **내 입찰 현황 박스**(낙찰건 이사 단계 진행 — `/partner/bids`와 공용 컴포넌트) + "업체정보 수정" 단축 진입
 - **공지사항**(`/partner/notice`): 고객 사이트와 같은 공지 데이터 공유
@@ -60,7 +60,7 @@ Moving-day/
 - **리뷰 관리**: 사용자/파트너 리뷰 통합, **숨김·노출 토글**(개인정보 정책상 삭제 불가)·**관리자 답변**(자동 마스킹)·페이지네이션
 - **Q&A 답변**: 사용자/파트너 문의 통합, **숨김 토글**(삭제 불가)·답변/수정 (자동 마스킹)·페이지네이션
 - **공지사항 관리**: 작성·수정·삭제 — `/notice`·`/partner/notice`와 동일 데이터 즉시 양방향 동기화
-- **자동 통계**: 진행 중 견적·누적 입찰·숨김 리뷰·미답변 Q&A·공지 카드
+- **자동 통계(전부 서버 실시간)**: 진행 중 견적·누적 입찰·숨김 리뷰·미답변 Q&A·공지 — 모든 데이터가 백엔드 기반이라 모든 사용자의 활동이 관리자 통계에 실시간 반영
 - `isAdmin` 판별: `user.role === 'admin'` (백엔드 `User.role` 기반). admin 권한은 `admin@movingday.com` 가입 시 서버가 자동 부여
 
 ### 인증·회원
@@ -124,13 +124,13 @@ cd frontend && npm install && npm run dev                          # 5173
 | `Notification` | id, toEmail(수신자), type(bid/award/reject/stage), message, link, read, createdAt — 서버 거래 이벤트 알림(폴링 조회) |
 | `Notice` | id, title, body, createdAt — 공지사항(관리자 작성, 고객·파트너 공유) |
 | `Qna` | id, scope(user/partner), name, q, a(답변·nullable), authorEmail, hidden, createdAt — Q&A 문의 |
+| `PartnerStory` | id, company, text, rating, authorEmail, hidden, reply, createdAt — 파트너 플랫폼 이용 후기 |
 | `Review` | id, name, text, rating(1~5), moveType, company(이용 업체·평점 집계 키), authorEmail, hidden(관리자 숨김), reply(관리자 답변), createdAt — 고객 리뷰·업체 평점 원천 |
 | `PartnerProfile` | id, email(파트너 1:1 unique), company, bizNo, ceo, phone, trucks, intro, regions(JSON), profileImg(URL), workPhotos(JSON URL), certs(JSON [{url,name,isImage}]), createdAt, updatedAt — 업체 프로필·사진·자격증 |
 
 ### 클라이언트 localStorage 키 (영속화)
 | 키 | 용도 |
 |---|---|
-| `movingday_partner_stories` | 파트너 스토리 (`authorEmail` 포함) |
 | `movingday_user_faqs` / `movingday_partner_faqs` | 자주 묻는 질문(관리자 편집) |
 | `movingday_notifications` | 알림 큐(수신자 `to` 필드로 필터) |
 | `movingday_user_quote_count` / `movingday_partner_bid_count` | 활동 카운트 |
@@ -176,6 +176,10 @@ cd frontend && npm install && npm run dev                          # 5173
 | POST | `/api/qna` | 질문 작성 |
 | PATCH | `/api/qna/:id` | 관리자 답변·숨김 토글 |
 | DELETE | `/api/qna/:id` | 질문 삭제 |
+| GET | `/api/stories` | 파트너 스토리 목록 (최신순) |
+| POST | `/api/stories` | 파트너 스토리 작성 |
+| PATCH | `/api/stories/:id` | 수정·숨김 토글·관리자 답변 |
+| DELETE | `/api/stories/:id` | 파트너 스토리 삭제 |
 
 ## 배포
 

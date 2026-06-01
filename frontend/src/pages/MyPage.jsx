@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ActivityCard from '../components/ActivityCard'
-import { useLocalState } from '../hooks/useLocalState'
 import { getReviews } from '../services/reviews'
 import { getMyQuotes } from '../services/quotes'
+import { getQna } from '../services/qna'
 
 function Info({ label, value }) {
   return (
@@ -31,7 +31,12 @@ function MyPage() {
       .then((d) => setQuoteCount(Array.isArray(d) ? d.length : 0))
       .catch(() => setQuoteCount(0))
   }, [user?.email])
-  const [questions] = useLocalState('movingday_user_qa', [])
+  const [questions, setQuestions] = useState([])
+  useEffect(() => {
+    getQna('user')
+      .then((d) => setQuestions(Array.isArray(d) ? d : []))
+      .catch(() => setQuestions([]))
+  }, [])
 
   if (!user) {
     return (

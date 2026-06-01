@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ActivityCard from '../components/ActivityCard'
 import PartnerBidsList from '../components/PartnerBidsList'
-import { useLocalState } from '../hooks/useLocalState'
 import { getPartnerProfile } from '../services/partners'
+import { getStories } from '../services/stories'
+import { getQna } from '../services/qna'
+import { getMyBids } from '../services/bids'
 
 function Info({ label, value }) {
   return (
@@ -30,9 +32,30 @@ function safeArr(raw) {
 function PartnerMyPage() {
   const { user, logout } = useAuth()
   // 실제 활동 카운트
-  const [stories] = useLocalState('movingday_partner_stories', [])
-  const [questions] = useLocalState('movingday_partner_qa', [])
-  const [bidCount] = useLocalState('movingday_partner_bid_count', 0)
+  // 활동 카운트 — 본인 것만 서버에서 집계
+  const [stories, setStories] = useState([])
+  const [questions, setQuestions] = useState([])
+  const [bidCount, setBidCount] = useState(0)
+  useEffect(() => {
+    if (!user?.email) return
+    getStories()
+      .then((d) =>
+        setStories(
+          Array.isArray(d) ? d.filter((s) => s.authorEmail === user.email) : [],
+        ),
+      )
+      .catch(() => setStories([]))
+    getQna('partner')
+      .then((d) =>
+        setQuestions(
+          Array.isArray(d) ? d.filter((q) => q.authorEmail === user.email) : [],
+        ),
+      )
+      .catch(() => setQuestions([]))
+    getMyBids(user.email)
+      .then((d) => setBidCount(Array.isArray(d) ? d.length : 0))
+      .catch(() => setBidCount(0))
+  }, [user?.email])
   // 업체 정보 — 서버에서 로드
   const [profile, setProfile] = useState(null)
   useEffect(() => {

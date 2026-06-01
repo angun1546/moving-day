@@ -8,6 +8,7 @@ import reviewsRouter from './routes/reviews.ts'
 import partnersRouter from './routes/partners.ts'
 import noticesRouter from './routes/notices.ts'
 import qnaRouter from './routes/qna.ts'
+import storiesRouter from './routes/stories.ts'
 
 // 배포 환경에서는 JWT_SECRET이 반드시 필요 — 누락 시 시작 거부
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -66,6 +67,9 @@ app.use('/api/notices', noticesRouter)
 
 // Q&A 문의 API
 app.use('/api/qna', qnaRouter)
+
+// 파트너 스토리 API
+app.use('/api/stories', storiesRouter)
 
 // 에러 처리 (사진 업로드 용량/개수 초과 등)
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

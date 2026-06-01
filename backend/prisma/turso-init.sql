@@ -81,6 +81,19 @@ CREATE TABLE "Review" (
 CREATE INDEX "Review_company_idx" ON "Review"("company");
 CREATE INDEX "Review_createdAt_idx" ON "Review"("createdAt");
 
+-- 파트너 스토리 (업체 플랫폼 이용 후기)
+CREATE TABLE "PartnerStory" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "company" TEXT NOT NULL,
+    "text" TEXT NOT NULL,
+    "rating" INTEGER NOT NULL,
+    "authorEmail" TEXT,
+    "hidden" BOOLEAN NOT NULL DEFAULT false,
+    "reply" TEXT
+);
+CREATE INDEX "PartnerStory_createdAt_idx" ON "PartnerStory"("createdAt");
+
 -- Q&A 문의 (고객·파트너 질문 + 관리자 답변)
 CREATE TABLE "Qna" (
     "id" TEXT NOT NULL PRIMARY KEY,

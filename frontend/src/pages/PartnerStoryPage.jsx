@@ -1,11 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { useLocalState } from '../hooks/useLocalState'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 import { useConfirm } from '../context/ConfirmContext'
-import { todayString } from '../utils/date'
 import { maskKoreanNamesInText } from '../utils/userDisplay'
+import {
+  getStories,
+  createStory,
+  updateStory,
+  deleteStory,
+} from '../services/stories'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -89,8 +93,14 @@ function EditStoryForm({ review, onSave, onCancel }) {
 
 function PartnerStoryPage() {
   const { user, isAdmin } = useAuth()
-  // localStorage 영속화 (메인 캐러셀과 공유)
-  const [reviews, setReviews] = useLocalState('movingday_partner_stories', [])
+  const confirm = useConfirm()
+  // 서버에서 파트너 스토리 로드
+  const [reviews, setReviews] = useState([])
+  useEffect(() => {
+    getStories()
+      .then((d) => setReviews(Array.isArray(d) ? d : []))
+      .catch(() => setReviews([]))
+  }, [])
   const [rating, setRating] = useState(5)
   const [showForm, setShowForm] = useState(false)
   const [q, setQ] = useState('')
@@ -117,41 +127,61 @@ function PartnerStoryPage() {
     setPage(1)
   }
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    const fd = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const fd = new FormData(form)
     const company = fd.get('company')?.toString().trim()
     const text = fd.get('text')?.toString().trim()
     if (!company || !text) return
-    setReviews((prev) => [
-      {
-        id: Date.now(),
+    try {
+      const created = await createStory({
         company,
         text,
         rating,
-        date: todayString(),
         authorEmail: user?.email || '',
-      },
-      ...prev,
-    ])
-    e.currentTarget.reset()
-    setRating(5)
-    setShowForm(false)
-    setPage(1)
+      })
+      setReviews((prev) => [created, ...prev])
+      form.reset()
+      setRating(5)
+      setShowForm(false)
+      setPage(1)
+    } catch (err) {
+      await confirm({
+        title: '등록 실패',
+        message: err.message || '후기 등록에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
   }
 
-  // 관리자: 수정/삭제
-  function update(id, updates) {
-    setReviews((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, ...updates } : r)),
-    )
+  // 관리자: 수정/삭제 (서버 반영)
+  async function update(id, updates) {
+    try {
+      const updated = await updateStory(id, updates)
+      setReviews((prev) => prev.map((r) => (r.id === id ? updated : r)))
+    } catch (err) {
+      await confirm({
+        title: '수정 실패',
+        message: err.message || '후기 수정에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
     setEditingId(null)
   }
-  const confirm = useConfirm()
   async function remove(id) {
     if (!(await confirm({ title: '후기 삭제', message: '이 후기를 삭제할까요?', danger: true })))
       return
-    setReviews((prev) => prev.filter((r) => r.id !== id))
+    try {
+      await deleteStory(id)
+      setReviews((prev) => prev.filter((r) => r.id !== id))
+    } catch (err) {
+      await confirm({
+        title: '삭제 실패',
+        message: err.message || '후기 삭제에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
   }
 
   return (

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocalState } from '../hooks/useLocalState'
 import { getQuotes } from '../services/quotes'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
@@ -15,6 +14,7 @@ import {
   deleteNotice,
 } from '../services/notices'
 import { getQna, updateQna } from '../services/qna'
+import { getStories, updateStory } from '../services/stories'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -315,11 +315,13 @@ function AdminDashboardPage() {
       .then((d) => setUserReviews(Array.isArray(d) ? d : []))
       .catch(() => setUserReviews([]))
   }, [])
-  // 파트너 스토리는 아직 localStorage (별도 작업)
-  const [partnerStories, setPartnerStories] = useLocalState(
-    'movingday_partner_stories',
-    [],
-  )
+  // 파트너 스토리도 서버에서 로드
+  const [partnerStories, setPartnerStories] = useState([])
+  useEffect(() => {
+    getStories()
+      .then((d) => setPartnerStories(Array.isArray(d) ? d : []))
+      .catch(() => setPartnerStories([]))
+  }, [])
   const [userQa, setUserQa] = useState([])
   const [partnerQa, setPartnerQa] = useState([])
   useEffect(() => {
@@ -368,8 +370,8 @@ function AdminDashboardPage() {
         _kind: 'partner',
         type: '파트너',
         author: r.company,
-        _sort: typeof r.id === 'number' ? r.id : 0,
-        displayDate: r.date || '',
+        _sort: new Date(r.createdAt).getTime() || 0,
+        displayDate: formatDate(r.createdAt),
       })),
     ].sort((a, b) => b._sort - a._sort)
   }, [userReviews, partnerStories])
@@ -418,9 +420,14 @@ function AdminDashboardPage() {
         // 무시
       }
     } else {
-      setPartnerStories((prev) =>
-        prev.map((r) => (r.id === item.id ? { ...r, hidden: !r.hidden } : r)),
-      )
+      try {
+        const updated = await updateStory(item.id, { hidden: !item.hidden })
+        setPartnerStories((prev) =>
+          prev.map((r) => (r.id === item.id ? updated : r)),
+        )
+      } catch {
+        // 무시
+      }
     }
   }
   async function replyReview(item, text) {
@@ -434,9 +441,14 @@ function AdminDashboardPage() {
         // 무시
       }
     } else {
-      setPartnerStories((prev) =>
-        prev.map((r) => (r.id === item.id ? { ...r, reply: text } : r)),
-      )
+      try {
+        const updated = await updateStory(item.id, { reply: text })
+        setPartnerStories((prev) =>
+          prev.map((r) => (r.id === item.id ? updated : r)),
+        )
+      } catch {
+        // 무시
+      }
     }
     // 답변은 작성자 본인에게만 (관리자 자신 포함 다른 사용자에겐 노출 X)
     addNotification({
@@ -457,9 +469,14 @@ function AdminDashboardPage() {
         // 무시
       }
     } else {
-      setPartnerStories((prev) =>
-        prev.map((r) => (r.id === item.id ? { ...r, reply: '' } : r)),
-      )
+      try {
+        const updated = await updateStory(item.id, { reply: '' })
+        setPartnerStories((prev) =>
+          prev.map((r) => (r.id === item.id ? updated : r)),
+        )
+      } catch {
+        // 무시
+      }
     }
   }
 

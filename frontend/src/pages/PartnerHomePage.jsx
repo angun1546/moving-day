@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import ReviewCarousel from '../components/ReviewCarousel'
 import HeroSearch from '../components/HeroSearch'
 import { PARTNER_SUGGESTIONS } from '../data/searchIndex'
-import { useLocalState } from '../hooks/useLocalState'
+import { getStories } from '../services/stories'
+import { formatDate } from '../utils/date'
 
 const STATS = [
   { value: '320+', label: '일 평균 견적 요청' },
@@ -66,16 +67,23 @@ function PartnerHomePage() {
     setProfileSaved(localStorage.getItem('partnerProfileSaved') === 'true')
   }, [])
 
-  // 작성된 파트너 스토리 (영속화)
-  const [stories] = useLocalState('movingday_partner_stories', [])
-  const storyDisplay = stories.map((s) => ({
-    id: s.id,
-    name: s.company,
-    rating: s.rating,
-    tag: '파트너 후기',
-    text: s.text,
-    date: s.date || '',
-  }))
+  // 작성된 파트너 스토리 (서버, 숨김 제외)
+  const [stories, setStories] = useState([])
+  useEffect(() => {
+    getStories()
+      .then((d) => setStories(Array.isArray(d) ? d : []))
+      .catch(() => setStories([]))
+  }, [])
+  const storyDisplay = stories
+    .filter((s) => !s.hidden)
+    .map((s) => ({
+      id: s.id,
+      name: s.company,
+      rating: s.rating,
+      tag: '파트너 후기',
+      text: s.text,
+      date: formatDate(s.createdAt),
+    }))
 
   return (
     <>

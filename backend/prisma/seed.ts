@@ -27,6 +27,23 @@ if (count > 0) {
   console.log(`리뷰 ${SEED.length}건 시드 완료`)
 }
 
+// 데모용 더미 파트너 스토리
+const STORIES = [
+  { company: '한솔이사', rating: 5, text: '입찰 방식이라 필요한 일감만 골라 받으니 효율이 확 올랐어요. 한 달 매출이 30% 늘었습니다.', createdAt: new Date('2026-05-18') },
+  { company: '으뜸이사', rating: 5, text: '광고비 한 푼 없이 새 고객을 매일 만납니다. 평점이 쌓이니 낙찰률도 같이 올라가요.', createdAt: new Date('2026-05-10') },
+  { company: '스마트무빙', rating: 5, text: '비대면 견적 덕에 헛걸음이 줄었어요. 모바일로 바로 입찰할 수 있어 편합니다.', createdAt: new Date('2026-04-30') },
+]
+
+const storyCount = await prisma.partnerStory.count()
+if (storyCount > 0) {
+  console.log(`이미 파트너 스토리 ${storyCount}건 존재 — 시드 생략`)
+} else {
+  for (const s of STORIES) {
+    await prisma.partnerStory.create({ data: s })
+  }
+  console.log(`파트너 스토리 ${STORIES.length}건 시드 완료`)
+}
+
 const noticeCount = await prisma.notice.count()
 if (noticeCount > 0) {
   console.log(`이미 공지 ${noticeCount}건 존재 — 공지 시드 생략`)

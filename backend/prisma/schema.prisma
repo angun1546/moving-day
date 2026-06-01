@@ -103,6 +103,20 @@ model Review {
   @@index([createdAt])
 }
 
+// 파트너 스토리 — 업체가 남기는 플랫폼 이용 후기
+model PartnerStory {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  company     String // 업체명
+  text        String
+  rating      Int // 1~5
+  authorEmail String? // 작성자 식별
+  hidden      Boolean  @default(false) // 관리자 숨김
+  reply       String? // 관리자 답변
+
+  @@index([createdAt])
+}
+
 // Q&A 문의 — 고객(user)·파트너(partner) 질문 + 관리자 답변
 model Qna {
   id          String   @id @default(cuid())
