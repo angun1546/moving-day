@@ -110,12 +110,7 @@ function BidComparePage() {
             : { ...x, status: '거절' },
         ),
       )
-      addNotification({
-        type: 'bid',
-        message: '🎉 낙찰되었습니다! 내 입찰 현황을 확인하세요.',
-        link: '/partner/bids',
-        to: b.bidderEmail,
-      })
+      // 파트너 낙찰 알림은 서버(award)가 생성 — 여기선 관리자 알림만
       addNotification({
         type: 'bid',
         message: `${b.company}가 낙찰되었습니다.`,
@@ -143,12 +138,7 @@ function BidComparePage() {
     if (!ok) return
     try {
       await cancelBid(pickedBid.id)
-      addNotification({
-        type: 'bid',
-        message: '낙찰이 취소되었습니다.',
-        link: '/partner/bids',
-        to: pickedBid.bidderEmail,
-      })
+      // 파트너 취소 알림은 서버(reject)가 생성 — 여기선 관리자 알림만
       addNotification({
         type: 'bid',
         message: `${pickedBid.company} 낙찰이 취소되었습니다.`,

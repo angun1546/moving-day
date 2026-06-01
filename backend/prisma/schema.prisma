@@ -84,3 +84,16 @@ model StageLog {
 
   @@index([quoteRequestId])
 }
+
+// 사용자 알림 — 서버 거래 이벤트(입찰·낙찰·거절·단계변경)에서 생성, 프론트가 폴링으로 조회
+model Notification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  toEmail   String // 수신자 이메일
+  type      String // bid | award | reject | stage
+  message   String
+  link      String? // 클릭 시 이동할 프론트 경로
+  read      Boolean  @default(false)
+
+  @@index([toEmail, createdAt])
+}

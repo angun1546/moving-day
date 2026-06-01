@@ -70,7 +70,9 @@ Moving-day/
 
 ### 공통 UI / 인터랙션
 - **헤더 통일**: 글래스모피즘(`bg-white/60 backdrop-blur`) + `rounded-b-2xl`, **알림 벨(좌우 흔들기 + 미확인 빨간점 + 드롭다운, 수신자별 필터링)**·사용자 메뉴 드롭다운(GSAP fade+slide)·햄버거(GSAP morph) — 검색은 헤더에서 빼고 Hero 큰 검색창으로 이동
-- **알림 시스템**: `addNotification({ type, message, link, to })` — 견적/입찰/답변/공지/결제 이벤트 발생 시 BellIcon 큐에 적재. `to` 지정 시 그 사용자에게만(`!to || to === user.email` 필터). **관리자 답변 알림은 항상 글 작성자 본인에게만 전송**, 공지/본인 액션은 전체 노출
+- **알림 시스템(서버 + 로컬 병합)**: BellIcon이 두 출처를 합쳐 최신순으로 보여줌
+  - **서버 거래 알림**(`Notification` 테이블): 입찰(`bid`)·낙찰(`award`)·거절(`reject`)·단계변경(`stage`) — 서버가 자동 생성, 로그인 사용자가 **20초 폴링**으로 수신. 고객·파트너가 서로 다른 브라우저여도 도달(localStorage 한계 해결). 열람 시 모두 읽음·비우기 API로 동기화
+  - **로컬 알림**(`addNotification({ type, message, link, to })`): 공지(`notice`)·관리자 답변(`reply`)·본인 견적 접수(`quote`) 등 비거래 알림은 기존 localStorage 큐 유지. `to` 지정 시 그 사용자에게만(`!to || to === user.email` 필터)
 - **TOP 버튼**: 우하단 고정, 300px 스크롤 이상에서 페이드인
 - **페이지 전환**: 모든 라우트에 GSAP fade+slide-in(0.5s, y 16) + 스크롤 최상단 리셋
 - **메인 캐러셀**: `snap-x` + 화살표 + 터치 스와이프 + 모바일 1개/태블릿 2개/데스크톱 3개, "전체 보기 →" 링크
@@ -113,6 +115,8 @@ cd frontend && npm install && npm run dev                          # 5173
 | `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, photos(JSON), visitDate, callTime, status, userEmail(회원 연결·nullable), stage(낙찰 후 진행 단계·nullable) |
 | `User` | id, email, password(bcrypt), name, birthDate, gender, phone, verified, createdAt |
 | `Bid` | id, quoteRequestId(FK→QuoteRequest, Cascade), bidderEmail, company, price, message, eta, status(입찰/낙찰/거절), createdAt |
+| `StageLog` | id, quoteRequestId(FK→QuoteRequest, Cascade), stage, createdAt — 단계 변경 이력(택배식 타임라인) |
+| `Notification` | id, toEmail(수신자), type(bid/award/reject/stage), message, link, read, createdAt — 서버 거래 이벤트 알림(폴링 조회) |
 
 ### 클라이언트 localStorage 키 (영속화)
 | 키 | 용도 |
@@ -149,8 +153,9 @@ cd frontend && npm install && npm run dev                          # 5173
 | GET | `/api/bids/mine/:email` | 파트너 본인 입찰 |
 | PATCH | `/api/bids/:id/accept` | 낙찰 처리 (선택 입찰 낙찰·나머지 거절·견적 완료) |
 | PATCH | `/api/bids/:id/cancel` | 낙찰 취소 (계약 전 — 입찰 복원·견적 상담중) |
-| POST | `/api/quotes` | 견적 신청 등록 (multipart/form-data, 사진 첨부 가능) |
-| GET | `/api/quotes` | 견적 신청 목록 (관리용) |
+| GET | `/api/notifications/:email` | 내 알림 목록 (최신순 50건 — 폴링) |
+| PATCH | `/api/notifications/:email/read` | 내 알림 모두 읽음 처리 |
+| DELETE | `/api/notifications/:email` | 내 알림 모두 비우기 |
 
 ## 배포
 
@@ -213,4 +218,4 @@ Start Command     npm start
 3. **사진·자격증 업로드 백엔드 연동** (예정) — 기존 multer 재사용 + S3/디스크
 4. **입찰 실제 DB 연동** (완료) — `Bid` 모델 + 파트너 입찰·고객 비교·관리자 매칭 + 낙찰/낙찰 취소 + 7단계 진행 추적
 5. **업체 평점 시스템** (예정) — 파트너 리뷰 백엔드화 + 평점 집계 → 입찰 평점순 정렬
-6. **실시간 알림** (MVP 외) — 웹소켓·알림톡
+6. **실시간 알림** (핵심 완료) — 서버 `Notification` 테이블 + 거래 이벤트(입찰·낙찰·거절·단계변경) 20초 폴링 알림. 향후 웹소켓·알림톡으로 확장

@@ -63,3 +63,15 @@ CREATE TABLE "StageLog" (
     CONSTRAINT "StageLog_quoteRequestId_fkey" FOREIGN KEY ("quoteRequestId") REFERENCES "QuoteRequest" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 CREATE INDEX "StageLog_quoteRequestId_idx" ON "StageLog"("quoteRequestId");
+
+-- 사용자 알림 (서버 거래 이벤트 — 폴링 조회)
+CREATE TABLE "Notification" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "toEmail" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "link" TEXT,
+    "read" BOOLEAN NOT NULL DEFAULT false
+);
+CREATE INDEX "Notification_toEmail_createdAt_idx" ON "Notification"("toEmail", "createdAt");

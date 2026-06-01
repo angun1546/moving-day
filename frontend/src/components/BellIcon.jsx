@@ -7,10 +7,18 @@ import {
   NOTIFICATIONS_KEY,
   NOTIFICATIONS_EVENT,
 } from '../utils/notifications'
+import {
+  getNotifications,
+  markAllRead,
+  clearNotifications,
+} from '../services/notifications'
 
 const TYPE_ICONS = {
   quote: '📋',
   bid: '💰',
+  award: '🎉',
+  reject: '😢',
+  stage: '🚚',
   reply: '💬',
   payment: '💳',
   notice: '📢',
@@ -35,17 +43,31 @@ function formatTime(iso) {
 function BellIcon({ size = 22 }) {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [notifications, setNotifications] = useState([])
+  const [notifications, setNotifications] = useState([]) // 로컬(공지·FAQ답변 등)
+  const [serverItems, setServerItems] = useState([]) // 서버 거래 알림(폴링)
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const bellRef = useRef(null)
   const dropdownRef = useRef(null)
 
-  // 수신자 필터: to가 없으면 모두에게, 있으면 본인 이메일과 일치해야 노출
-  const visible = useMemo(
-    () => notifications.filter((n) => !n.to || n.to === user?.email),
-    [notifications, user?.email],
-  )
+  // 로컬(수신자 필터 적용)과 서버 알림을 합쳐 최신순 정렬
+  //  - id는 출처 접두사로 충돌 방지(l-: 로컬, s-: 서버)
+  const visible = useMemo(() => {
+    const local = notifications
+      .filter((n) => !n.to || n.to === user?.email)
+      .map((n) => ({ ...n, id: `l-${n.id}` }))
+    const server = serverItems.map((n) => ({
+      id: `s-${n.id}`,
+      type: n.type,
+      message: n.message,
+      link: n.link,
+      read: n.read,
+      date: n.createdAt,
+    }))
+    return [...server, ...local].sort(
+      (a, b) => new Date(b.date) - new Date(a.date),
+    )
+  }, [notifications, serverItems, user?.email])
 
   // 초기 로드 + 외부 addNotification 호출 시 자동 갱신
   useEffect(() => {
@@ -65,6 +87,26 @@ function BellIcon({ size = 22 }) {
       window.removeEventListener('storage', refresh)
     }
   }, [])
+
+  // 로그인 사용자면 서버 알림을 20초마다 폴링 (비로그인은 비움)
+  useEffect(() => {
+    const email = user?.email
+    if (!email) {
+      setServerItems([])
+      return
+    }
+    let alive = true
+    async function poll() {
+      const list = await getNotifications(email)
+      if (alive) setServerItems(list)
+    }
+    poll()
+    const t = setInterval(poll, 20000)
+    return () => {
+      alive = false
+      clearInterval(t)
+    }
+  }, [user?.email])
 
   const unreadCount = visible.filter((n) => !n.read).length
 
@@ -122,6 +164,12 @@ function BellIcon({ size = 22 }) {
       // 열 때 모두 읽음 처리 (잠시 후 — 사용자가 본 뒤)
       if (next && unreadCount > 0) {
         setTimeout(() => {
+          // 서버 알림 읽음 (낙관적 갱신 + API)
+          if (user?.email) {
+            markAllRead(user.email)
+            setServerItems((prev) => prev.map((n) => ({ ...n, read: true })))
+          }
+          // 로컬 알림 읽음
           setNotifications((prev) => {
             const updated = prev.map((n) => ({ ...n, read: true }))
             try {
@@ -144,6 +192,12 @@ function BellIcon({ size = 22 }) {
   async function clearAll() {
     if (!(await confirm({ title: '알림 삭제', message: '모든 알림을 삭제할까요?', danger: true })))
       return
+    // 서버 알림 비우기
+    if (user?.email) {
+      await clearNotifications(user.email)
+      setServerItems([])
+    }
+    // 로컬 알림 비우기
     try {
       localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify([]))
     } catch {

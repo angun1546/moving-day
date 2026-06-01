@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../db.ts'
+import { notify } from '../notify.ts'
 
 const router = Router()
 
@@ -23,6 +24,19 @@ router.post('/', async (req, res) => {
         eta: eta || null,
       },
     })
+
+    // 견적 주인에게 새 입찰 알림 (비회원 견적이면 notify가 알아서 생략)
+    const quote = await prisma.quoteRequest.findUnique({
+      where: { id: quoteRequestId },
+      select: { userEmail: true },
+    })
+    await notify(
+      quote?.userEmail,
+      'bid',
+      `${company}님이 입찰했어요. ${Number(price).toLocaleString()}원`,
+      '/mypage',
+    )
+
     res.status(201).json(bid)
   } catch (err) {
     console.error('입찰 저장 실패:', err)
@@ -70,6 +84,12 @@ router.patch('/:id/accept', async (req, res) => {
     if (!bid) {
       return res.status(404).json({ message: '입찰을 찾을 수 없습니다.' })
     }
+    // 거절될 다른 입찰 파트너 목록 (updateMany 전에 미리 확보)
+    const losers = await prisma.bid.findMany({
+      where: { quoteRequestId: bid.quoteRequestId, id: { not: bid.id } },
+      select: { bidderEmail: true },
+    })
+
     await prisma.bid.update({
       where: { id: bid.id },
       data: { status: '낙찰' },
@@ -85,6 +105,23 @@ router.patch('/:id/accept', async (req, res) => {
     await prisma.stageLog.create({
       data: { quoteRequestId: bid.quoteRequestId, stage: '낙찰완료' },
     })
+
+    // 낙찰 파트너에게 축하, 나머지 파트너에게 거절 알림
+    await notify(
+      bid.bidderEmail,
+      'award',
+      '축하해요! 고객이 회원님의 입찰을 선택했어요.',
+      '/partner/bids',
+    )
+    for (const l of losers) {
+      await notify(
+        l.bidderEmail,
+        'reject',
+        '아쉽게도 이번 견적은 다른 업체로 결정되었어요.',
+        '/partner/bids',
+      )
+    }
+
     res.json({ ok: true, bid: { ...bid, status: '낙찰' } })
   } catch (err) {
     console.error('낙찰 처리 실패:', err)
@@ -111,6 +148,15 @@ router.patch('/:id/cancel', async (req, res) => {
     await prisma.stageLog.deleteMany({
       where: { quoteRequestId: bid.quoteRequestId },
     })
+
+    // 낙찰됐던 파트너에게 취소 알림
+    await notify(
+      bid.bidderEmail,
+      'reject',
+      '낙찰이 취소되어 다시 검토 단계로 돌아갔어요.',
+      '/partner/bids',
+    )
+
     res.json({ ok: true })
   } catch (err) {
     console.error('낙찰 취소 실패:', err)

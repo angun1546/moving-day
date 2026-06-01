@@ -2,6 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import { v2 as cloudinary } from 'cloudinary'
 import { prisma } from '../db.ts'
+import { notify } from '../notify.ts'
 
 const router = Router()
 
@@ -151,6 +152,13 @@ router.patch('/:id/stage', async (req, res) => {
       await prisma.stageLog.create({
         data: { quoteRequestId: req.params.id, stage },
       })
+      // 견적 주인에게 진행 단계 변경 알림
+      await notify(
+        quote.userEmail,
+        'stage',
+        `이사 진행 상태가 '${stage}'(으)로 업데이트됐어요.`,
+        '/mypage',
+      )
     }
     res.json(quote)
   } catch (err) {

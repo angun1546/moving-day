@@ -3,6 +3,7 @@ import express, { type ErrorRequestHandler } from 'express'
 import quotesRouter from './routes/quotes.ts'
 import authRouter from './routes/auth.ts'
 import bidsRouter from './routes/bids.ts'
+import notificationsRouter from './routes/notifications.ts'
 
 // 배포 환경에서는 JWT_SECRET이 반드시 필요 — 누락 시 시작 거부
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -46,6 +47,9 @@ app.use('/api/quotes', quotesRouter)
 
 // 입찰 API
 app.use('/api/bids', bidsRouter)
+
+// 알림 API (폴링 조회)
+app.use('/api/notifications', notificationsRouter)
 
 // 에러 처리 (사진 업로드 용량/개수 초과 등)
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
