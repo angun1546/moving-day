@@ -87,4 +87,4 @@ API 키, 데이터베이스 주소, AI 모델 연동 키 등 보안이 필요한
 백엔드 (backend/)
 Node.js, Express 5, Prisma 7, SQLite (better-sqlite3 어댑터), multer(사진 업로드)
 
- **주소 검색**: 다음(카카오) 우편번호 서비스
+ **주소 검색**: 다음(카카오) 우편번호 서비스1

@@ -4,6 +4,8 @@ import ReviewCarousel from '../components/ReviewCarousel'
 import HeroSearch from '../components/HeroSearch'
 import { PARTNER_SUGGESTIONS } from '../data/searchIndex'
 import { getStories } from '../services/stories'
+import { getPartnerProfile } from '../services/partners'
+import { useAuth } from '../context/AuthContext'
 import { formatDate } from '../utils/date'
 
 const STATS = [
@@ -61,11 +63,18 @@ const FAQS = [
 ]
 
 function PartnerHomePage() {
-  // 업체 정보 등록 여부 (목업: localStorage 플래그)
+  // 업체 정보 등록 여부 — 백엔드 프로필 존재로 판단(로그인 파트너 기준)
+  const { user } = useAuth()
   const [profileSaved, setProfileSaved] = useState(false)
   useEffect(() => {
-    setProfileSaved(localStorage.getItem('partnerProfileSaved') === 'true')
-  }, [])
+    if (!user?.email) {
+      setProfileSaved(false)
+      return
+    }
+    getPartnerProfile(user.email)
+      .then((p) => setProfileSaved(!!p))
+      .catch(() => setProfileSaved(false))
+  }, [user])
 
   // 작성된 파트너 스토리 (서버, 숨김 제외)
   const [stories, setStories] = useState([])
@@ -114,6 +123,7 @@ function PartnerHomePage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               {profileSaved ? (
+                // 업체 정보 등록 완료 — 입찰 시작 버튼만 노출(등록 버튼 숨김)
                 <Link
                   to="/partner/dashboard"
                   className="rounded-full bg-brand px-7 py-3 text-center font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark"
@@ -121,25 +131,24 @@ function PartnerHomePage() {
                   입찰 시작하기
                 </Link>
               ) : (
-                <button
-                  type="button"
-                  disabled
-                  title="업체 정보를 먼저 등록해 주세요"
-                  className="cursor-not-allowed rounded-full bg-gray-200 px-7 py-3 text-center font-semibold text-gray-400"
-                >
-                  입찰 시작하기
-                </button>
+                // 미등록 — 입찰 비활성 + 업체 정보 등록 유도
+                <>
+                  <button
+                    type="button"
+                    disabled
+                    title="업체 정보를 먼저 등록해 주세요"
+                    className="cursor-not-allowed rounded-full bg-gray-200 px-7 py-3 text-center font-semibold text-gray-400"
+                  >
+                    입찰 시작하기
+                  </button>
+                  <Link
+                    to="/partner/profile"
+                    className="rounded-full bg-brand px-7 py-3 text-center font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark"
+                  >
+                    업체 정보 등록하기
+                  </Link>
+                </>
               )}
-              <Link
-                to="/partner/profile"
-                className={
-                  profileSaved
-                    ? 'rounded-full border border-gray-300 bg-white px-7 py-3 text-center font-semibold text-gray-700 transition hover:border-brand hover:text-brand'
-                    : 'rounded-full bg-brand px-7 py-3 text-center font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark'
-                }
-              >
-                {profileSaved ? '업체 정보 등록' : '업체 정보 등록하기'}
-              </Link>
             </div>
             {!profileSaved && (
               <p className="mt-3 text-sm font-medium text-amber-700">

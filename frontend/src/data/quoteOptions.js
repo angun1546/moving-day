@@ -30,6 +30,7 @@ export const TYPES = [
   { slug: 'semi', label: '반포장이사', icon: '🪑', desc: '깨지기 쉬운 짐만 포장하는 실속형' },
   { slug: 'general', label: '일반이사', icon: '🚚', desc: '운반 중심의 가성비 이사' },
   { slug: 'office', label: '사무실이사', icon: '🏢', desc: '업무 공백 없이 빠르고 정확하게' },
+  { slug: 'business', label: '기업·관공서 이사', icon: '🏛️', desc: '대량·무중단 이전, 세금계산서 발행' },
 ]
 
 export const findMethod = (slug) => METHODS.find((m) => m.slug === slug)

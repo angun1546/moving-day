@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 // 대표 서비스(포장이사)는 넓게 강조, 나머지는 벤토 카드로 구획화
 const SERVICES = [
   {
@@ -47,6 +49,25 @@ function BentoServices() {
           <ServiceCard key={s.title} {...s} />
         ))}
       </div>
+
+      {/* 기업·관공서(B2B) 전용 파트 진입 배너 */}
+      <Link
+        to="/business"
+        className="mt-4 flex flex-col items-start justify-between gap-4 rounded-3xl border border-brand-light bg-brand-light/30 p-8 transition hover:-translate-y-1 hover:shadow-md sm:flex-row sm:items-center"
+      >
+        <div>
+          <span className="text-3xl">🏛️</span>
+          <h3 className="mt-2 text-xl font-bold text-gray-900">
+            기업·관공서 이사
+          </h3>
+          <p className="mt-1 text-sm leading-relaxed text-gray-600">
+            사무실·관공서·공장 대량 이전. 무중단 작업과 세금계산서까지 한 번에.
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full bg-brand px-6 py-3 font-semibold text-white">
+          전용 서비스 보기 →
+        </span>
+      </Link>
     </section>
   )
 }

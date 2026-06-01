@@ -9,6 +9,7 @@ import UserMenu from './UserMenu'
 // 햄버거 패널 메뉴 — 메인 섹션(hash)은 어느 페이지에서든 메인으로 이동 후 스크롤
 const NAV = [
   { hash: '#hero', label: '서비스' },
+  { to: '/business', label: '기업·관공서' },
   { hash: '#steps', label: '이용 절차' },
   { to: '/reviews', label: '고객 후기' },
   { to: '/faq', label: 'FAQ' },

@@ -26,6 +26,7 @@ import RequirePartner from '../components/RequirePartner'
 import RequireAdmin from '../components/RequireAdmin'
 import AdminDashboardPage from '../pages/AdminDashboardPage'
 import SearchResultsPage from '../pages/SearchResultsPage'
+import BusinessMovePage from '../pages/BusinessMovePage'
 import { createQuote } from '../services/quotes'
 
 // 데이터 모드 라우터 (고객: '/' 레이아웃 / 업체: '/partner' 레이아웃)
@@ -59,6 +60,8 @@ export const router = createBrowserRouter([
       { path: 'account', element: <AccountEditPage /> },
       // 공지사항
       { path: 'notice', element: <NoticePage /> },
+      // 기업·관공서 이사 (B2B 전용 랜딩)
+      { path: 'business', element: <BusinessMovePage /> },
       // 사이트 검색 (검색어로 연관 페이지 찾기)
       { path: 'search', element: <SearchResultsPage scope="user" /> },
       // 관리자 대시보드 (admin 전용 가드)
