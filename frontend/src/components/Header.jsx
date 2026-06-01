@@ -10,8 +10,8 @@ import UserMenu from './UserMenu'
 const NAV = [
   { hash: '#hero', label: '서비스' },
   { hash: '#steps', label: '이용 절차' },
-  { hash: '#reviews', label: '고객 후기' },
-  { hash: '#faq', label: 'FAQ' },
+  { to: '/reviews', label: '고객 후기' },
+  { to: '/faq', label: 'FAQ' },
   { to: '/notice', label: '공지사항' },
 ]
 

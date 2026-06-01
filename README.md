@@ -72,7 +72,7 @@ Moving-day/
 
 ### 공통 UI / 인터랙션
 - **헤더 통일**: 글래스모피즘(`bg-white/60 backdrop-blur`) + `rounded-b-2xl`, **알림 벨(좌우 흔들기 + 미확인 빨간점 + 드롭다운, 수신자별 필터링)**·사용자 메뉴 드롭다운(GSAP fade+slide)·햄버거(GSAP morph) — 검색은 헤더에서 빼고 Hero 큰 검색창으로 이동
-- **메인 섹션 네비**: 헤더 햄버거 메뉴(서비스→Hero·이용 절차→Process·고객 후기→Reviews·FAQ→FAQ 섹션)는 **어느 페이지에서 눌러도** 메인(`/`)으로 이동 후 해당 섹션으로 스크롤(같은 페이지면 바로 스크롤). 공지사항은 `/notice` 라우트
+- **헤더 메뉴 네비**: 서비스→Hero·이용 절차→Process 섹션은 **어느 페이지에서 눌러도** 메인(`/`)으로 이동 후 해당 섹션으로 스크롤(같은 페이지면 바로 스크롤). 고객 후기→`/reviews`·FAQ→`/faq`·공지사항→`/notice`는 전용 페이지 라우트
 - **알림 시스템(서버 + 로컬 병합)**: BellIcon이 두 출처를 합쳐 최신순으로 보여줌
   - **서버 거래 알림**(`Notification` 테이블): 입찰(`bid`)·낙찰(`award`)·거절(`reject`)·단계변경(`stage`) — 서버가 자동 생성, 로그인 사용자가 **20초 폴링**으로 수신. 고객·파트너가 서로 다른 브라우저여도 도달(localStorage 한계 해결). 열람 시 모두 읽음·비우기 API로 동기화
   - **로컬 알림**(`addNotification({ type, message, link, to })`): 공지(`notice`)·관리자 답변(`reply`)·본인 견적 접수(`quote`) 등 비거래 알림은 기존 localStorage 큐 유지. `to` 지정 시 그 사용자에게만(`!to || to === user.email` 필터)
