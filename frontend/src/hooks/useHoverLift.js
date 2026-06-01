@@ -16,6 +16,7 @@ export function useHoverLift(ref) {
     function over(e) {
       const el = e.target.closest(SEL)
       if (!el || !root.contains(el)) return
+      if (el.closest('[data-no-lift]')) return // 제외 영역(예: 검색창)
       gsap.to(el, {
         y: -6,
         boxShadow: '0 14px 30px rgba(0,0,0,0.12)',
@@ -27,6 +28,7 @@ export function useHoverLift(ref) {
     function out(e) {
       const el = e.target.closest(SEL)
       if (!el || !root.contains(el)) return
+      if (el.closest('[data-no-lift]')) return // 제외 영역(예: 검색창)
       // 요소 내부로 이동하는 경우(자식으로)는 무시
       if (e.relatedTarget && el.contains(e.relatedTarget)) return
       gsap.to(el, {

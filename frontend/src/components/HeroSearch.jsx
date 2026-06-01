@@ -21,6 +21,7 @@ function HeroSearch({ scope = 'user', suggestions = [], centered = false }) {
   return (
     <div className={`w-full max-w-2xl ${centered ? 'mx-auto' : ''}`}>
       <form
+        data-no-lift
         onSubmit={(e) => {
           e.preventDefault()
           go(q)
@@ -54,6 +55,7 @@ function HeroSearch({ scope = 'user', suggestions = [], centered = false }) {
         </div>
         <button
           type="submit"
+          data-no-tap
           className="rounded-full bg-brand px-7 py-3 font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-dark"
         >
           검색
