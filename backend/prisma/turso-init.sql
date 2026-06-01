@@ -80,6 +80,25 @@ CREATE TABLE "Review" (
 CREATE INDEX "Review_company_idx" ON "Review"("company");
 CREATE INDEX "Review_createdAt_idx" ON "Review"("createdAt");
 
+-- 파트너(업체) 프로필 (이메일 1:1, 사진/자격증은 Cloudinary URL)
+CREATE TABLE "PartnerProfile" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "email" TEXT NOT NULL,
+    "company" TEXT NOT NULL,
+    "bizNo" TEXT NOT NULL,
+    "ceo" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "trucks" TEXT,
+    "intro" TEXT,
+    "regions" TEXT NOT NULL DEFAULT '[]',
+    "profileImg" TEXT,
+    "workPhotos" TEXT,
+    "certs" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX "PartnerProfile_email_key" ON "PartnerProfile"("email");
+
 -- 사용자 알림 (서버 거래 이벤트 — 폴링 조회)
 CREATE TABLE "Notification" (
     "id" TEXT NOT NULL PRIMARY KEY,

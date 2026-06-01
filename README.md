@@ -47,7 +47,7 @@ Moving-day/
 - **메인 랜딩**(`/partner`): Hero(**큰 통합 검색창** + 통계)·혜택 벤토·시작 4단계·**파트너 스토리 캐러셀**·FAQ·CTA, 사이트 검색(`/partner/search`)
 - **견적 요청**(`/partner/dashboard`): 들어온 견적 요청 목록(백엔드 연동) + 입찰 제출 (업체명=업체정보, 로그인 필요)
 - **내 입찰 현황**(`/partner/bids`): 제출한 입찰·낙찰/거절 + **낙찰건 이사 단계 진행**(낙찰완료→낙찰확인→계약완료→이사준비→이사중→이사완료, "다음 단계로" 버튼) (페이지네이션, 로그인 필요)
-- **업체 정보 등록**(`/partner/profile`): 프로필 사진·사업자 정보·**서비스 가능 지역**(권역 → 시·도 → 시·군·구 3단계 트리, 약 229개, **권역 전체 / 시·도별 전체 선택 지원**)·업체 사진·자격증 업로드, **localStorage 영속화로 재진입 시 기존 값 복원** (로그인 필요)
+- **업체 정보 등록**(`/partner/profile`): 프로필 사진·사업자 정보·**서비스 가능 지역**(권역 → 시·도 → 시·군·구 3단계 트리, 약 229개, **권역 전체 / 시·도별 전체 선택 지원**)·업체 사진(최대 8장)·자격증(이미지+PDF, 최대 5개) 업로드, **백엔드 저장(`PartnerProfile` 모델 + 사진/자격증 Cloudinary, 이메일 1:1 upsert)으로 재진입·다른 기기에서 복원** (로그인 필요)
 - **파트너 스토리**(`/partner/story`): 후기 작성 + 검색·페이지네이션, 등록 폼 토글
 - **FAQ**(`/partner/faq`): **관리자 직접 편집** 자주 묻는 질문 + 관리자 답변 Q&A (전체보기 = 글만)
 - **파트너 마이페이지**(`/partner/mypage`): 활동 카드 + **내 업체 정보** 요약 + **내 입찰 현황 박스**(낙찰건 이사 단계 진행 — `/partner/bids`와 공용 컴포넌트) + "업체정보 수정" 단축 진입
@@ -118,6 +118,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | `StageLog` | id, quoteRequestId(FK→QuoteRequest, Cascade), stage, createdAt — 단계 변경 이력(택배식 타임라인) |
 | `Notification` | id, toEmail(수신자), type(bid/award/reject/stage), message, link, read, createdAt — 서버 거래 이벤트 알림(폴링 조회) |
 | `Review` | id, name, text, rating(1~5), moveType, company(이용 업체·평점 집계 키), authorEmail, hidden(관리자 숨김), reply(관리자 답변), createdAt — 고객 리뷰·업체 평점 원천 |
+| `PartnerProfile` | id, email(파트너 1:1 unique), company, bizNo, ceo, phone, trucks, intro, regions(JSON), profileImg(URL), workPhotos(JSON URL), certs(JSON [{url,name,isImage}]), createdAt, updatedAt — 업체 프로필·사진·자격증 |
 
 ### 클라이언트 localStorage 키 (영속화)
 | 키 | 용도 |
@@ -130,8 +131,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | `movingday_user_quote_count` / `movingday_partner_bid_count` | 활동 카운트 |
 | `movingday_user_overrides_{email}` | 회원정보 클라이언트 오버라이드(닉네임·전화) |
 | `movingday_header_mode` / `movingday_display_mode` | 헤더 표시 방식 / 리뷰·FAQ 표시 방식 |
-| `movingday_partner_profile` | 파트너 업체정보(지역·사진·자격증 등) |
-| `partnerProfileSaved` | 파트너 업체정보 등록 플래그(입찰 시작 게이트) |
+| `partnerProfileSaved` | 파트너 업체정보 등록 플래그(입찰 시작 게이트 — 프로필 자체는 `PartnerProfile` 서버 저장) |
 | `movingday_last_quote_id` | 방금 신청한 견적 id(고객 입찰 비교 조회용) |
 
 ## 주요 API
@@ -161,13 +161,15 @@ cd frontend && npm install && npm run dev                          # 5173
 | POST | `/api/reviews` | 리뷰 작성 |
 | PATCH | `/api/reviews/:id` | 리뷰 수정·숨김 토글·관리자 답변 |
 | DELETE | `/api/reviews/:id` | 리뷰 삭제 |
+| GET | `/api/partners/:email` | 내 업체 프로필 조회 (없으면 null) |
+| PUT | `/api/partners` | 업체 프로필 저장 (multipart — 사진/자격증 Cloudinary, upsert) |
 
 ## 배포
 
 - **Frontend**: Vercel 자동 빌드 (GitHub `main` push 시 자동 배포, `frontend/dist`). `/api/*`·`/uploads/*`는 `vercel.json` rewrites로 Render 백엔드로 프록시
 - **Backend**: Render Web Service (`movingday-api`). DB는 Turso(libSQL), 견적 사진은 Cloudinary
 - **DB**: Turso (libSQL) — Prisma 7 `@prisma/adapter-libsql` 어댑터로 연결. 로컬 dev는 그대로 `better-sqlite3` (URL이 `file:...`면 자동 분기)
-- **사진 업로드**: Cloudinary — multer가 메모리에 받은 버퍼를 Cloudinary `upload_stream`으로 전송, `secure_url`을 DB에 저장
+- **사진 업로드**: Cloudinary — multer가 메모리에 받은 버퍼를 공용 헬퍼(`src/cloudinary.ts`)의 `upload_stream`으로 전송, `secure_url`을 DB에 저장. 견적 사진(이미지)·파트너 프로필 사진·자격증(이미지+PDF, `resource_type` 분기)에 공통 사용
 
 ### 백엔드(Render) 환경변수 — 시크릿은 절대 저장소에 두지 않음
 
@@ -222,7 +224,7 @@ Start Command     npm start
 
 1. **프론트 멀티테넌시 골격** (완료) — 경로 기반 고객/파트너/관리자 분리
 2. **풀스택 role 시스템** (예정) — `User.role(customer/partner/admin)` + `partner_profiles` 1:1 + 회원가입 시 역할 선택 + role 기반 가드/리다이렉트
-3. **사진·자격증 업로드 백엔드 연동** (예정) — 기존 multer 재사용 + S3/디스크
+3. **사진·자격증 업로드 백엔드 연동** (완료) — `PartnerProfile` 모델 + `/api/partners`(GET·PUT upsert). 공용 Cloudinary 헬퍼(`src/cloudinary.ts`)로 프로필 사진·업체 사진·자격증(이미지+PDF) 업로드, 새로 올리면 교체·아니면 기존 URL 유지. PartnerProfilePage·PartnerMyPage 서버 연동(리뷰 사진은 별도로 아직 메모리)
 4. **입찰 실제 DB 연동** (완료) — `Bid` 모델 + 파트너 입찰·고객 비교·관리자 매칭 + 낙찰/낙찰 취소 + 7단계 진행 추적
 5. **업체 평점 시스템** (완료) — 고객 리뷰 백엔드화(`Review` 모델 + CRUD) + 업체별 평점 집계 API(`/api/reviews/ratings`) → 입찰 비교에서 실제 평점 데이터로 정렬. 리뷰 작성·관리자 숨김/답변·메인 캐러셀·마이페이지 카운트 전부 서버 연동(리뷰 사진은 메모리 유지)
 6. **실시간 알림** (핵심 완료) — 서버 `Notification` 테이블 + 거래 이벤트(입찰·낙찰·거절·단계변경) 20초 폴링 알림. 향후 웹소켓·알림톡으로 확장

@@ -5,6 +5,7 @@ import authRouter from './routes/auth.ts'
 import bidsRouter from './routes/bids.ts'
 import notificationsRouter from './routes/notifications.ts'
 import reviewsRouter from './routes/reviews.ts'
+import partnersRouter from './routes/partners.ts'
 
 // 배포 환경에서는 JWT_SECRET이 반드시 필요 — 누락 시 시작 거부
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -54,6 +55,9 @@ app.use('/api/notifications', notificationsRouter)
 
 // 리뷰 API (업체 평점 집계 포함)
 app.use('/api/reviews', reviewsRouter)
+
+// 파트너 업체 프로필 API (사진/자격증 Cloudinary)
+app.use('/api/partners', partnersRouter)
 
 // 에러 처리 (사진 업로드 용량/개수 초과 등)
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

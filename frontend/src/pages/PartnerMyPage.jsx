@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ActivityCard from '../components/ActivityCard'
 import PartnerBidsList from '../components/PartnerBidsList'
 import { useLocalState } from '../hooks/useLocalState'
+import { getPartnerProfile } from '../services/partners'
 
 function Info({ label, value }) {
   return (
@@ -13,13 +15,15 @@ function Info({ label, value }) {
   )
 }
 
-// 저장된 업체 정보 로드 (PartnerProfilePage와 동일 키)
-function loadStoredProfile() {
+// JSON 문자열 → 배열 (잘못된 값은 빈 배열)
+function safeArr(raw) {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw !== 'string' || !raw) return []
   try {
-    const raw = localStorage.getItem('movingday_partner_profile')
-    return raw ? JSON.parse(raw) : null
+    const v = JSON.parse(raw)
+    return Array.isArray(v) ? v : []
   } catch {
-    return null
+    return []
   }
 }
 
@@ -29,12 +33,16 @@ function PartnerMyPage() {
   const [stories] = useLocalState('movingday_partner_stories', [])
   const [questions] = useLocalState('movingday_partner_qa', [])
   const [bidCount] = useLocalState('movingday_partner_bid_count', 0)
-  // 업체 정보 (페이지 마운트 시점 스냅샷)
-  const profile = loadStoredProfile()
-  const profileSaved =
-    typeof window !== 'undefined' &&
-    localStorage.getItem('partnerProfileSaved') === 'true' &&
-    profile
+  // 업체 정보 — 서버에서 로드
+  const [profile, setProfile] = useState(null)
+  useEffect(() => {
+    if (!user?.email) return
+    getPartnerProfile(user.email)
+      .then(setProfile)
+      .catch(() => setProfile(null))
+  }, [user?.email])
+  const profileSaved = !!profile
+  const regions = profile ? safeArr(profile.regions) : []
 
   if (!user) {
     return (
@@ -83,13 +91,13 @@ function PartnerMyPage() {
               value={profile.trucks ? `${profile.trucks}대` : '-'}
             />
           </div>
-          {profile.regions && profile.regions.length > 0 && (
+          {regions.length > 0 && (
             <div className="mt-4">
               <p className="text-xs font-medium text-gray-500">
                 서비스 가능 지역
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {profile.regions.slice(0, 12).map((r) => (
+                {regions.slice(0, 12).map((r) => (
                   <span
                     key={r}
                     className="rounded-full bg-brand-light px-2.5 py-1 text-xs font-medium text-brand"
@@ -97,9 +105,9 @@ function PartnerMyPage() {
                     {r}
                   </span>
                 ))}
-                {profile.regions.length > 12 && (
+                {regions.length > 12 && (
                   <span className="self-center text-xs text-gray-400">
-                    외 {profile.regions.length - 12}곳
+                    외 {regions.length - 12}곳
                   </span>
                 )}
               </div>

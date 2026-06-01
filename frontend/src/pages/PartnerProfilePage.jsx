@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { REGION_TREE } from '../data/regions'
+import { getPartnerProfile, savePartnerProfile } from '../services/partners'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -17,27 +19,51 @@ function Opt() {
   return <span className="font-normal text-gray-400"> (선택)</span>
 }
 
-// 저장된 업체 정보 로드 (마운트 시점) — 마이페이지에서도 동일 키로 읽음
-function loadStoredProfile() {
+// JSON 문자열 → 배열 (잘못된 값은 빈 배열)
+function safeArr(raw) {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw !== 'string' || !raw) return []
   try {
-    const raw = localStorage.getItem('movingday_partner_profile')
-    return raw ? JSON.parse(raw) : {}
+    const v = JSON.parse(raw)
+    return Array.isArray(v) ? v : []
   } catch {
-    return {}
+    return []
   }
 }
 
 function PartnerProfilePage() {
-  const stored = loadStoredProfile()
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState(null) // 서버 저장본
   const [saved, setSaved] = useState(false)
-  const [error, setError] = useState('') // 서비스 지역 미선택 안내
-  const [profileImg, setProfileImg] = useState(null) // 프로필 사진 1장
-  const [workPhotos, setWorkPhotos] = useState([]) // 업체·이사 사진
-  const [certs, setCerts] = useState([]) // 자격증·서류 (이미지/PDF)
-  // 서비스 지역 — controlled (권역별 전체 선택 토글을 위해)
-  const [selectedRegions, setSelectedRegions] = useState(
-    () => new Set(stored.regions || []),
-  )
+  const [error, setError] = useState('')
+  // 새로 선택한 파일 (업로드 대상)
+  const [newProfileImg, setNewProfileImg] = useState(null) // {file,url}
+  const [newWork, setNewWork] = useState([]) // [{file,url,name}]
+  const [newCerts, setNewCerts] = useState([]) // [{file,url,name,isImage}]
+  // 서버에 이미 저장된 사진 (새로 안 올리면 유지)
+  const [existingWork, setExistingWork] = useState([]) // [url]
+  const [existingCerts, setExistingCerts] = useState([]) // [{url,name,isImage}]
+  // 서비스 지역 — controlled
+  const [selectedRegions, setSelectedRegions] = useState(() => new Set())
+
+  // 서버에서 기존 프로필 로드
+  useEffect(() => {
+    if (!user?.email) {
+      setLoading(false)
+      return
+    }
+    getPartnerProfile(user.email)
+      .then((p) => {
+        setProfile(p)
+        if (p) {
+          setSelectedRegions(new Set(safeArr(p.regions)))
+          setExistingWork(safeArr(p.workPhotos))
+          setExistingCerts(safeArr(p.certs))
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [user?.email])
 
   function toggleRegion(value) {
     setSelectedRegions((prev) => {
@@ -49,7 +75,6 @@ function PartnerProfilePage() {
   }
 
   function toggleGroup(sidoMap) {
-    // 그룹 안 모든 '시도 시군구' 키 집계
     const all = []
     Object.entries(sidoMap).forEach(([sido, sgs]) => {
       sgs.forEach((sg) => all.push(`${sido} ${sg}`))
@@ -63,7 +88,6 @@ function PartnerProfilePage() {
     })
   }
 
-  // 시·도 단위 일괄 토글 (예: 서울 25구 한 번에)
   function toggleSido(sido, sgs) {
     const all = sgs.map((sg) => `${sido} ${sg}`)
     const allOn = all.every((r) => selectedRegions.has(r))
@@ -78,56 +102,102 @@ function PartnerProfilePage() {
   // 프로필 사진 (단일)
   function onProfile(e) {
     const f = e.target.files?.[0]
-    if (f) setProfileImg({ name: f.name, url: URL.createObjectURL(f) })
+    if (!f) return
+    if (newProfileImg) URL.revokeObjectURL(newProfileImg.url)
+    setNewProfileImg({ file: f, url: URL.createObjectURL(f) })
   }
 
   // 업체·이사 사진 (최대 8장)
   function onWork(e) {
+    newWork.forEach((p) => URL.revokeObjectURL(p.url))
     const files = Array.from(e.target.files ?? []).slice(0, 8)
-    setWorkPhotos(files.map((f) => ({ name: f.name, url: URL.createObjectURL(f) })))
+    setNewWork(
+      files.map((f) => ({ file: f, url: URL.createObjectURL(f), name: f.name })),
+    )
   }
 
   // 자격증·서류 (이미지 또는 PDF, 최대 5개)
   function onCerts(e) {
+    newCerts.forEach((p) => URL.revokeObjectURL(p.url))
     const files = Array.from(e.target.files ?? []).slice(0, 5)
-    setCerts(
+    setNewCerts(
       files.map((f) => ({
-        name: f.name,
+        file: f,
         url: URL.createObjectURL(f),
+        name: f.name,
         isImage: f.type.startsWith('image/'),
       })),
     )
   }
 
-  // 저장 (목업): 서비스 지역은 최소 1곳 선택해야 함
-  function submit(e) {
+  // 저장 — 서비스 지역 최소 1곳, 사진은 새로 올린 것만 업로드(없으면 기존 유지)
+  async function submit(e) {
     e.preventDefault()
     if (selectedRegions.size === 0) {
       setSaved(false)
       setError('서비스 가능 지역을 1곳 이상 선택해 주세요.')
       return
     }
-    const fd = new FormData(e.currentTarget)
-    // 업체 정보 영속화 — 파트너 마이페이지에서 같은 키로 읽음
-    const profile = {
-      company: fd.get('company')?.toString().trim() || '',
-      bizNo: fd.get('bizNo')?.toString().trim() || '',
-      ceo: fd.get('ceo')?.toString().trim() || '',
-      phone: fd.get('phone')?.toString().trim() || '',
-      trucks: fd.get('trucks')?.toString().trim() || '',
-      intro: fd.get('intro')?.toString().trim() || '',
-      regions: Array.from(selectedRegions),
-    }
+    const form = e.currentTarget
+    const val = (n) => form.elements[n]?.value?.trim() || ''
+    const fd = new FormData()
+    fd.append('email', user.email)
+    fd.append('company', val('company'))
+    fd.append('bizNo', val('bizNo'))
+    fd.append('ceo', val('ceo'))
+    fd.append('phone', val('phone'))
+    fd.append('trucks', val('trucks'))
+    fd.append('intro', val('intro'))
+    fd.append('regions', JSON.stringify([...selectedRegions]))
+    // 프로필 사진
+    if (newProfileImg) fd.append('profileImg', newProfileImg.file)
+    else if (profile?.profileImg)
+      fd.append('existingProfileImg', profile.profileImg)
+    // 업체 사진
+    if (newWork.length) newWork.forEach((p) => fd.append('workPhotos', p.file))
+    else if (existingWork.length)
+      fd.append('existingWorkPhotos', JSON.stringify(existingWork))
+    // 자격증
+    if (newCerts.length) newCerts.forEach((p) => fd.append('certs', p.file))
+    else if (existingCerts.length)
+      fd.append('existingCerts', JSON.stringify(existingCerts))
+
     try {
-      localStorage.setItem('movingday_partner_profile', JSON.stringify(profile))
-    } catch {
-      // 저장 실패 무시
+      const savedProfile = await savePartnerProfile(fd)
+      setProfile(savedProfile)
+      setExistingWork(safeArr(savedProfile.workPhotos))
+      setExistingCerts(safeArr(savedProfile.certs))
+      // 새 파일 미리보기 정리
+      if (newProfileImg) URL.revokeObjectURL(newProfileImg.url)
+      newWork.forEach((p) => URL.revokeObjectURL(p.url))
+      newCerts.forEach((p) => URL.revokeObjectURL(p.url))
+      setNewProfileImg(null)
+      setNewWork([])
+      setNewCerts([])
+      setError('')
+      setSaved(true)
+      // 파트너 홈 "입찰 시작하기" 게이트 해제용 플래그
+      localStorage.setItem('partnerProfileSaved', 'true')
+    } catch (err) {
+      setSaved(false)
+      setError(err.message || '업체 정보 저장에 실패했습니다.')
     }
-    setError('')
-    setSaved(true)
-    // 파트너 홈에서 "입찰 시작하기" 게이트 해제용 플래그
-    localStorage.setItem('partnerProfileSaved', 'true')
   }
+
+  if (loading) {
+    return (
+      <section className="mx-auto max-w-3xl px-4 py-24 text-center text-gray-400">
+        업체 정보를 불러오는 중…
+      </section>
+    )
+  }
+
+  // 미리보기 소스 (새 파일 우선, 없으면 서버 저장본)
+  const profilePreview = newProfileImg?.url || profile?.profileImg || null
+  const workPreview = newWork.length
+    ? newWork
+    : existingWork.map((url) => ({ url, name: '' }))
+  const certPreview = newCerts.length ? newCerts : existingCerts
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-10">
@@ -150,9 +220,9 @@ function PartnerProfilePage() {
             <Opt />
           </span>
           <div className="mt-2 flex items-center gap-4">
-            {profileImg ? (
+            {profilePreview ? (
               <img
-                src={profileImg.url}
+                src={profilePreview}
                 alt="프로필 미리보기"
                 className="h-20 w-20 rounded-full border border-gray-200 object-cover"
               />
@@ -163,7 +233,6 @@ function PartnerProfilePage() {
             )}
             <input
               type="file"
-              name="profileImg"
               accept="image/*"
               onChange={onProfile}
               className={fileClass}
@@ -180,7 +249,7 @@ function PartnerProfilePage() {
             type="text"
             name="company"
             required
-            defaultValue={stored.company || ''}
+            defaultValue={profile?.company || ''}
             placeholder="예: 한솔이사"
             className={inputClass}
           />
@@ -196,7 +265,7 @@ function PartnerProfilePage() {
               type="text"
               name="bizNo"
               required
-              defaultValue={stored.bizNo || ''}
+              defaultValue={profile?.bizNo || ''}
               placeholder="예: 123-45-67890"
               className={inputClass}
             />
@@ -210,7 +279,7 @@ function PartnerProfilePage() {
               type="text"
               name="ceo"
               required
-              defaultValue={stored.ceo || ''}
+              defaultValue={profile?.ceo || ''}
               placeholder="예: 김한솔"
               className={inputClass}
             />
@@ -227,7 +296,7 @@ function PartnerProfilePage() {
               type="tel"
               name="phone"
               required
-              defaultValue={stored.phone || ''}
+              defaultValue={profile?.phone || ''}
               placeholder="예: 02-1234-5678"
               className={inputClass}
             />
@@ -241,7 +310,7 @@ function PartnerProfilePage() {
               type="number"
               name="trucks"
               min="0"
-              defaultValue={stored.trucks || ''}
+              defaultValue={profile?.trucks || ''}
               placeholder="예: 4"
               className={inputClass}
             />
@@ -335,7 +404,6 @@ function PartnerProfilePage() {
                                 >
                                   <input
                                     type="checkbox"
-                                    name="regions"
                                     value={value}
                                     checked={selectedRegions.has(value)}
                                     onChange={() => toggleRegion(value)}
@@ -365,7 +433,7 @@ function PartnerProfilePage() {
           <textarea
             name="intro"
             rows={3}
-            defaultValue={stored.intro || ''}
+            defaultValue={profile?.intro || ''}
             placeholder="예: 20년 경력 베테랑 팀이 포장부터 정리까지 직접 책임집니다."
             className={inputClass}
           />
@@ -379,26 +447,25 @@ function PartnerProfilePage() {
           </span>
           <input
             type="file"
-            name="workPhotos"
             accept="image/*"
             multiple
             onChange={onWork}
             className={`${fileClass} mt-1`}
           />
-          {workPhotos.length > 0 && (
+          {workPreview.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
-              {workPhotos.map((p) => (
+              {workPreview.map((p) => (
                 <img
                   key={p.url}
                   src={p.url}
-                  alt={p.name}
+                  alt={p.name || '업체 사진'}
                   className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
                 />
               ))}
             </div>
           )}
           <p className="mt-2 text-xs text-gray-400">
-            실제 작업 사진을 올리면 고객 신뢰도가 올라가요.
+            실제 작업 사진을 올리면 고객 신뢰도가 올라가요. (새로 올리면 기존 사진은 교체됩니다)
           </p>
         </label>
 
@@ -410,35 +477,37 @@ function PartnerProfilePage() {
           </span>
           <input
             type="file"
-            name="certs"
             accept="image/*,.pdf"
             multiple
             onChange={onCerts}
             className={`${fileClass} mt-1`}
           />
-          {certs.length > 0 && (
+          {certPreview.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
-              {certs.map((c) =>
+              {certPreview.map((c) =>
                 c.isImage ? (
                   <img
                     key={c.url}
                     src={c.url}
-                    alt={c.name}
+                    alt={c.name || '자격증'}
                     className="h-20 w-20 rounded-lg border border-gray-200 object-cover"
                   />
                 ) : (
-                  <span
+                  <a
                     key={c.url}
-                    className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600"
+                    href={c.url || undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 transition hover:border-brand hover:text-brand"
                   >
-                    📄 {c.name}
-                  </span>
+                    📄 {c.name || '서류'}
+                  </a>
                 ),
               )}
             </div>
           )}
           <p className="mt-2 text-xs text-gray-400">
-            사업자등록증·자격증 등 (이미지 또는 PDF)
+            사업자등록증·자격증 등 (이미지 또는 PDF · 새로 올리면 기존 서류는 교체됩니다)
           </p>
         </label>
 

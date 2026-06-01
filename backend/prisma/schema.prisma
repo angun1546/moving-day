@@ -102,6 +102,24 @@ model Review {
   @@index([createdAt])
 }
 
+// 파트너(업체) 프로필 — 로그인 파트너 이메일 1:1, 사진/자격증은 Cloudinary URL
+model PartnerProfile {
+  id         String   @id @default(cuid())
+  email      String   @unique // 로그인 파트너 이메일
+  company    String
+  bizNo      String // 사업자등록번호
+  ceo        String // 대표자명
+  phone      String
+  trucks     String? // 탑차 보유 대수
+  intro      String? // 한 줄 소개
+  regions    String   @default("[]") // 서비스 지역 JSON 배열
+  profileImg String? // 프로필 사진 URL
+  workPhotos String? // 업체·이사 사진 URL JSON 배열
+  certs      String? // 자격증·서류 JSON 배열 [{url,name,isImage}]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
 // 사용자 알림 — 서버 거래 이벤트(입찰·낙찰·거절·단계변경)에서 생성, 프론트가 폴링으로 조회
 model Notification {
   id        String   @id @default(cuid())
