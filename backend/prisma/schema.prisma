@@ -103,6 +103,20 @@ model Review {
   @@index([createdAt])
 }
 
+// Q&A 문의 — 고객(user)·파트너(partner) 질문 + 관리자 답변
+model Qna {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  scope       String // user | partner
+  name        String // 질문자 표시명
+  q           String // 질문
+  a           String? // 관리자 답변(없으면 미답변)
+  authorEmail String? // 질문자 식별
+  hidden      Boolean  @default(false) // 관리자 숨김
+
+  @@index([scope, createdAt])
+}
+
 // 공지사항 — 관리자 작성, 고객·파트너 사이트 공유
 model Notice {
   id        String   @id @default(cuid())

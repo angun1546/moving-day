@@ -123,6 +123,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | `StageLog` | id, quoteRequestId(FK→QuoteRequest, Cascade), stage, createdAt — 단계 변경 이력(택배식 타임라인) |
 | `Notification` | id, toEmail(수신자), type(bid/award/reject/stage), message, link, read, createdAt — 서버 거래 이벤트 알림(폴링 조회) |
 | `Notice` | id, title, body, createdAt — 공지사항(관리자 작성, 고객·파트너 공유) |
+| `Qna` | id, scope(user/partner), name, q, a(답변·nullable), authorEmail, hidden, createdAt — Q&A 문의 |
 | `Review` | id, name, text, rating(1~5), moveType, company(이용 업체·평점 집계 키), authorEmail, hidden(관리자 숨김), reply(관리자 답변), createdAt — 고객 리뷰·업체 평점 원천 |
 | `PartnerProfile` | id, email(파트너 1:1 unique), company, bizNo, ceo, phone, trucks, intro, regions(JSON), profileImg(URL), workPhotos(JSON URL), certs(JSON [{url,name,isImage}]), createdAt, updatedAt — 업체 프로필·사진·자격증 |
 
@@ -130,7 +131,6 @@ cd frontend && npm install && npm run dev                          # 5173
 | 키 | 용도 |
 |---|---|
 | `movingday_partner_stories` | 파트너 스토리 (`authorEmail` 포함) |
-| `movingday_user_qa` / `movingday_partner_qa` | 사용자/파트너 Q&A (관리자 답변 + `authorEmail`) |
 | `movingday_user_faqs` / `movingday_partner_faqs` | 자주 묻는 질문(관리자 편집) |
 | `movingday_notifications` | 알림 큐(수신자 `to` 필드로 필터) |
 | `movingday_user_quote_count` / `movingday_partner_bid_count` | 활동 카운트 |
@@ -172,6 +172,10 @@ cd frontend && npm install && npm run dev                          # 5173
 | POST | `/api/notices` | 공지 작성 |
 | PATCH | `/api/notices/:id` | 공지 수정 |
 | DELETE | `/api/notices/:id` | 공지 삭제 |
+| GET | `/api/qna/:scope` | Q&A 목록 (scope=user/partner, 최신순) |
+| POST | `/api/qna` | 질문 작성 |
+| PATCH | `/api/qna/:id` | 관리자 답변·숨김 토글 |
+| DELETE | `/api/qna/:id` | 질문 삭제 |
 
 ## 배포
 

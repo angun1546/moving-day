@@ -81,6 +81,19 @@ CREATE TABLE "Review" (
 CREATE INDEX "Review_company_idx" ON "Review"("company");
 CREATE INDEX "Review_createdAt_idx" ON "Review"("createdAt");
 
+-- Q&A 문의 (고객·파트너 질문 + 관리자 답변)
+CREATE TABLE "Qna" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "scope" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "q" TEXT NOT NULL,
+    "a" TEXT,
+    "authorEmail" TEXT,
+    "hidden" BOOLEAN NOT NULL DEFAULT false
+);
+CREATE INDEX "Qna_scope_createdAt_idx" ON "Qna"("scope", "createdAt");
+
 -- 공지사항 (관리자 작성, 고객·파트너 공유)
 CREATE TABLE "Notice" (
     "id" TEXT NOT NULL PRIMARY KEY,

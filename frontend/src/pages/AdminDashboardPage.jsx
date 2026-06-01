@@ -14,6 +14,7 @@ import {
   updateNotice,
   deleteNotice,
 } from '../services/notices'
+import { getQna, updateQna } from '../services/qna'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -319,8 +320,16 @@ function AdminDashboardPage() {
     'movingday_partner_stories',
     [],
   )
-  const [userQa, setUserQa] = useLocalState('movingday_user_qa', [])
-  const [partnerQa, setPartnerQa] = useLocalState('movingday_partner_qa', [])
+  const [userQa, setUserQa] = useState([])
+  const [partnerQa, setPartnerQa] = useState([])
+  useEffect(() => {
+    getQna('user')
+      .then((d) => setUserQa(Array.isArray(d) ? d : []))
+      .catch(() => setUserQa([]))
+    getQna('partner')
+      .then((d) => setPartnerQa(Array.isArray(d) ? d : []))
+      .catch(() => setPartnerQa([]))
+  }, [])
   // 공지 — NoticePage와 동일 키 (즉시 양방향 동기화)
   const [notices, setNotices] = useState([])
   useEffect(() => {
@@ -372,14 +381,16 @@ function AdminDashboardPage() {
         _kind: 'user',
         type: '고객',
         author: q.name,
+        _sort: new Date(q.createdAt).getTime() || 0,
       })),
       ...partnerQa.map((q) => ({
         ...q,
         _kind: 'partner',
         type: '파트너',
         author: q.name,
+        _sort: new Date(q.createdAt).getTime() || 0,
       })),
-    ].sort((a, b) => b.id - a.id)
+    ].sort((a, b) => b._sort - a._sort)
   }, [userQa, partnerQa])
 
   // 매칭·리뷰·Q&A·공지 목록 페이지네이션 (5개씩)
@@ -452,12 +463,15 @@ function AdminDashboardPage() {
     }
   }
 
-  // Q&A 액션
-  function answer(item, text) {
-    const updater = (prev) =>
-      prev.map((q) => (q.id === item.id ? { ...q, a: text } : q))
-    if (item._kind === 'user') setUserQa(updater)
-    else setPartnerQa(updater)
+  // Q&A 액션 (서버 반영, _kind로 user/partner 큐 분기)
+  async function answer(item, text) {
+    try {
+      const updated = await updateQna(item.id, { a: text })
+      const setter = item._kind === 'user' ? setUserQa : setPartnerQa
+      setter((prev) => prev.map((q) => (q.id === item.id ? updated : q)))
+    } catch {
+      // 무시
+    }
     // 답변은 질문자 본인에게만
     addNotification({
       type: 'reply',
@@ -466,17 +480,23 @@ function AdminDashboardPage() {
       to: item.authorEmail || '',
     })
   }
-  function clearAnswer(item) {
-    const updater = (prev) =>
-      prev.map((q) => (q.id === item.id ? { ...q, a: '' } : q))
-    if (item._kind === 'user') setUserQa(updater)
-    else setPartnerQa(updater)
+  async function clearAnswer(item) {
+    try {
+      const updated = await updateQna(item.id, { a: '' })
+      const setter = item._kind === 'user' ? setUserQa : setPartnerQa
+      setter((prev) => prev.map((q) => (q.id === item.id ? updated : q)))
+    } catch {
+      // 무시
+    }
   }
-  function toggleHideInquiry(item) {
-    const updater = (prev) =>
-      prev.map((q) => (q.id === item.id ? { ...q, hidden: !q.hidden } : q))
-    if (item._kind === 'user') setUserQa(updater)
-    else setPartnerQa(updater)
+  async function toggleHideInquiry(item) {
+    try {
+      const updated = await updateQna(item.id, { hidden: !item.hidden })
+      const setter = item._kind === 'user' ? setUserQa : setPartnerQa
+      setter((prev) => prev.map((q) => (q.id === item.id ? updated : q)))
+    } catch {
+      // 무시
+    }
   }
 
   // 공지 액션 — 작성·수정·삭제 (전체 사용자 알림, 관리자 본인 제외 X = 전체에게)

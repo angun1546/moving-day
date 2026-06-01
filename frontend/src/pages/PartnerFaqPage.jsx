@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useLocalState } from '../hooks/useLocalState'
+import { getQna, createQna, updateQna, deleteQna } from '../services/qna'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
 import { useConfirm } from '../context/ConfirmContext'
@@ -177,7 +178,12 @@ function QaCard({ qa, onAnswer, onDeleteAnswer, onDeleteQuestion, isAdmin }) {
 
 function PartnerFaqPage() {
   const { user, isAdmin } = useAuth()
-  const [questions, setQuestions] = useLocalState('movingday_partner_qa', [])
+  const [questions, setQuestions] = useState([])
+  useEffect(() => {
+    getQna('partner')
+      .then((d) => setQuestions(Array.isArray(d) ? d : []))
+      .catch(() => setQuestions([]))
+  }, [])
   // 숨김 처리된 질문은 사용자 화면에서 제외
   const visibleQuestions = questions.filter((q) => !q.hidden)
   // Q&A 질문 페이지네이션 (5개씩)
@@ -223,49 +229,71 @@ function PartnerFaqPage() {
     setEditingFaqId(null)
   }
 
-  function ask(e) {
+  async function ask(e) {
     e.preventDefault()
-    const fd = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const fd = new FormData(form)
     const name = fd.get('name')?.toString().trim()
     const text = fd.get('q')?.toString().trim()
     if (!name || !text) return
-    setQuestions((prev) => [
-      {
-        id: Date.now(),
+    try {
+      const created = await createQna({
+        scope: 'partner',
         name,
         q: text,
-        a: '',
         authorEmail: user?.email || '',
-      },
-      ...prev,
-    ])
-    e.currentTarget.reset()
-    setShowAsk(false)
+      })
+      setQuestions((prev) => [created, ...prev])
+      form.reset()
+      setShowAsk(false)
+    } catch (err) {
+      await confirm({
+        title: '등록 실패',
+        message: err.message || '질문 등록에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
   }
 
-  function answer(id, text) {
-    setQuestions((prev) =>
-      prev.map((qa) => (qa.id === id ? { ...qa, a: text } : qa)),
-    )
-    const target = questions.find((qa) => qa.id === id)
-    addNotification({
-      type: 'reply',
-      message: target
-        ? `${target.name}님의 질문에 관리자 답변이 달렸어요.`
-        : '관리자 답변이 등록되었어요.',
-      link: '/partner/faq',
-      to: target?.authorEmail || '',
-    })
+  async function answer(id, text) {
+    try {
+      const updated = await updateQna(id, { a: text })
+      setQuestions((prev) => prev.map((qa) => (qa.id === id ? updated : qa)))
+      addNotification({
+        type: 'reply',
+        message: `${updated.name}님의 질문에 관리자 답변이 달렸어요.`,
+        link: '/partner/faq',
+        to: updated.authorEmail || '',
+      })
+    } catch (err) {
+      await confirm({
+        title: '답변 실패',
+        message: err.message || '답변 등록에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
   }
-  function deleteAnswer(id) {
-    setQuestions((prev) =>
-      prev.map((qa) => (qa.id === id ? { ...qa, a: '' } : qa)),
-    )
+  async function deleteAnswer(id) {
+    try {
+      const updated = await updateQna(id, { a: '' })
+      setQuestions((prev) => prev.map((qa) => (qa.id === id ? updated : qa)))
+    } catch {
+      // 무시
+    }
   }
   async function deleteQuestion(id) {
     if (!(await confirm({ title: '질문 삭제', message: '이 질문을 삭제할까요?', danger: true })))
       return
-    setQuestions((prev) => prev.filter((qa) => qa.id !== id))
+    try {
+      await deleteQna(id)
+      setQuestions((prev) => prev.filter((qa) => qa.id !== id))
+    } catch (err) {
+      await confirm({
+        title: '삭제 실패',
+        message: err.message || '질문 삭제에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
   }
 
   return (
