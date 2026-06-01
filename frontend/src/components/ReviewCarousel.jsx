@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import gsap from 'gsap'
 
 // 별점 표시 (소수점 미지원, 1~5 정수)
 function Stars({ rating }) {
@@ -86,24 +85,6 @@ function ReviewCarousel({
   const trackRef = useRef(null)
   const [atStart, setAtStart] = useState(true)
   const [atEnd, setAtEnd] = useState(false)
-
-  // 카드 등장 — 마운트/목록 변경 시 부드럽게 stagger로 떠오름
-  useEffect(() => {
-    const track = trackRef.current
-    if (!track || !track.children.length) return
-    gsap.fromTo(
-      track.children,
-      { autoAlpha: 0, y: 24 },
-      {
-        autoAlpha: 1,
-        y: 0,
-        stagger: 0.08,
-        duration: 0.5,
-        ease: 'power2.out',
-        clearProps: 'transform',
-      },
-    )
-  }, [reviews])
 
   // 스크롤 위치에 따라 화살표 비활성 상태 갱신
   useEffect(() => {
