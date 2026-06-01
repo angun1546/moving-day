@@ -11,6 +11,7 @@ import SignupPage from '../pages/SignupPage'
 import UserReviewPage from '../pages/UserReviewPage'
 import UserFaqPage from '../pages/UserFaqPage'
 import MyPage from '../pages/MyPage'
+import MyQuotesPage from '../pages/MyQuotesPage'
 import AccountEditPage from '../pages/AccountEditPage'
 import NoticePage from '../pages/NoticePage'
 import PartnerLayout from '../components/PartnerLayout'
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
       { path: 'faq', element: <UserFaqPage /> },
       // 회원 영역
       { path: 'mypage', element: <MyPage /> },
+      { path: 'mypage/quotes', element: <MyQuotesPage /> },
       { path: 'account', element: <AccountEditPage /> },
       // 공지사항
       { path: 'notice', element: <NoticePage /> },

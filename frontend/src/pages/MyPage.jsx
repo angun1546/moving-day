@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ActivityCard from '../components/ActivityCard'
-import MyQuotesBox from '../components/MyQuotesBox'
 import { useLocalState } from '../hooks/useLocalState'
 import { getReviews } from '../services/reviews'
 
@@ -63,7 +62,7 @@ function MyPage() {
       {/* 활동 내역 — 클릭 시 해당 페이지로 이동 */}
       <h2 className="mt-10 text-lg font-bold text-gray-900">활동 내역</h2>
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <ActivityCard to="/quote" label="견적 신청" count={quoteCount} />
+        <ActivityCard to="/mypage/quotes" label="견적 신청" count={quoteCount} />
         <ActivityCard
           to="/reviews"
           label="작성 리뷰"
@@ -71,10 +70,6 @@ function MyPage() {
         />
         <ActivityCard to="/faq" label="내 질문" count={questions.length} />
       </div>
-
-      {/* 내 견적 현황 */}
-      <h2 className="mt-10 text-lg font-bold text-gray-900">내 견적 현황</h2>
-      <MyQuotesBox email={user.email} />
 
       {/* 액션 */}
       <div className="mt-10 flex flex-col gap-3 sm:flex-row">
