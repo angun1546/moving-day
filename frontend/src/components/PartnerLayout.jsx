@@ -7,6 +7,7 @@ import BellIcon from './BellIcon'
 import UserMenu from './UserMenu'
 import PageTransition from './PageTransition'
 import TopButton from './TopButton'
+import { useTapFeedback } from '../hooks/useTapFeedback'
 
 const NAV = [
   { to: '/partner/dashboard', label: '견적 요청' },
@@ -19,6 +20,7 @@ const NAV = [
 
 // 업체(파트너) 전용 레이아웃 — 유저 헤더와 동일 패턴(검색·로그인·알림·햄버거)
 function PartnerLayout() {
+  useTapFeedback() // 전역 버튼·링크 탭 피드백
   const { user, logout } = useAuth()
   const { pathname } = useLocation()
   const navigate = useNavigate()

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import ActivityCard from '../components/ActivityCard'
 import { useLocalState } from '../hooks/useLocalState'
 import { getReviews } from '../services/reviews'
+import { getMyQuotes } from '../services/quotes'
 
 function Info({ label, value }) {
   return (
@@ -16,15 +17,21 @@ function Info({ label, value }) {
 
 function MyPage() {
   const { user, logout } = useAuth()
-  // 작성 리뷰는 서버에서 로드(본인 것만 카운트), 나머지는 localStorage 활동 카운트
+  // 활동 카운트는 실제 데이터 기준 — 견적·리뷰는 서버, 질문은 본인 것만
   const [reviews, setReviews] = useState([])
+  const [quoteCount, setQuoteCount] = useState(0)
   useEffect(() => {
     getReviews()
       .then((d) => setReviews(Array.isArray(d) ? d : []))
       .catch(() => setReviews([]))
   }, [])
+  useEffect(() => {
+    if (!user?.email) return
+    getMyQuotes(user.email)
+      .then((d) => setQuoteCount(Array.isArray(d) ? d.length : 0))
+      .catch(() => setQuoteCount(0))
+  }, [user?.email])
   const [questions] = useLocalState('movingday_user_qa', [])
-  const [quoteCount] = useLocalState('movingday_user_quote_count', 0)
 
   if (!user) {
     return (
@@ -68,7 +75,11 @@ function MyPage() {
           label="작성 리뷰"
           count={reviews.filter((r) => r.authorEmail === user.email).length}
         />
-        <ActivityCard to="/faq" label="내 질문" count={questions.length} />
+        <ActivityCard
+          to="/faq"
+          label="내 질문"
+          count={questions.filter((q) => q.authorEmail === user.email).length}
+        />
       </div>
 
       {/* 액션 */}
