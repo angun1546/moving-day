@@ -1,16 +1,24 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { USER_PAGES, PARTNER_PAGES, searchPages } from '../data/searchIndex'
 
-// Hero용 큰 검색창 — 검색 시 연관 페이지 검색 결과로 이동
+// Hero용 큰 검색창 — 입력 시 연관 페이지를 드롭다운으로 추천, 검색 시 결과 페이지로 이동
 // scope: 'user' → /search, 'partner' → /partner/search
 function HeroSearch({ scope = 'user', suggestions = [], centered = false }) {
   const [q, setQ] = useState('')
+  const [focused, setFocused] = useState(false)
   const navigate = useNavigate()
-  const base = scope === 'partner' ? '/partner/search' : '/search'
-  const placeholder =
-    scope === 'partner'
-      ? '무엇을 찾으세요? 예: 입찰, 업체 정보, 수수료'
-      : '무엇을 찾으세요? 예: 포장이사, 견적 비교, 후기'
+
+  const isPartner = scope === 'partner'
+  const base = isPartner ? '/partner/search' : '/search'
+  const pages = isPartner ? PARTNER_PAGES : USER_PAGES
+  const placeholder = isPartner
+    ? '무엇을 찾으세요? 예: 입찰, 업체 정보, 수수료'
+    : '무엇을 찾으세요? 예: 가정이사, 기업 이사, 후기'
+
+  // 입력어와 연관된 페이지 (최대 6개)
+  const matches = q.trim() ? searchPages(pages, q).slice(0, 6) : []
+  const showDropdown = focused && q.trim().length > 0
 
   // 검색어로 결과 페이지 이동 (빈 값이면 전체 목록 페이지로)
   function go(query) {
@@ -19,7 +27,7 @@ function HeroSearch({ scope = 'user', suggestions = [], centered = false }) {
   }
 
   return (
-    <div className={`w-full max-w-2xl ${centered ? 'mx-auto' : ''}`}>
+    <div className={`relative w-full max-w-2xl ${centered ? 'mx-auto' : ''}`}>
       <form
         data-no-lift
         onSubmit={(e) => {
@@ -48,8 +56,11 @@ function HeroSearch({ scope = 'user', suggestions = [], centered = false }) {
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             placeholder={placeholder}
             aria-label="사이트 검색"
+            autoComplete="off"
             className="w-full bg-transparent py-3 text-base outline-none placeholder:text-gray-400"
           />
         </div>
@@ -62,7 +73,60 @@ function HeroSearch({ scope = 'user', suggestions = [], centered = false }) {
         </button>
       </form>
 
-      {suggestions.length > 0 && (
+      {/* 자동완성 — 연관 페이지 드롭다운 */}
+      {showDropdown && (
+        <div className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 text-left shadow-xl">
+          {/* 현재 검색어로 결과 페이지 보기 */}
+          <button
+            type="button"
+            data-no-tap
+            onMouseDown={(e) => {
+              e.preventDefault()
+              go(q)
+            }}
+            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition hover:bg-brand-bg"
+          >
+            <span className="text-xl">🔍</span>
+            <span className="text-sm text-gray-700">
+              ‘<span className="font-semibold text-brand">{q}</span>’ 검색 결과 보기
+            </span>
+          </button>
+
+          {matches.length > 0 && (
+            <>
+              <div className="my-1 border-t border-gray-100" />
+              <p className="px-4 py-1 text-xs font-semibold tracking-wider text-gray-400 uppercase">
+                연관 페이지
+              </p>
+              {matches.map((p) => (
+                <button
+                  key={p.path}
+                  type="button"
+                  data-no-tap
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    navigate(p.path)
+                  }}
+                  className="flex w-full items-start gap-3 rounded-2xl px-4 py-3 text-left transition hover:bg-brand-bg"
+                >
+                  <span className="text-2xl">{p.icon}</span>
+                  <span>
+                    <span className="block font-semibold text-gray-900">
+                      {p.title}
+                    </span>
+                    <span className="mt-0.5 block text-sm leading-relaxed text-gray-500">
+                      {p.desc}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 추천 검색어 칩 (입력 전) */}
+      {suggestions.length > 0 && !showDropdown && (
         <div
           className={`mt-4 flex flex-wrap items-center gap-2 ${
             centered ? 'justify-center' : ''

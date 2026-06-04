@@ -7,6 +7,9 @@ import {
   useParams,
 } from 'react-router-dom'
 import { findMethod, findType } from '../data/quoteOptions'
+import { cleaningServices } from '../data/cleaning'
+import { storageServices } from '../data/storage'
+import { documentServices } from '../data/document'
 import { useAuth } from '../context/AuthContext'
 import DatePicker from '../components/DatePicker'
 import { usePostcode } from '../hooks/usePostcode'
@@ -75,6 +78,17 @@ function QuoteFormPage() {
   const [fromDetail, setFromDetail] = useState('')
   const [toDetail, setToDetail] = useState('')
   const [photos, setPhotos] = useState([])
+  const [cleaning, setCleaning] = useState('') // 청소 추가(선택)
+  const [storage, setStorage] = useState([]) // 창고보관 추가(복수 선택)
+  const [docs, setDocs] = useState([]) // 문서보관·파쇄 추가(복수 선택)
+
+  // 복수 선택 토글 (setter 공용)
+  const toggle = (setter) => (label) =>
+    setter((cur) =>
+      cur.includes(label) ? cur.filter((v) => v !== label) : [...cur, label],
+    )
+  const toggleStorage = toggle(setStorage)
+  const toggleDocs = toggle(setDocs)
 
   if (!m || !t) {
     return (
@@ -245,6 +259,100 @@ function QuoteFormPage() {
             </p>
           </Field>
         )}
+
+        {/* 청소 추가 (선택) — 이사와 함께 청소 상품 선택 */}
+        <Field label="청소 추가 (선택)">
+          <div className="mt-1 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setCleaning('')}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                cleaning === ''
+                  ? 'border-brand bg-brand text-white'
+                  : 'border-gray-300 bg-white text-gray-700 hover:border-brand hover:text-brand'
+              }`}
+            >
+              선택 안 함
+            </button>
+            {cleaningServices.map((c) => {
+              const value = `${c.label} (${c.sub})`
+              return (
+                <button
+                  key={c.slug}
+                  type="button"
+                  onClick={() => setCleaning(value)}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    cleaning === value
+                      ? 'border-brand bg-brand text-white'
+                      : 'border-gray-300 bg-white text-gray-700 hover:border-brand hover:text-brand'
+                  }`}
+                >
+                  {c.icon} {c.label}
+                </button>
+              )
+            })}
+          </div>
+          <input type="hidden" name="cleaning" value={cleaning} />
+          <p className="mt-2 text-xs text-gray-400">
+            이사와 함께 청소가 필요하면 선택하세요. 신청 내용에 함께 반영돼요.
+          </p>
+        </Field>
+
+        {/* 창고보관 추가 (선택 · 복수 선택 가능) */}
+        <Field label="창고보관 추가 (선택 · 복수 선택)">
+          <div className="mt-1 flex flex-wrap gap-2">
+            {storageServices.map((s) => {
+              const on = storage.includes(s.label)
+              return (
+                <button
+                  key={s.slug}
+                  type="button"
+                  onClick={() => toggleStorage(s.label)}
+                  aria-pressed={on}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    on
+                      ? 'border-brand bg-brand text-white'
+                      : 'border-gray-300 bg-white text-gray-700 hover:border-brand hover:text-brand'
+                  }`}
+                >
+                  {s.icon} {s.label}
+                </button>
+              )
+            })}
+          </div>
+          <input type="hidden" name="storage" value={storage.join(', ')} />
+          <p className="mt-2 text-xs text-gray-400">
+            보관이 필요한 상품을 모두 선택하세요. 신청 내용에 함께 반영돼요.
+          </p>
+        </Field>
+
+        {/* 문서보관·파쇄 추가 (선택 · 복수 선택 가능) */}
+        <Field label="문서보관·파쇄 추가 (선택 · 복수 선택)">
+          <div className="mt-1 flex flex-wrap gap-2">
+            {documentServices.map((d) => {
+              const on = docs.includes(d.label)
+              return (
+                <button
+                  key={d.slug}
+                  type="button"
+                  onClick={() => toggleDocs(d.label)}
+                  aria-pressed={on}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    on
+                      ? 'border-brand bg-brand text-white'
+                      : 'border-gray-300 bg-white text-gray-700 hover:border-brand hover:text-brand'
+                  }`}
+                >
+                  {d.icon} {d.label}
+                </button>
+              )
+            })}
+          </div>
+          <input type="hidden" name="document" value={docs.join(', ')} />
+          <p className="mt-2 text-xs text-gray-400">
+            문서 파쇄·보관이 필요하면 모두 선택하세요. 신청 내용에 함께 반영돼요.
+          </p>
+        </Field>
 
         <Field label="추가 요청사항">
           <textarea

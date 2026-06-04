@@ -29,7 +29,7 @@ function HeroSection() {
           <span className="text-brand">견적은 한 번에.</span>
         </h1>
         <p className="mt-6 max-w-xl text-lg leading-relaxed text-gray-600">
-          포장이사부터 사무실 이사까지. 검증된 업체들의 견적을 무료로 비교하고,
+          포장이사부터 기업·관공서 이사까지. 검증된 업체들의 견적을 무료로 비교하고,
           합리적인 가격에 안심하고 맡기세요.
         </p>
 

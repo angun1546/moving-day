@@ -3,7 +3,13 @@ import { Link } from 'react-router-dom'
 const COLUMNS = [
   {
     title: '서비스',
-    items: ['포장이사', '반포장이사', '일반이사', '사무실 이사'],
+    items: [
+      { label: '기업·관공서 이사', to: '/business' },
+      { label: '문서보관·파쇄', to: '/document' },
+      { label: '창고보관', to: '/storage' },
+      { label: '가정이사', to: '/home' },
+      { label: '청소', to: '/cleaning' },
+    ],
   },
   {
     title: '회사',
@@ -38,9 +44,20 @@ function Footer() {
               <div key={col.title}>
                 <p className="font-semibold text-gray-900">{col.title}</p>
                 <ul className="mt-3 space-y-2 text-gray-500">
-                  {col.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
+                  {col.items.map((item) =>
+                    typeof item === 'string' ? (
+                      <li key={item}>{item}</li>
+                    ) : (
+                      <li key={item.label}>
+                        <Link
+                          to={item.to}
+                          className="transition hover:text-brand"
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    ),
+                  )}
                 </ul>
               </div>
             ))}

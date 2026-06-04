@@ -27,6 +27,13 @@ import RequireAdmin from '../components/RequireAdmin'
 import AdminDashboardPage from '../pages/AdminDashboardPage'
 import SearchResultsPage from '../pages/SearchResultsPage'
 import BusinessMovePage from '../pages/BusinessMovePage'
+import HomeMovePage from '../pages/HomeMovePage'
+import CleaningPage from '../pages/CleaningPage'
+import CleaningDetailPage from '../pages/CleaningDetailPage'
+import StoragePage from '../pages/StoragePage'
+import StorageDetailPage from '../pages/StorageDetailPage'
+import DocumentPage from '../pages/DocumentPage'
+import DocumentDetailPage from '../pages/DocumentDetailPage'
 import { createQuote } from '../services/quotes'
 
 // 데이터 모드 라우터 (고객: '/' 레이아웃 / 업체: '/partner' 레이아웃)
@@ -62,6 +69,17 @@ export const router = createBrowserRouter([
       { path: 'notice', element: <NoticePage /> },
       // 기업·관공서 이사 (B2B 전용 랜딩)
       { path: 'business', element: <BusinessMovePage /> },
+      // 가정이사 (개인 전용 랜딩)
+      { path: 'home', element: <HomeMovePage /> },
+      // 청소 (상품 소개 랜딩 + 세부 상품 페이지)
+      { path: 'cleaning', element: <CleaningPage /> },
+      { path: 'cleaning/:slug', element: <CleaningDetailPage /> },
+      // 창고보관 (상품 소개 랜딩 + 세부 상품 페이지)
+      { path: 'storage', element: <StoragePage /> },
+      { path: 'storage/:slug', element: <StorageDetailPage /> },
+      // 문서보관·파쇄 (상품 소개 랜딩 + 세부 상품 페이지)
+      { path: 'document', element: <DocumentPage /> },
+      { path: 'document/:slug', element: <DocumentDetailPage /> },
       // 사이트 검색 (검색어로 연관 페이지 찾기)
       { path: 'search', element: <SearchResultsPage scope="user" /> },
       // 관리자 대시보드 (admin 전용 가드)

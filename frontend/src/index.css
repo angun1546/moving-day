@@ -12,6 +12,63 @@
   --color-brand-bg: #f1faf5;
   /* 형광 포인트: 로고 시그니처 그린 (강조·배경용) */
   --color-accent: #00e676;
+
+  /* GNB(헤더) 컨테이너 폭 — 1200px */
+  --container-gnb: 75rem;
+
+  /* 이사트럭 덜컹임 — 높이·타이밍이 제각각인 불규칙 바운스(울퉁불퉁 노면 느낌) */
+  --animate-truck: truck-jiggle 1.3s ease-in-out infinite;
+
+  /* 노면 — 좌측으로 굴러가는 스크롤(한 험프 주기=6 user unit, 8주기=48 이동) */
+  --animate-road: road-scroll 0.8s linear infinite;
+}
+
+@keyframes road-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-48px);
+  }
+}
+
+@keyframes truck-jiggle {
+  0% {
+    transform: translateY(0) scaleY(0.93) rotate(-2deg);
+  }
+  9% {
+    transform: translateY(-5px) scaleY(1.05) rotate(2deg);
+  }
+  17% {
+    transform: translateY(-1px) scaleY(0.97) rotate(-1deg);
+  }
+  24% {
+    transform: translateY(-3px) scaleY(1.02) rotate(1.5deg);
+  }
+  33% {
+    transform: translateY(0) scaleY(0.92) rotate(-1.5deg);
+  }
+  44% {
+    transform: translateY(-6px) scaleY(1.06) rotate(2deg);
+  }
+  52% {
+    transform: translateY(-2px) scaleY(1) rotate(-2deg);
+  }
+  61% {
+    transform: translateY(-4px) scaleY(1.03) rotate(1deg);
+  }
+  70% {
+    transform: translateY(0) scaleY(0.93) rotate(-1deg);
+  }
+  79% {
+    transform: translateY(-2px) scaleY(1.01) rotate(2deg);
+  }
+  88% {
+    transform: translateY(-1px) scaleY(0.96) rotate(-1.5deg);
+  }
+  100% {
+    transform: translateY(0) scaleY(0.93) rotate(-2deg);
+  }
 }
 
 @layer base {

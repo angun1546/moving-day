@@ -1,8 +1,10 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { METHODS } from '../data/quoteOptions'
 import QuoteSteps from '../components/QuoteSteps'
 
 function QuoteMethodPage() {
+  // 진입 범위(?scope=home|business)를 다음 단계까지 그대로 전달
+  const { search } = useLocation()
   return (
     <section className="mx-auto max-w-4xl px-4 py-16">
       <QuoteSteps current={1} />
@@ -15,7 +17,7 @@ function QuoteMethodPage() {
         {METHODS.map((m) => (
           <Link
             key={m.slug}
-            to={`/quote/${m.slug}`}
+            to={`/quote/${m.slug}${search}`}
             className="group rounded-3xl border border-gray-100 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
           >
             <div className="flex items-start justify-between">
