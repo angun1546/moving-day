@@ -26,11 +26,13 @@ router.post('/', async (req, res) => {
       },
     })
 
-    // 견적 주인에게 새 입찰 알림 (비회원 견적이면 notify가 알아서 생략)
+    // 견적 정보 (인앱 알림용 이메일 + 문자 발송용 연락처)
     const quote = await prisma.quoteRequest.findUnique({
       where: { id: quoteRequestId },
-      select: { userEmail: true },
+      select: { userEmail: true, phone: true },
     })
+
+    // 인앱 알림 (회원만 — 비회원이면 notify가 알아서 생략)
     await notify(
       quote?.userEmail,
       'bid',
@@ -38,23 +40,17 @@ router.post('/', async (req, res) => {
       '/mypage',
     )
 
-    // 견적 주인 휴대폰으로 SMS/알림톡 (회원 + 번호 있을 때만, 실패해도 입찰엔 영향 없음)
+    // 견적에 입력된 연락처로 SMS/알림톡 (회원·비회원 모두, 실패해도 입찰엔 영향 없음)
     // 알림톡 템플릿(SOLAPI_ALIMTALK_TEMPLATE_BID)이 설정돼 있으면 알림톡 우선, 아니면 SMS
-    if (quote?.userEmail) {
-      const user = await prisma.user.findUnique({
-        where: { email: quote.userEmail },
-        select: { phone: true },
-      })
-      const bidTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_BID
-      const won = Number(price).toLocaleString()
-      void sendMessage({
-        to: user?.phone,
-        text: `[이삿날] ${company}님이 견적을 보냈어요. ${won}원\n앱에서 비교하고 선택하세요.`,
-        kakao: bidTemplate
-          ? { templateId: bidTemplate, variables: { 업체명: company, 금액: won } }
-          : undefined,
-      })
-    }
+    const bidTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_BID
+    const won = Number(price).toLocaleString()
+    void sendMessage({
+      to: quote?.phone,
+      text: `[이삿날] ${company}님이 견적을 보냈어요. ${won}원\n앱에서 비교하고 선택하세요.`,
+      kakao: bidTemplate
+        ? { templateId: bidTemplate, variables: { 업체명: company, 금액: won } }
+        : undefined,
+    })
 
     res.status(201).json(bid)
   } catch (err) {

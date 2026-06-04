@@ -4,7 +4,8 @@ import crypto from 'node:crypto'
 // 키·발신번호가 모두 설정돼 있으면 실제 발송, 아니면 mock(콘솔 로그만) → 가입·심사 전 로컬 테스트 가능
 const API_KEY = process.env.SOLAPI_API_KEY
 const API_SECRET = process.env.SOLAPI_API_SECRET
-const SENDER = process.env.SOLAPI_SENDER // 사전 등록된 발신번호
+// 사전 등록된 발신번호 — 하이픈/공백이 있어도 숫자만 추출
+const SENDER = (process.env.SOLAPI_SENDER ?? '').replace(/\D/g, '')
 const KAKAO_PF_ID = process.env.SOLAPI_KAKAO_PF_ID // 카카오 비즈니스 채널 ID(알림톡, 선택)
 
 const live = Boolean(API_KEY && API_SECRET && SENDER)
@@ -70,8 +71,12 @@ export async function sendMessage({ to, text, kakao }: SendOpts): Promise<void> 
       },
       body: JSON.stringify({ message }),
     })
-    if (!res.ok) {
-      console.error('[메시지 발송 실패]', res.status, await res.text())
+    const body = await res.text()
+    if (res.ok) {
+      // 발송 요청 성공 (실제 도달 여부는 솔라피 콘솔 발송내역에서 확인)
+      console.log(`[메시지 발송] ${kakao ? '알림톡' : 'SMS'} → ${phone}`)
+    } else {
+      console.error('[메시지 발송 실패]', res.status, body)
     }
   } catch (err) {
     console.error('[메시지 발송 오류]', err)
