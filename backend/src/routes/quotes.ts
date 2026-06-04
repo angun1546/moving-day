@@ -3,6 +3,7 @@ import multer from 'multer'
 import { v2 as cloudinary } from 'cloudinary'
 import { prisma } from '../db.ts'
 import { notify } from '../notify.ts'
+import { sendMessageToMany } from '../messaging.ts'
 
 const router = Router()
 
@@ -117,6 +118,25 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
         userEmail: userEmail || null,
       },
     })
+
+    // 가입 업체들 휴대폰으로 새 견적 알림 (MVP: 전체 발송 — 추후 서비스 지역 매칭으로 좁힘)
+    // 실패해도 견적 접수엔 영향 없도록 fire-and-forget
+    // 알림톡 템플릿(SOLAPI_ALIMTALK_TEMPLATE_QUOTE)이 설정돼 있으면 알림톡 우선, 아니면 SMS
+    const quoteTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_QUOTE
+    const partners = await prisma.partnerProfile.findMany({
+      select: { phone: true },
+    })
+    void sendMessageToMany(
+      partners.map((p) => p.phone),
+      `[이삿날] 새 견적 요청이 도착했어요. (${moveType} · ${fromRegion} → ${toRegion})\n파트너센터에서 입찰하세요.`,
+      quoteTemplate
+        ? {
+            templateId: quoteTemplate,
+            variables: { 이사종류: moveType, 출발지: fromRegion, 도착지: toRegion },
+          }
+        : undefined,
+    )
+
     res.status(201).json(quote)
   } catch (err) {
     console.error('견적 저장 실패:', err)

@@ -211,6 +211,15 @@ cd frontend && npm install && npm run dev                          # 5173
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary 계정 이름 | `movingday` |
 | `CLOUDINARY_API_KEY` | (시크릿) | |
 | `CLOUDINARY_API_SECRET` | (시크릿) | |
+| `SOLAPI_API_KEY` | 솔라피 API Key (SMS/알림톡) | (시크릿) |
+| `SOLAPI_API_SECRET` | 솔라피 API Secret | (시크릿) |
+| `SOLAPI_SENDER` | 사전 등록한 발신번호 | `0212345678` |
+| `SOLAPI_KAKAO_PF_ID` | 카카오 비즈니스 채널 ID(알림톡, 선택) | (선택) |
+| `SOLAPI_ALIMTALK_TEMPLATE_QUOTE` | 견적 도착 알림톡 템플릿 ID(선택) | (선택) |
+| `SOLAPI_ALIMTALK_TEMPLATE_BID` | 입찰 도착 알림톡 템플릿 ID(선택) | (선택) |
+
+> SMS: `SOLAPI_API_KEY`·`SOLAPI_API_SECRET`·`SOLAPI_SENDER` **3개만 있으면 문자 실제 발송**. 셋 중 하나라도 없으면 **mock 모드(콘솔 로그만)**.
+> 알림톡: 위 3개 + `SOLAPI_KAKAO_PF_ID` + 템플릿 ID(`..._QUOTE`/`..._BID`)까지 설정되면 **알림톡 우선·실패 시 SMS 자동 대체**. 템플릿 변수 — 견적: `#{이사종류}#{출발지}#{도착지}`, 입찰: `#{업체명}#{금액}`. (`backend/src/messaging.ts`)
 
 ### 프론트엔드(Vercel) 환경변수 — 선택
 
@@ -256,6 +265,6 @@ Start Command     npm start
 3. **사진·자격증 업로드 백엔드 연동** (완료) — `PartnerProfile` 모델 + `/api/partners`(GET·PUT upsert). 공용 Cloudinary 헬퍼(`src/cloudinary.ts`)로 프로필 사진·업체 사진·자격증(이미지+PDF) 업로드, 새로 올리면 교체·아니면 기존 URL 유지. PartnerProfilePage·PartnerMyPage 서버 연동(리뷰 사진은 별도로 아직 메모리)
 4. **입찰 실제 DB 연동** (완료) — `Bid` 모델 + 파트너 입찰·고객 비교·관리자 매칭 + 낙찰/낙찰 취소 + 7단계 진행 추적
 5. **업체 평점 시스템** (완료) — 고객 리뷰 백엔드화(`Review` 모델 + CRUD) + 업체별 평점 집계 API(`/api/reviews/ratings`) → 입찰 비교에서 실제 평점 데이터로 정렬. 리뷰 작성·관리자 숨김/답변·메인 캐러셀·마이페이지 카운트 전부 서버 연동(리뷰 사진은 메모리 유지)
-6. **실시간 알림** (핵심 완료) — 서버 `Notification` 테이블 + 거래 이벤트(입찰·낙찰·거절·단계변경) 20초 폴링 알림. 향후 웹소켓·알림톡으로 확장
+6. **실시간 알림** (핵심 완료) — 서버 `Notification` 테이블 + 거래 이벤트(입찰·낙찰·거절·단계변경) 20초 폴링 알림. **SMS/카카오 알림톡(솔라피) 연동 스켈레톤**(`backend/src/messaging.ts`) — 견적 등록 시 가입 업체에게, 입찰 등록 시 견적 주인에게 발송(키 없으면 mock 로그). 향후 웹소켓·알림톡 템플릿 승인·서비스 지역 매칭으로 확장
 7. **서비스 라인 확장 + GNB 리디자인** (완료) — 가정/기업 이사 랜딩 분리(scope 기반 견적 종류 분리·이삿날 싱글 추가), 청소·창고보관·문서보관·파쇄 전용 랜딩 + 세부 상품 페이지, 견적 폼 부가 서비스 선택(요청사항 기록·MVP), 검색 자동완성, 이사트럭 인터랙션 헤더, 2단 헤더 + 회사 페이지(기업소개·기업문화·인증현황) + 무빙 프로젝트(실적·갤러리·포트폴리오·브이로그, 빈 상태 UI). *향후*: 부가 서비스(청소·보관·문서)를 `QuoteRequest` 구조화 컬럼으로 분리 저장, 무빙 프로젝트 콘텐츠 백엔드화(글·사진·영상 업로드)
 8. **TypeScript 점진 도입** (진행) — (1단계 완료) 데이터 레이어 `.ts` 전환 + 공통 타입(`data/types.ts`). (2단계 완료) API 경계 타입(`data/apiTypes.ts`: `QuoteRequest`·`Bid`·`Review`·`PartnerProfile`·`User`) + `services/auth.ts`·`quotes.ts` 반환 타입 적용, `tsconfig`(`checkJs:false`)·`vite-env.d.ts`·`npm run typecheck`. (3단계 규칙) 화면은 `.jsx` 유지, **새 파일은 `.tsx`**, 기존은 손댈 때 전환. *향후*: 나머지 서비스(`bids`·`reviews`·`partners`…)·컴포넌트 점진 전환

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { prisma } from '../db.ts'
 import { notify } from '../notify.ts'
+import { sendMessage } from '../messaging.ts'
 
 const router = Router()
 
@@ -36,6 +37,24 @@ router.post('/', async (req, res) => {
       `${company}님이 입찰했어요. ${Number(price).toLocaleString()}원`,
       '/mypage',
     )
+
+    // 견적 주인 휴대폰으로 SMS/알림톡 (회원 + 번호 있을 때만, 실패해도 입찰엔 영향 없음)
+    // 알림톡 템플릿(SOLAPI_ALIMTALK_TEMPLATE_BID)이 설정돼 있으면 알림톡 우선, 아니면 SMS
+    if (quote?.userEmail) {
+      const user = await prisma.user.findUnique({
+        where: { email: quote.userEmail },
+        select: { phone: true },
+      })
+      const bidTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_BID
+      const won = Number(price).toLocaleString()
+      void sendMessage({
+        to: user?.phone,
+        text: `[이삿날] ${company}님이 견적을 보냈어요. ${won}원\n앱에서 비교하고 선택하세요.`,
+        kakao: bidTemplate
+          ? { templateId: bidTemplate, variables: { 업체명: company, 금액: won } }
+          : undefined,
+      })
+    }
 
     res.status(201).json(bid)
   } catch (err) {
