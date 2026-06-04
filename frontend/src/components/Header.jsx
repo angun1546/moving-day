@@ -15,9 +15,8 @@ import MovingTruck from './MovingTruck'
 const subItems = (scope, types) =>
   types.map((t) => ({ label: t.label, to: `/quote?scope=${scope}&type=${t.slug}` }))
 
-// 메인 내비게이션 (기획서 순서 엄수)
-// soon: 페이지 준비중(비활성) / subs: 호버 시 펼치는 세부 카테고리
-const NAV = [
+// 하단 메뉴 바 — 주요 서비스 (subs: 호버 시 펼치는 세부 카테고리 / soon: 준비중)
+const MENU = [
   { to: '/business', label: '기업·관공서 이사', subs: subItems('business', businessTypes) },
   { to: '/home', label: '가정이사', subs: subItems('home', homeTypes) },
   {
@@ -46,6 +45,13 @@ const NAV = [
       { label: '무빙 브이로그', soon: true },
     ],
   },
+]
+
+// 상단 줄 보조 링크 (로고 오른쪽) — 회사 소개·공지
+const TOP_LINKS = [
+  { to: '/about', label: '기업소개' },
+  { to: '/culture', label: '기업문화' },
+  { to: '/certifications', label: '인증현황' },
   { to: '/notice', label: '공지사항' },
 ]
 
@@ -115,7 +121,7 @@ function NavItem({ item }) {
     return (
       <span
         title="준비중"
-        className="cursor-not-allowed py-2 text-base font-semibold whitespace-nowrap text-gray-400"
+        className="cursor-not-allowed py-2 text-lg font-semibold whitespace-nowrap text-gray-400"
       >
         {item.label}
       </span>
@@ -127,7 +133,7 @@ function NavItem({ item }) {
     return (
       <Link
         to={item.to}
-        className="group relative py-2 text-base font-semibold whitespace-nowrap text-gray-700 transition-colors hover:text-brand"
+        className="group relative py-2 text-lg font-semibold whitespace-nowrap text-gray-700 transition-colors hover:text-brand"
       >
         {item.label}
         <Underline />
@@ -137,7 +143,7 @@ function NavItem({ item }) {
 
   // 드롭다운 — 트리거는 링크(to 있을 때) 또는 라벨(to 없을 때)
   const triggerClass =
-    'group relative flex items-center gap-1.5 py-2 text-base font-semibold whitespace-nowrap text-gray-700 transition-colors hover:text-brand'
+    'group relative flex items-center gap-1.5 py-2 text-lg font-semibold whitespace-nowrap text-gray-700 transition-colors hover:text-brand'
   return (
     <div className="group relative">
       {item.to ? (
@@ -205,34 +211,40 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-50">
-      {/* 메인 GNB */}
-      <div className="border-b border-white/40 bg-white/70 shadow-sm backdrop-blur-lg">
-        <div className="mx-auto flex h-24 max-w-gnb items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          {/* 좌측: 이사트럭 + 로고 */}
-          <div className="flex shrink-0 items-center gap-2">
-            <MovingTruck />
-            <Logo onClick={close} />
+      {/* 상단 줄: 로고 + 유틸(로그인·알림·CTA) */}
+      <div className="relative z-20 border-b border-gray-100 bg-white/80 backdrop-blur-lg">
+        <div className="mx-auto flex h-16 max-w-gnb items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          {/* 좌측: 이사트럭 + 로고 + 보조 링크 */}
+          <div className="flex shrink-0 items-center gap-2 lg:gap-5">
+            <div className="flex shrink-0 items-center gap-2">
+              <MovingTruck />
+              <Logo onClick={close} />
+            </div>
+            <nav className="hidden items-center gap-4 lg:flex">
+              {TOP_LINKS.map((l) => (
+                <Link
+                  key={l.label}
+                  to={l.to}
+                  className="text-sm font-medium whitespace-nowrap text-gray-500 transition-colors hover:text-brand"
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
           </div>
 
-          {/* 중앙: 메인 내비 (데스크톱) */}
-          <nav className="hidden items-center gap-4 lg:flex xl:gap-6">
-            {NAV.map((n) => (
-              <NavItem key={n.label} item={n} />
-            ))}
-          </nav>
-
           {/* 우측: 유틸 / CTA */}
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Link
               to="/partner"
-              className="hidden rounded-full px-4 py-2.5 text-base font-semibold text-gray-600 transition-colors hover:text-brand lg:inline-flex"
+              className="hidden rounded-full px-3 py-2 text-sm font-semibold text-gray-600 transition-colors hover:text-brand md:inline-flex"
             >
               파트너
             </Link>
             {isAdmin && (
               <Link
                 to="/admin"
-                className="hidden rounded-full bg-amber-100 px-3 py-2.5 text-sm font-bold text-amber-700 transition hover:bg-amber-200 lg:inline-flex"
+                className="hidden rounded-full bg-amber-100 px-3 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-200 md:inline-flex"
               >
                 관리자
               </Link>
@@ -243,22 +255,22 @@ function Header() {
             ) : (
               <Link
                 to="/login"
-                className="hidden rounded-full border border-brand px-5 py-2.5 text-base font-semibold text-brand transition hover:bg-brand hover:text-white md:inline-flex"
+                className="hidden rounded-full border border-brand px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white sm:inline-flex"
               >
-                로그인
+                로그인/회원가입
               </Link>
             )}
+
+            {/* 알림 */}
+            <BellIcon />
 
             {/* 메인 CTA */}
             <Link
               to="/quote"
-              className="rounded-full bg-brand px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark"
+              className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark"
             >
               견적신청
             </Link>
-
-            {/* 알림 */}
-            <BellIcon />
 
             {/* 햄버거 (모바일) */}
             <button
@@ -266,12 +278,21 @@ function Header() {
               onClick={() => setOpen((v) => !v)}
               aria-label="메뉴"
               aria-expanded={open}
-              className="inline-flex items-center justify-center rounded-lg p-2.5 text-brand transition hover:bg-brand-bg lg:hidden"
+              className="inline-flex items-center justify-center rounded-lg p-2 text-brand transition hover:bg-brand-bg lg:hidden"
             >
               <MenuIcon open={open} />
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 하단 줄: 메뉴 바 (데스크톱) — 좌측 정렬 */}
+      <div className="relative z-10 hidden border-b border-white/40 bg-white/70 shadow-sm backdrop-blur-lg lg:block">
+        <nav className="mx-auto flex h-24 max-w-gnb items-center gap-4 px-4 sm:px-6 lg:px-8 xl:gap-6">
+          {MENU.map((n) => (
+            <NavItem key={n.label} item={n} />
+          ))}
+        </nav>
       </div>
 
       {/* 모바일 메뉴 패널 */}
@@ -281,9 +302,9 @@ function Header() {
       >
         <div
           className="mx-auto max-w-gnb space-y-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6"
-          style={{ maxHeight: 'calc(100dvh - 6rem)' }}
+          style={{ maxHeight: 'calc(100dvh - 4rem)' }}
         >
-          {NAV.map((n) => {
+          {MENU.map((n) => {
             // 준비중(단독)
             if (n.soon) {
               return (
@@ -354,6 +375,20 @@ function Header() {
               </Link>
             )
           })}
+
+          {/* 보조 링크 (기업소개·기업문화·인증현황·공지사항) */}
+          <div className="border-t border-gray-100 pt-2">
+            {TOP_LINKS.map((l) => (
+              <Link
+                key={l.label}
+                to={l.to}
+                onClick={close}
+                className="block rounded-lg px-3 py-2 font-medium text-gray-600 transition hover:bg-brand-bg hover:text-brand"
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
 
           <div className="border-t border-gray-100 pt-2">
             {user ? (

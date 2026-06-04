@@ -155,6 +155,27 @@ export const USER_PAGES = [
     keywords: ['faq', '질문', '문의', '도움말', '자주묻는'],
   },
   {
+    title: '기업소개',
+    desc: '기업소개 페이지.',
+    path: '/about',
+    icon: '🏢',
+    keywords: ['기업소개', '회사소개', '소개'],
+  },
+  {
+    title: '기업문화',
+    desc: '기업문화 페이지.',
+    path: '/culture',
+    icon: '🌱',
+    keywords: ['기업문화', '문화'],
+  },
+  {
+    title: '인증현황',
+    desc: '인증현황 페이지.',
+    path: '/certifications',
+    icon: '✅',
+    keywords: ['인증현황', '인증'],
+  },
+  {
     title: '공지사항',
     desc: '서비스 소식과 업데이트, 이벤트를 확인하세요.',
     path: '/notice',
