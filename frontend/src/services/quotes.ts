@@ -1,16 +1,19 @@
-import { redirect } from 'react-router-dom'
+import { redirect, type ActionFunctionArgs } from 'react-router-dom'
 import { addNotification } from '../utils/notifications'
+import type { QuoteRequest } from '../data/apiTypes'
 
 // 배포는 VITE_API_BASE로 백엔드 절대 URL 주입, 로컬은 빈 문자열 → vite proxy 사용
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 const API = `${BASE}/api/quotes`
 
 // 견적 신청 폼 제출 (React Router action)
-export async function createQuote({ request }) {
+export async function createQuote({
+  request,
+}: ActionFunctionArgs): Promise<Response | { error: string }> {
   const form = await request.formData()
 
   // 청소·창고보관 추가(선택) → 요청사항(memo)에 합쳐 전송 (별도 컬럼 없이 기록)
-  const addons = []
+  const addons: string[] = []
   const cleaning = form.get('cleaning')
   if (cleaning) addons.push(`🧹 청소 추가: ${cleaning}`)
   const storage = form.get('storage')
@@ -76,28 +79,31 @@ export async function createQuote({ request }) {
 }
 
 // 견적 목록 (파트너 입찰용·관리자 모니터링 — 입찰 포함)
-export async function getQuotes() {
+export async function getQuotes(): Promise<QuoteRequest[]> {
   const res = await fetch(API)
   if (!res.ok) throw new Error('견적 조회에 실패했습니다.')
   return res.json()
 }
 
 // 내 견적 목록 (회원 — 입찰 포함)
-export async function getMyQuotes(email) {
+export async function getMyQuotes(email: string): Promise<QuoteRequest[]> {
   const res = await fetch(`${API}/mine/${encodeURIComponent(email)}`)
   if (!res.ok) throw new Error('내 견적 조회에 실패했습니다.')
   return res.json()
 }
 
 // 견적 취소(삭제)
-export async function deleteQuote(id) {
+export async function deleteQuote(id: string): Promise<{ ok: boolean }> {
   const res = await fetch(`${API}/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error('견적 취소에 실패했습니다.')
   return res.json()
 }
 
 // 낙찰 후 진행 단계 변경
-export async function updateQuoteStage(id, stage) {
+export async function updateQuoteStage(
+  id: string,
+  stage: string,
+): Promise<QuoteRequest> {
   const res = await fetch(`${API}/${id}/stage`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -108,7 +114,10 @@ export async function updateQuoteStage(id, stage) {
 }
 
 // 견적 수정
-export async function updateQuote(id, data) {
+export async function updateQuote(
+  id: string,
+  data: Partial<QuoteRequest>,
+): Promise<QuoteRequest> {
   const res = await fetch(`${API}/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

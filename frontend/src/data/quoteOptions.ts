@@ -1,5 +1,7 @@
+import type { QuoteMethod, MoveType } from './types'
+
 // 견적 방식 (큰 틀 3가지)
-export const METHODS = [
+export const METHODS: QuoteMethod[] = [
   {
     slug: 'visit',
     label: '방문견적',
@@ -25,7 +27,7 @@ export const METHODS = [
 ]
 
 // 이사 종류 — 개인(가정) 그룹 + 기업·관공서 그룹
-export const TYPES = [
+export const TYPES: MoveType[] = [
   // 가정 이사
   { slug: 'single', label: '이삿날 싱글', icon: '🧳', desc: '원룸·소형 단신 이사를 빠르고 합리적으로', group: '가정 이사' },
   { slug: 'packing', label: '포장이사', icon: '📦', desc: '짐 싸기부터 운반·정리까지 한 번에', group: '가정 이사' },
@@ -42,9 +44,11 @@ export const TYPES = [
 ]
 
 // 그룹 순서(렌더용)와 그룹별 종류
-export const TYPE_GROUPS = ['가정 이사', '기업·관공서 이사']
+export const TYPE_GROUPS: string[] = ['가정 이사', '기업·관공서 이사']
 export const homeTypes = TYPES.filter((t) => t.group === '가정 이사')
 export const businessTypes = TYPES.filter((t) => t.group === '기업·관공서 이사')
 
-export const findMethod = (slug) => METHODS.find((m) => m.slug === slug)
-export const findType = (slug) => TYPES.find((t) => t.slug === slug)
+export const findMethod = (slug: string): QuoteMethod | undefined =>
+  METHODS.find((m) => m.slug === slug)
+export const findType = (slug: string): MoveType | undefined =>
+  TYPES.find((t) => t.slug === slug)

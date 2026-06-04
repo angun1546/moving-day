@@ -1,14 +1,16 @@
+import type { User, AuthResult } from '../data/apiTypes'
+
 // 배포 환경에서는 VITE_API_BASE로 백엔드 절대 URL 주입 (예: https://moving-day-api.onrender.com)
 // 로컬은 비워두면 vite proxy(/api → :4000)가 그대로 처리한다.
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 const API = `${BASE}/api/auth`
 const TOKEN_KEY = 'movingday_token'
 
-export const getToken = () => localStorage.getItem(TOKEN_KEY)
-export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
-const setToken = (t) => localStorage.setItem(TOKEN_KEY, t)
+export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY)
+export const clearToken = (): void => localStorage.removeItem(TOKEN_KEY)
+const setToken = (t: string): void => localStorage.setItem(TOKEN_KEY, t)
 
-async function post(path, body) {
+async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -16,23 +18,23 @@ async function post(path, body) {
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.message ?? '요청에 실패했습니다.')
-  return data
+  return data as T
 }
 
-export async function signup(payload) {
-  const data = await post('/signup', payload)
+export async function signup(payload: unknown): Promise<User> {
+  const data = await post<AuthResult>('/signup', payload)
   setToken(data.token)
   return data.user
 }
 
-export async function login(email, password) {
-  const data = await post('/login', { email, password })
+export async function login(email: string, password: string): Promise<User> {
+  const data = await post<AuthResult>('/login', { email, password })
   setToken(data.token)
   return data.user
 }
 
 // 저장된 토큰으로 로그인 상태 복원
-export async function fetchMe() {
+export async function fetchMe(): Promise<User | null> {
   const token = getToken()
   if (!token) return null
   const res = await fetch(`${API}/me`, {
@@ -43,5 +45,5 @@ export async function fetchMe() {
     return null
   }
   const data = await res.json()
-  return data.user
+  return data.user as User
 }

@@ -1,5 +1,7 @@
+import type { ServiceProduct } from './types'
+
 // 문서보관·파쇄 서비스 — 상품 소개 단일 출처 (GNB·랜딩·상세·검색에서 재사용)
-export const documentServices = [
+export const documentServices: ServiceProduct[] = [
   {
     slug: 'shred',
     label: '보안 문서 파쇄',
@@ -77,5 +79,5 @@ export const documentServices = [
   },
 ]
 
-export const findDocument = (slug) =>
+export const findDocument = (slug: string): ServiceProduct | undefined =>
   documentServices.find((s) => s.slug === slug)

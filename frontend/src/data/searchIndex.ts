@@ -1,7 +1,9 @@
+import type { SearchPage } from './types'
+
 // 사이트 내 검색 인덱스 — 검색어로 연관 페이지를 찾아 이동
 // 고객(USER)과 파트너(PARTNER) 각각의 주요 페이지 메타를 둔다
 
-export const USER_PAGES = [
+export const USER_PAGES: SearchPage[] = [
   {
     title: '이사 견적 신청',
     desc: '가정이사부터 기업·관공서 이사까지 견적을 무료로 신청하세요.',
@@ -198,7 +200,7 @@ export const USER_PAGES = [
   },
 ]
 
-export const PARTNER_PAGES = [
+export const PARTNER_PAGES: SearchPage[] = [
   {
     title: '파트너 홈',
     desc: '무브 마스터 파트너 센터 메인으로 이동합니다.',
@@ -251,11 +253,11 @@ export const PARTNER_PAGES = [
 ]
 
 // Hero 검색창 아래 추천 검색어 칩
-export const USER_SUGGESTIONS = ['가정이사', '기업·관공서 이사', '포장이사', '후기']
-export const PARTNER_SUGGESTIONS = ['입찰', '업체 정보', '수수료', '파트너 스토리']
+export const USER_SUGGESTIONS: string[] = ['가정이사', '기업·관공서 이사', '포장이사', '후기']
+export const PARTNER_SUGGESTIONS: string[] = ['입찰', '업체 정보', '수수료', '파트너 스토리']
 
 // 검색어로 페이지 필터링 (제목·설명·키워드 대상, 공백으로 나눈 모든 단어 포함)
-export function searchPages(pages, query) {
+export function searchPages(pages: SearchPage[], query: string): SearchPage[] {
   const q = (query ?? '').trim().toLowerCase()
   if (!q) return []
   const terms = q.split(/\s+/)

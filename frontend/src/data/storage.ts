@@ -1,6 +1,8 @@
+import type { ServiceProduct } from './types'
+
 // 창고보관 서비스 — 상품 소개 + 견적 다중 선택용 단일 출처
 // GNB·랜딩·상세·검색·견적폼에서 재사용
-export const storageServices = [
+export const storageServices: ServiceProduct[] = [
   {
     slug: 'container',
     label: '컨테이너 보관',
@@ -63,5 +65,5 @@ export const storageServices = [
   },
 ]
 
-export const findStorage = (slug) =>
+export const findStorage = (slug: string): ServiceProduct | undefined =>
   storageServices.find((s) => s.slug === slug)

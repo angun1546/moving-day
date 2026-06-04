@@ -1,6 +1,8 @@
+import type { ServiceProduct } from './types'
+
 // 청소 서비스 — 브랜드명(label) + 원래 명칭(sub) + 상세 소개 콘텐츠
 // 이사 견적 흐름과 별개의 '상품 소개' 서비스. 단일 출처로 GNB·랜딩·상세·검색에서 재사용
-export const cleaningServices = [
+export const cleaningServices: ServiceProduct[] = [
   {
     slug: 'welcome',
     label: '웰컴케어',
@@ -51,5 +53,5 @@ export const cleaningServices = [
   },
 ]
 
-export const findCleaning = (slug) =>
+export const findCleaning = (slug: string): ServiceProduct | undefined =>
   cleaningServices.find((c) => c.slug === slug)

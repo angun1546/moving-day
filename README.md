@@ -27,6 +27,7 @@ Moving-day/
 ## 기술 스택
 
 - **프론트엔드**: React 19, React Router 7 (Data Mode), Vite 8, Tailwind CSS v4, GSAP(애니메이션), Pretendard/Inter
+- **타입(점진 도입)**: TypeScript — 데이터 레이어·API 경계부터 `.ts`로 전환(`tsconfig` `checkJs:false`로 `.jsx`는 비검사). 화면은 `.jsx` 유지, **새 파일은 `.tsx`**로 작성하고 기존은 손댈 때 전환(스트랭글러). 검사: `npm run typecheck`(`tsc --noEmit`)
 - **백엔드**: Node.js, Express 5, Prisma 7, SQLite (better-sqlite3 어댑터), multer, JWT
 - **주소 검색**: 다음(카카오) 우편번호 서비스
 - **배포**: Vercel (frontend 단독) — backend는 풀스택 단계에서 Render/Turso 예정
@@ -255,4 +256,5 @@ Start Command     npm start
 4. **입찰 실제 DB 연동** (완료) — `Bid` 모델 + 파트너 입찰·고객 비교·관리자 매칭 + 낙찰/낙찰 취소 + 7단계 진행 추적
 5. **업체 평점 시스템** (완료) — 고객 리뷰 백엔드화(`Review` 모델 + CRUD) + 업체별 평점 집계 API(`/api/reviews/ratings`) → 입찰 비교에서 실제 평점 데이터로 정렬. 리뷰 작성·관리자 숨김/답변·메인 캐러셀·마이페이지 카운트 전부 서버 연동(리뷰 사진은 메모리 유지)
 6. **실시간 알림** (핵심 완료) — 서버 `Notification` 테이블 + 거래 이벤트(입찰·낙찰·거절·단계변경) 20초 폴링 알림. 향후 웹소켓·알림톡으로 확장
-7. **서비스 라인 확장 + GNB 리디자인** (완료) — 가정/기업 이사 랜딩 분리(scope 기반 견적 종류 분리·이삿날 싱글 추가), 청소·창고보관·문서보관·파쇄 전용 랜딩 + 세부 상품 페이지, 견적 폼 부가 서비스 선택(요청사항 기록·MVP), 검색 자동완성, 이사트럭 인터랙션 헤더. *향후*: 부가 서비스(청소·보관·문서)를 `QuoteRequest` 구조화 컬럼으로 분리 저장, 무빙 프로젝트(갤러리·포트폴리오·브이로그) 페이지
+7. **서비스 라인 확장 + GNB 리디자인** (완료) — 가정/기업 이사 랜딩 분리(scope 기반 견적 종류 분리·이삿날 싱글 추가), 청소·창고보관·문서보관·파쇄 전용 랜딩 + 세부 상품 페이지, 견적 폼 부가 서비스 선택(요청사항 기록·MVP), 검색 자동완성, 이사트럭 인터랙션 헤더, 2단 헤더 + 회사 페이지(기업소개·기업문화·인증현황). *향후*: 부가 서비스(청소·보관·문서)를 `QuoteRequest` 구조화 컬럼으로 분리 저장, 무빙 프로젝트(갤러리·포트폴리오·브이로그) 페이지
+8. **TypeScript 점진 도입** (진행) — (1단계 완료) 데이터 레이어 `.ts` 전환 + 공통 타입(`data/types.ts`). (2단계 완료) API 경계 타입(`data/apiTypes.ts`: `QuoteRequest`·`Bid`·`Review`·`PartnerProfile`·`User`) + `services/auth.ts`·`quotes.ts` 반환 타입 적용, `tsconfig`(`checkJs:false`)·`vite-env.d.ts`·`npm run typecheck`. (3단계 규칙) 화면은 `.jsx` 유지, **새 파일은 `.tsx`**, 기존은 손댈 때 전환. *향후*: 나머지 서비스(`bids`·`reviews`·`partners`…)·컴포넌트 점진 전환
