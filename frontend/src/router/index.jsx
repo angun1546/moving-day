@@ -37,6 +37,10 @@ import DocumentDetailPage from '../pages/DocumentDetailPage'
 import AboutPage from '../pages/AboutPage'
 import CulturePage from '../pages/CulturePage'
 import CertificationsPage from '../pages/CertificationsPage'
+import ProjectsPage from '../pages/ProjectsPage'
+import GalleryPage from '../pages/GalleryPage'
+import PortfolioPage from '../pages/PortfolioPage'
+import VlogPage from '../pages/VlogPage'
 import { createQuote } from '../services/quotes'
 
 // 데이터 모드 라우터 (고객: '/' 레이아웃 / 업체: '/partner' 레이아웃)
@@ -87,6 +91,11 @@ export const router = createBrowserRouter([
       { path: 'about', element: <AboutPage /> },
       { path: 'culture', element: <CulturePage /> },
       { path: 'certifications', element: <CertificationsPage /> },
+      // 무빙 프로젝트 (실적 + 갤러리·포트폴리오·브이로그)
+      { path: 'projects', element: <ProjectsPage /> },
+      { path: 'projects/gallery', element: <GalleryPage /> },
+      { path: 'projects/portfolio', element: <PortfolioPage /> },
+      { path: 'projects/vlog', element: <VlogPage /> },
       // 사이트 검색 (검색어로 연관 페이지 찾기)
       { path: 'search', element: <SearchResultsPage scope="user" /> },
       // 관리자 대시보드 (admin 전용 가드)

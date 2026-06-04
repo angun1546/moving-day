@@ -38,11 +38,12 @@ const MENU = [
   { to: '/reviews', label: '고객 후기' },
   { to: '/faq', label: 'FAQ' },
   {
+    to: '/projects',
     label: '무빙 프로젝트',
     subs: [
-      { label: '프로젝트 갤러리', soon: true },
-      { label: '포트폴리오', soon: true },
-      { label: '무빙 브이로그', soon: true },
+      { label: '프로젝트 갤러리', to: '/projects/gallery' },
+      { label: '포트폴리오', to: '/projects/portfolio' },
+      { label: '무빙 브이로그', to: '/projects/vlog' },
     ],
   },
 ]
