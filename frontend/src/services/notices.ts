@@ -1,16 +1,18 @@
 // 공지사항 API 클라이언트
+import type { Notice } from '../data/apiTypes'
+
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 const API = `${BASE}/api/notices`
 
 // 공지 목록 (최신순)
-export async function getNotices() {
+export async function getNotices(): Promise<Notice[]> {
   const res = await fetch(API)
   if (!res.ok) throw new Error('공지 조회에 실패했습니다.')
   return res.json()
 }
 
 // 공지 작성
-export async function createNotice(data) {
+export async function createNotice(data: Partial<Notice>): Promise<Notice> {
   const res = await fetch(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -24,7 +26,10 @@ export async function createNotice(data) {
 }
 
 // 공지 수정
-export async function updateNotice(id, data) {
+export async function updateNotice(
+  id: string,
+  data: Partial<Notice>,
+): Promise<Notice> {
   const res = await fetch(`${API}/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -35,7 +40,7 @@ export async function updateNotice(id, data) {
 }
 
 // 공지 삭제
-export async function deleteNotice(id) {
+export async function deleteNotice(id: string): Promise<{ ok: boolean }> {
   const res = await fetch(`${API}/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error('공지 삭제에 실패했습니다.')
   return res.json()

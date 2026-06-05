@@ -1,9 +1,11 @@
 // 알림 API 클라이언트 (서버 거래 이벤트 — 폴링 조회)
+import type { Notification } from '../data/apiTypes'
+
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 const API = `${BASE}/api/notifications`
 
 // 내 알림 목록 (최신순)
-export async function getNotifications(email) {
+export async function getNotifications(email: string): Promise<Notification[]> {
   if (!email) return []
   try {
     const res = await fetch(`${API}/${encodeURIComponent(email)}`)
@@ -16,7 +18,7 @@ export async function getNotifications(email) {
 }
 
 // 내 알림 모두 읽음 처리
-export async function markAllRead(email) {
+export async function markAllRead(email: string): Promise<void> {
   if (!email) return
   try {
     await fetch(`${API}/${encodeURIComponent(email)}/read`, { method: 'PATCH' })
@@ -26,7 +28,7 @@ export async function markAllRead(email) {
 }
 
 // 내 알림 모두 비우기
-export async function clearNotifications(email) {
+export async function clearNotifications(email: string): Promise<void> {
   if (!email) return
   try {
     await fetch(`${API}/${encodeURIComponent(email)}`, { method: 'DELETE' })
