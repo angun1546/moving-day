@@ -7,6 +7,7 @@ import { addNotification } from '../utils/notifications'
 import { formatDateTime } from '../utils/date'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import AddonChips from '../components/AddonChips'
 
 const won = (n) => n.toLocaleString('ko-KR')
 
@@ -149,6 +150,7 @@ function PartnerDashboardPage() {
                       <p className="mt-0.5 text-xs text-gray-300">
                         {formatDateTime(r.createdAt)} 신청
                       </p>
+                      <AddonChips addons={r.addons} />
                     </div>
                     <div className="text-right text-sm">
                       <p className="text-gray-400">현재 입찰 {bidCount}건</p>

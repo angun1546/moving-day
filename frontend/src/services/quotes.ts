@@ -12,21 +12,9 @@ export async function createQuote({
 }: ActionFunctionArgs): Promise<Response | { error: string }> {
   const form = await request.formData()
 
-  // 청소·창고보관 추가(선택) → 요청사항(memo)에 합쳐 전송 (별도 컬럼 없이 기록)
-  const addons: string[] = []
-  const cleaning = form.get('cleaning')
-  if (cleaning) addons.push(`🧹 청소 추가: ${cleaning}`)
-  const storage = form.get('storage')
-  if (storage) addons.push(`📦 창고보관 추가: ${storage}`)
-  const docs = form.get('document')
-  if (docs) addons.push(`🗂️ 문서보관·파쇄 추가: ${docs}`)
-  if (addons.length) {
-    const memo = form.get('memo') || ''
-    form.set('memo', [memo, ...addons].filter(Boolean).join('\n'))
-  }
-  form.delete('cleaning')
-  form.delete('storage')
-  form.delete('document')
+  // 부가 서비스(addons) — 폼이 JSON으로 넘긴 값을 그대로 전송 (선택 없으면 제거)
+  const addons = form.get('addons')
+  if (!addons || addons === '{}') form.delete('addons')
 
   // 선택 항목이 비어 있으면 전송하지 않는다
   for (const key of ['moveDate', 'homeSize', 'memo', 'visitDate', 'callTime']) {

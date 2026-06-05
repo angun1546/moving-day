@@ -27,6 +27,7 @@ model QuoteRequest {
   homeSize   String? // 주거 형태/평형 (예: 원룸, 20평대 등)
   memo       String? // 추가 요청사항
   photos     String? // 첨부 사진 경로 목록 (JSON 문자열)
+  addons     String? // 부가 서비스 선택 (JSON: {cleaning, storage[], document[]})
 
   method    String // 견적 방식: 방문견적 / 사진견적 / 전화상담
   visitDate String? // 방문 희망 일시 (방문견적)

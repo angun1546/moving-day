@@ -112,6 +112,13 @@ function QuoteFormPage() {
 
   const photoRequired = m.slug === 'photo'
 
+  // 부가 서비스 → 구조화 JSON (선택한 항목만 담김, 없으면 빈 객체)
+  const addonsValue = JSON.stringify({
+    ...(cleaning ? { cleaning } : {}),
+    ...(storage.length ? { storage } : {}),
+    ...(docs.length ? { document: docs } : {}),
+  })
+
   return (
     <section className="mx-auto max-w-2xl px-4 py-16">
       <QuoteSteps current={3} />
@@ -143,6 +150,8 @@ function QuoteFormPage() {
         <input type="hidden" name="moveType" value={t.label} />
         {/* 로그인 회원이면 견적을 계정과 연결 */}
         <input type="hidden" name="userEmail" value={user?.email || ''} />
+        {/* 부가 서비스(청소·창고보관·문서) 구조화 JSON */}
+        <input type="hidden" name="addons" value={addonsValue} />
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <Field label="이름" required>
@@ -292,7 +301,6 @@ function QuoteFormPage() {
               )
             })}
           </div>
-          <input type="hidden" name="cleaning" value={cleaning} />
           <p className="mt-2 text-xs text-gray-400">
             이사와 함께 청소가 필요하면 선택하세요. 신청 내용에 함께 반영돼요.
           </p>
@@ -320,7 +328,6 @@ function QuoteFormPage() {
               )
             })}
           </div>
-          <input type="hidden" name="storage" value={storage.join(', ')} />
           <p className="mt-2 text-xs text-gray-400">
             보관이 필요한 상품을 모두 선택하세요. 신청 내용에 함께 반영돼요.
           </p>
@@ -348,7 +355,6 @@ function QuoteFormPage() {
               )
             })}
           </div>
-          <input type="hidden" name="document" value={docs.join(', ')} />
           <p className="mt-2 text-xs text-gray-400">
             문서 파쇄·보관이 필요하면 모두 선택하세요. 신청 내용에 함께 반영돼요.
           </p>

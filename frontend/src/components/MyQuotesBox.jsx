@@ -5,6 +5,7 @@ import { useConfirm } from '../context/ConfirmContext'
 import { formatDateTime } from '../utils/date'
 import StageProgress from './StageProgress'
 import DatePicker from './DatePicker'
+import AddonChips from './AddonChips'
 
 const MOVE_TYPES = ['포장이사', '반포장이사', '일반이사', '사무실이사']
 
@@ -187,6 +188,7 @@ function MyQuotesBox({ email }) {
                         ✓ {accepted.company} 낙찰
                       </p>
                     )}
+                    <AddonChips addons={q.addons} />
                   </div>
                   <div className="shrink-0 text-right text-sm">
                     <p className="text-gray-400">입찰 {bidCount}건</p>

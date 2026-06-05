@@ -16,7 +16,7 @@ Moving-day/
 │   │   ├── context/           # AuthContext (user·isAdmin·headerMode·오버라이드)
 │   │   ├── utils/             # userDisplay(마스킹)·date·regions
 │   │   ├── data/              # quoteOptions(이사종류 그룹)·cleaning·storage·document·searchIndex·sampleReviews
-│   │   ├── services/          # auth·quotes API 클라이언트
+│   │   ├── services/          # API 클라이언트 전 계층 .ts (auth·quotes·bids·reviews·partners·notices·qna·stories·notifications)
 │   │   └── router/index.jsx   # createBrowserRouter
 ├── backend/                   # Express 5 + Prisma 7 + SQLite (auth·quotes REST API)
 ├── md/design.md               # 디자인 가이드 (그린 팔레트·Pretendard/Inter·벤토)
@@ -37,7 +37,7 @@ Moving-day/
 ### 고객 영역(`/`)
 - **메인 랜딩**: Hero(**큰 통합 검색창** + 통계 카드)·이사 종류 벤토(+ **기업·관공서 이사 진입 배너**)·이용 절차 3단계·**고객 리뷰 캐러셀**·FAQ·CTA
 - **사이트 검색**(`/search`): Hero 검색창에 키워드 입력 → **입력 즉시 연관 페이지 자동완성 드롭다운**(각 서비스 랜딩·세부 상품까지 색인) + 결과 페이지 카드 안내. 입력 전에는 추천 검색어 칩
-- **견적 신청 3단계**: 방식 선택(방문/사진/전화) → 이사 종류 → 신청 폼. **진입 범위(scope)로 종류 분리** — 가정 진입은 가정 그룹(이삿날 싱글·포장·반포장·일반), 기업 진입은 기업 그룹(사무실·창고·관공서·병원·공장·실험실·전시장)만 노출. 세부 카테고리 드롭다운으로 들어오면 종류 선택을 건너뛰고 바로 폼으로. 신청 폼에서 **부가 서비스 선택**(청소=단일 / 창고보관·문서보관·파쇄=복수 선택 — 요청사항에 함께 기록) + 출발·도착지 다음 우편번호 검색 + 상세주소
+- **견적 신청 3단계**: 방식 선택(방문/사진/전화) → 이사 종류 → 신청 폼. **진입 범위(scope)로 종류 분리** — 가정 진입은 가정 그룹(이삿날 싱글·포장·반포장·일반), 기업 진입은 기업 그룹(사무실·창고·관공서·병원·공장·실험실·전시장)만 노출. 세부 카테고리 드롭다운으로 들어오면 종류 선택을 건너뛰고 바로 폼으로. 신청 폼에서 **부가 서비스 선택**(청소=단일 / 창고보관·문서보관·파쇄=복수 선택 — **`addons` 구조화 컬럼[JSON]에 분리 저장**, 파트너·마이페이지·관리자 화면에 칩으로 표시[`AddonChips`]) + 출발·도착지 다음 우편번호 검색 + 상세주소
 - **입찰 비교**(`/quote/bids`): 신청 견적에 들어온 **실제 입찰** 비교(가격·메시지·소요시간), **최저가 배지**, 정렬(최저가/최고가/평점 높은순·낮은순/최신)·업체 평점(고객 리뷰 별점 **서버 집계** — 이용 업체명 기준)·입찰 등록일시, **낙찰 선택 + 계약 전 낙찰 취소**(파트너·관리자에 알림)
 - **고객 리뷰**(`/reviews`): 별점·이름(**실명 자동 마스킹**)·이사 종류·**이용 업체**·내용·사진 첨부(메모리), **백엔드 저장(`Review` 모델 — 입찰 비교 평점의 원천)**, **페이지네이션(개수 선택 5~40)**
 - **FAQ + 직접 질문**(`/faq`): **관리자가 직접 작성·수정·삭제하는 자주 묻는 질문** + 관리자 답변 Q&A. 전체보기 진입 시 작성 폼은 닫혀 있고 글 목록만 노출(토글), **Q&A 페이지네이션**
@@ -129,7 +129,7 @@ cd frontend && npm install && npm run dev                          # 5173
 ### 백엔드 (Prisma)
 | 모델 | 주요 필드 |
 |------|------|
-| `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, photos(JSON), visitDate, callTime, status, userEmail(회원 연결·nullable), stage(낙찰 후 진행 단계·nullable) |
+| `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, **addons(부가 서비스 JSON `{cleaning, storage[], document[]}`·nullable)**, photos(JSON), visitDate, callTime, status, userEmail(회원 연결·nullable), stage(낙찰 후 진행 단계·nullable) |
 | `User` | id, email, password(bcrypt), name, **role(customer/partner/admin)**, birthDate, gender, phone, verified, createdAt |
 | `Bid` | id, quoteRequestId(FK→QuoteRequest, Cascade), bidderEmail, company, price, message, eta, status(입찰/낙찰/거절), createdAt |
 | `StageLog` | id, quoteRequestId(FK→QuoteRequest, Cascade), stage, createdAt — 단계 변경 이력(택배식 타임라인) |
@@ -266,5 +266,5 @@ Start Command     npm start
 4. **입찰 실제 DB 연동** (완료) — `Bid` 모델 + 파트너 입찰·고객 비교·관리자 매칭 + 낙찰/낙찰 취소 + 7단계 진행 추적
 5. **업체 평점 시스템** (완료) — 고객 리뷰 백엔드화(`Review` 모델 + CRUD) + 업체별 평점 집계 API(`/api/reviews/ratings`) → 입찰 비교에서 실제 평점 데이터로 정렬. 리뷰 작성·관리자 숨김/답변·메인 캐러셀·마이페이지 카운트 전부 서버 연동(리뷰 사진은 메모리 유지)
 6. **실시간 알림** (핵심 완료) — 서버 `Notification` 테이블 + 거래 이벤트(입찰·낙찰·거절·단계변경) 20초 폴링 알림. **SMS/카카오 알림톡(솔라피) 연동 스켈레톤**(`backend/src/messaging.ts`) — 견적 등록 시 가입 업체에게, 입찰 등록 시 견적 주인에게 발송(키 없으면 mock 로그). 향후 웹소켓·알림톡 템플릿 승인·서비스 지역 매칭으로 확장
-7. **서비스 라인 확장 + GNB 리디자인** (완료) — 가정/기업 이사 랜딩 분리(scope 기반 견적 종류 분리·이삿날 싱글 추가), 청소·창고보관·문서보관·파쇄 전용 랜딩 + 세부 상품 페이지, 견적 폼 부가 서비스 선택(요청사항 기록·MVP), 검색 자동완성, 이사트럭 인터랙션 헤더, 2단 헤더 + 회사 페이지(기업소개·기업문화·인증현황) + 무빙 프로젝트(실적·갤러리·포트폴리오·브이로그, 빈 상태 UI). *향후*: 부가 서비스(청소·보관·문서)를 `QuoteRequest` 구조화 컬럼으로 분리 저장, 무빙 프로젝트 콘텐츠 백엔드화(글·사진·영상 업로드)
-8. **TypeScript 점진 도입** (진행) — (1단계 완료) 데이터 레이어 `.ts` 전환 + 공통 타입(`data/types.ts`). (2단계 완료) API 경계 타입(`data/apiTypes.ts`: `QuoteRequest`·`Bid`·`Review`·`PartnerProfile`·`User`) + `services/auth.ts`·`quotes.ts` 반환 타입 적용, `tsconfig`(`checkJs:false`)·`vite-env.d.ts`·`npm run typecheck`. (3단계 규칙) 화면은 `.jsx` 유지, **새 파일은 `.tsx`**, 기존은 손댈 때 전환. *향후*: 나머지 서비스(`bids`·`reviews`·`partners`…)·컴포넌트 점진 전환
+7. **서비스 라인 확장 + GNB 리디자인** (완료) — 가정/기업 이사 랜딩 분리(scope 기반 견적 종류 분리·이삿날 싱글 추가), 청소·창고보관·문서보관·파쇄 전용 랜딩 + 세부 상품 페이지, 견적 폼 부가 서비스 선택(요청사항 기록·MVP), 검색 자동완성, 이사트럭 인터랙션 헤더, 2단 헤더 + 회사 페이지(기업소개·기업문화·인증현황) + 무빙 프로젝트(실적·갤러리·포트폴리오·브이로그, 빈 상태 UI). **부가 서비스(청소·보관·문서)를 `QuoteRequest.addons` 구조화 컬럼[JSON]으로 분리 저장 — memo와 분리, 파트너·마이페이지·관리자에 칩 표시(`AddonChips`)** (완료). *향후*: 무빙 프로젝트 콘텐츠 백엔드화(글·사진·영상 업로드)
+8. **TypeScript 점진 도입** (진행) — (1단계 완료) 데이터 레이어 `.ts` 전환 + 공통 타입(`data/types.ts`). (2단계 완료) API 경계 타입(`data/apiTypes.ts`: `QuoteRequest`·`Bid`·`Review`·`PartnerProfile`·`User`) + `services/auth.ts`·`quotes.ts` 반환 타입 적용, `tsconfig`(`checkJs:false`)·`vite-env.d.ts`·`npm run typecheck`. (3단계 규칙) 화면은 `.jsx` 유지, **새 파일은 `.tsx`**, 기존은 손댈 때 전환. (3단계 진행) **API 서비스 전 계층 `.ts` 전환 완료** — `bids`·`reviews`·`partners`·`notices`·`qna`·`stories`·`notifications`에 반환·입력 타입 적용, `apiTypes`에 `Notice`·`Qna`·`PartnerStory`·`Notification`·`Rating`·`QuoteAddons` 추가. *향후*: 화면 컴포넌트 점진 전환

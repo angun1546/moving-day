@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { getQuotes } from '../services/quotes'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from '../components/Pagination'
+import AddonChips from '../components/AddonChips'
 import { useConfirm } from '../context/ConfirmContext'
 import { maskKoreanNamesInText } from '../utils/userDisplay'
 import { addNotification } from '../utils/notifications'
@@ -656,6 +657,7 @@ function AdminDashboardPage() {
                 <p className="mt-1 text-sm text-gray-500">
                   {m.name} · 이사 예정 {m.moveDate || '미정'}
                 </p>
+                <AddonChips addons={m.addons} />
               </div>
               <div className="text-right text-sm">
                 <p className="text-gray-400">입찰 {m.bids.length}건</p>

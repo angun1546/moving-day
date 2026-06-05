@@ -37,6 +37,13 @@ export interface StageLog {
   stage: string
 }
 
+// 부가 서비스 선택 — QuoteRequest.addons(JSON 문자열)의 파싱 결과
+export interface QuoteAddons {
+  cleaning?: string // 청소(단일 선택)
+  storage?: string[] // 창고보관(복수)
+  document?: string[] // 문서보관·파쇄(복수)
+}
+
 export interface QuoteRequest {
   id: string
   createdAt: string
@@ -48,6 +55,7 @@ export interface QuoteRequest {
   moveDate?: string | null
   homeSize?: string | null
   memo?: string | null
+  addons?: string | null // 부가 서비스 JSON 문자열(QuoteAddons)
   photos?: string | null // JSON 문자열(URL 배열)
   method: string // 방문견적 | 사진견적 | 전화상담
   visitDate?: string | null
@@ -85,4 +93,50 @@ export interface PartnerProfile {
   profileImg?: string | null
   workPhotos?: string | null // JSON 문자열(URL 배열)
   certs?: string | null // JSON 문자열([{url,name,isImage}])
+}
+
+export interface Notice {
+  id: string
+  createdAt: string
+  title: string
+  body: string
+}
+
+export interface Qna {
+  id: string
+  createdAt: string
+  scope: string // user | partner
+  name: string
+  q: string
+  a?: string | null // 관리자 답변(없으면 미답변)
+  authorEmail?: string | null
+  hidden: boolean
+}
+
+export interface PartnerStory {
+  id: string
+  createdAt: string
+  company: string
+  text: string
+  rating: number // 1~5
+  authorEmail?: string | null
+  hidden: boolean
+  reply?: string | null
+}
+
+export interface Notification {
+  id: string
+  createdAt: string
+  toEmail: string
+  type: string // bid | award | reject | stage
+  message: string
+  link?: string | null
+  read: boolean
+}
+
+// 업체별 평점 집계 (/api/reviews/ratings)
+export interface Rating {
+  company: string
+  avg: number
+  count: number
 }

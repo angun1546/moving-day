@@ -65,6 +65,7 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
     moveDate,
     homeSize,
     memo,
+    addons,
     method,
     visitDate,
     callTime,
@@ -100,6 +101,21 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
     return res.status(500).json({ message: '사진 업로드 중 오류가 발생했습니다.' })
   }
 
+  // 부가 서비스(JSON 문자열) — 유효한 JSON이고 비어 있지 않을 때만 저장
+  let addonsJson: string | null = null
+  if (addons) {
+    try {
+      const parsed = JSON.parse(addons)
+      const hasAny =
+        parsed?.cleaning ||
+        parsed?.storage?.length ||
+        parsed?.document?.length
+      if (hasAny) addonsJson = addons
+    } catch {
+      addonsJson = null // 잘못된 형식은 무시
+    }
+  }
+
   try {
     const quote = await prisma.quoteRequest.create({
       data: {
@@ -111,6 +127,7 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
         moveDate,
         homeSize,
         memo,
+        addons: addonsJson,
         photos,
         method,
         visitDate,
