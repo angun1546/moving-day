@@ -12,10 +12,8 @@ function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      {/* 최근 공지 릴레이 배너 — 헤더 바로 아래 */}
-      <div className="px-4 pt-4">
-        <NoticeBanner />
-      </div>
+      {/* 최근 공지 바 — GNB 바로 아래 가로 꽉 찬 띠(X로 닫기) */}
+      <NoticeBanner />
       <main className="flex-1">
         <PageTransition>
           <Outlet />
