@@ -217,7 +217,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | `DATABASE_URL` | Turso DB URL | `libsql://<db>.turso.io` |
 | `DATABASE_AUTH_TOKEN` | Turso 토큰 | (시크릿) |
 | `JWT_SECRET` | JWT 서명 키(긴 임의 문자열) | (시크릿) |
-| `FRONTEND_URL` | CORS 화이트리스트(콤마 다중) | `https://moving-day.vercel.app,http://localhost:5173` |
+| `FRONTEND_URL` | CORS 화이트리스트(콤마 다중) | `https://moving-day-zeta.vercel.app,http://localhost:5173` |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary 계정 이름 | `movingday` |
 | `CLOUDINARY_API_KEY` | (시크릿) | |
 | `CLOUDINARY_API_SECRET` | (시크릿) | |
