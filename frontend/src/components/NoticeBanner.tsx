@@ -4,21 +4,12 @@ import gsap from 'gsap'
 import { getNotices } from '../services/notices'
 import type { Notice } from '../data/apiTypes'
 
-// 닫은 공지 id 저장 — 새 공지(최신 id 변경)가 오면 다시 노출
-const DISMISS_KEY = 'movingday_notice_dismissed'
-
 // 최근 공지 바 — GNB 바로 아래 가로 꽉 찬 띠. 여러 공지를 일정 간격으로 순환(GSAP), X로 닫기
+// 닫기는 일시적(상태로만) — 새로고침하면 다시 노출
 function NoticeBanner() {
   const [notices, setNotices] = useState<Notice[]>([])
   const [idx, setIdx] = useState(0)
-  // 마운트 시 1회만 읽어 깜빡임 방지
-  const [dismissedId, setDismissedId] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem(DISMISS_KEY)
-    } catch {
-      return null
-    }
-  })
+  const [closed, setClosed] = useState(false)
   const textRef = useRef<HTMLSpanElement>(null)
   const first = useRef(true)
 
@@ -51,20 +42,6 @@ function NoticeBanner() {
     )
   }, [idx])
 
-  // 가장 최근 공지 id를 기준으로 닫힘 판정
-  const latestId = notices[0]?.id
-  const closed = !!latestId && dismissedId === latestId
-
-  function close() {
-    if (!latestId) return
-    setDismissedId(latestId)
-    try {
-      localStorage.setItem(DISMISS_KEY, latestId)
-    } catch {
-      // 저장 실패 무시
-    }
-  }
-
   if (!notices.length || closed) return null
   const n = notices[idx]
 
@@ -91,7 +68,7 @@ function NoticeBanner() {
         </Link>
         <button
           type="button"
-          onClick={close}
+          onClick={() => setClosed(true)}
           aria-label="공지 닫기"
           className="shrink-0 rounded-full p-1 text-brand-dark/50 transition hover:bg-white/70 hover:text-brand-dark"
         >
