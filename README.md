@@ -52,7 +52,7 @@ Moving-day/
   - **문서보관·파쇄**(`/document` + `/document/:slug`): 보안 문서 파쇄·디지털 미디어 파쇄·코어 천공 폐기·아카이브 스토리지·스마트 인덱싱
   - 이사 종류(가정·기업)는 견적 플로우로 딥링크, 청소·창고보관·문서보관·파쇄는 세부 상품 페이지로 연결
 - **회사 페이지**: 기업소개(`/about`)·기업문화(`/culture`)·인증현황(`/certifications`) — 현재 제목만 있는 **빈 페이지(내용 미정)**. 헤더 상단 줄·푸터 회사 컬럼에서 진입
-- **무빙 프로젝트**(`/projects`): 프로젝트 실적(데이터 없음·빈 상태) + 갤러리(`/projects/gallery`, 블로그형 사진·글)·포트폴리오(`/projects/portfolio`)·브이로그(`/projects/vlog`, 영상 썸네일 그리드). 모두 **빈 상태 UI**(데이터 쌓이면 자동 표시), 신규 페이지는 `.tsx`로 작성
+- **무빙 프로젝트**(`/projects`): 프로젝트 실적 진입 + 갤러리(`/projects/gallery`, 블로그형 사진·글)·포트폴리오(`/projects/portfolio`)·브이로그(`/projects/vlog`, 유튜브 영상 그리드). **갤러리·포트폴리오·브이로그 전부 백엔드 연동 완료** — 관리자 대시보드 "무빙 프로젝트" 탭에서 글(사진 Cloudinary 업로드)·영상(유튜브 URL) 등록/수정/삭제, 콘텐츠 없으면 빈 상태 UI. 브이로그 썸네일은 유튜브 URL에서 자동 추출. 페이지는 `.tsx`
 
 ### 파트너 영역(`/partner/*`)
 - **메인 랜딩**(`/partner`): Hero(**큰 통합 검색창** + 통계)·혜택 벤토·시작 4단계·**파트너 스토리 캐러셀**·FAQ·CTA, 사이트 검색(`/partner/search`). **업체정보 등록 완료 시(백엔드 `PartnerProfile` 기준) 등록 버튼 숨김** — 입찰 시작 버튼만 노출
@@ -82,7 +82,7 @@ Moving-day/
 
 ### 공통 UI / 인터랙션
 - **헤더(GNB) 2단 리디자인**(아정당식 · 유저·파트너 공통): `max-w-gnb`(1200px) · `sticky` + 글래스모피즘. 상단 줄(`h-16`, `z-20`)에 **이사트럭 아이콘**(노면 위를 불규칙하게 덜컹이며 달리는 SVG/CSS) + 로고 + **보조 링크**(기업소개·기업문화·인증현황·공지사항) + 우측 유틸(파트너·로그인/회원가입·알림 벨·**견적신청/입찰하기 CTA**). 하단 메뉴 바(`h-24`, `z-10`, 좌측 정렬)에 주요 서비스 메뉴 — 상단 로고와 하단 첫 메뉴의 좌측 라인 정렬. 상단을 윗 레이어로 둬 사용자 메뉴 드롭다운이 하단 바에 가리지 않음
-- **카테고리 드롭다운**: 메뉴 호버 시 세부 카테고리 펼침(글래스모피즘 + 하단 라인 슬라이드 호버) — 이사 종류는 견적으로 딥링크, 청소·창고보관·문서보관·파쇄는 세부 상품 페이지로. **`lg` 미만은 햄버거 패널**(세로 스크롤 + 세부 카테고리·보조 링크 노출). 무빙 프로젝트(갤러리·포트폴리오·브이로그)는 준비중
+- **카테고리 드롭다운**: 메뉴 호버 시 세부 카테고리 펼침(글래스모피즘 + 하단 라인 슬라이드 호버) — 이사 종류는 견적으로 딥링크, 청소·창고보관·문서보관·파쇄는 세부 상품 페이지로. **`lg` 미만은 햄버거 패널**(세로 스크롤 + 세부 카테고리·보조 링크 노출). 무빙 프로젝트(갤러리·포트폴리오·브이로그)로 이동
 - **푸터**: 서비스·회사(기업소개·기업문화·인증현황·**정보처리방침 팝업**[내용 공란, 사이트 톤 모달]·**로그인/로그아웃** 상태 연동)·고객센터 컬럼
 - **알림 벨**: 좌우 흔들기 + 미확인 빨간점 + 드롭다운(수신자별 필터링)·사용자 메뉴 드롭다운(GSAP fade+slide)
 - **알림 시스템(서버 + 로컬 병합)**: BellIcon이 두 출처를 합쳐 최신순으로 보여줌
@@ -139,6 +139,8 @@ cd frontend && npm install && npm run dev                          # 5173
 | `PartnerStory` | id, company, text, rating, authorEmail, hidden, reply, createdAt — 파트너 플랫폼 이용 후기 |
 | `Review` | id, name, text, rating(1~5), moveType, company(이용 업체·평점 집계 키), authorEmail, hidden(관리자 숨김), reply(관리자 답변), createdAt — 고객 리뷰·업체 평점 원천 |
 | `PartnerProfile` | id, email(파트너 1:1 unique), company, bizNo, ceo, phone, trucks, intro, regions(JSON), profileImg(URL), workPhotos(JSON URL), certs(JSON [{url,name,isImage}]), createdAt, updatedAt — 업체 프로필·사진·자격증 |
+| `ProjectPost` | id, kind(gallery/portfolio), title, excerpt, image(대표 사진 URL·nullable), createdAt — 무빙 프로젝트 갤러리·포트폴리오 글(관리자 작성) |
+| `Vlog` | id, title, videoUrl(유튜브), createdAt — 무빙 브이로그(썸네일은 URL에서 자동 추출) |
 
 ### 클라이언트 localStorage 키 (영속화)
 | 키 | 용도 |
@@ -192,6 +194,14 @@ cd frontend && npm install && npm run dev                          # 5173
 | POST | `/api/stories` | 파트너 스토리 작성 |
 | PATCH | `/api/stories/:id` | 수정·숨김 토글·관리자 답변 |
 | DELETE | `/api/stories/:id` | 파트너 스토리 삭제 |
+| GET | `/api/projects?kind=` | 무빙 프로젝트 목록 (kind=gallery/portfolio 필터·생략 시 전체, 최신순) |
+| POST | `/api/projects` | 프로젝트 글 작성 (multipart — 대표 사진 Cloudinary) |
+| PATCH | `/api/projects/:id` | 프로젝트 글 수정 (사진 새로 올리면 교체) |
+| DELETE | `/api/projects/:id` | 프로젝트 글 삭제 |
+| GET | `/api/vlogs` | 브이로그 목록 (최신순) |
+| POST | `/api/vlogs` | 브이로그 등록 (유튜브 URL) |
+| PATCH | `/api/vlogs/:id` | 브이로그 수정 |
+| DELETE | `/api/vlogs/:id` | 브이로그 삭제 |
 
 ## 배포
 
@@ -266,5 +276,5 @@ Start Command     npm start
 4. **입찰 실제 DB 연동** (완료) — `Bid` 모델 + 파트너 입찰·고객 비교·관리자 매칭 + 낙찰/낙찰 취소 + 7단계 진행 추적
 5. **업체 평점 시스템** (완료) — 고객 리뷰 백엔드화(`Review` 모델 + CRUD) + 업체별 평점 집계 API(`/api/reviews/ratings`) → 입찰 비교에서 실제 평점 데이터로 정렬. 리뷰 작성·관리자 숨김/답변·메인 캐러셀·마이페이지 카운트 전부 서버 연동(리뷰 사진은 메모리 유지)
 6. **실시간 알림** (핵심 완료) — 서버 `Notification` 테이블 + 거래 이벤트(입찰·낙찰·거절·단계변경) 20초 폴링 알림. **SMS/카카오 알림톡(솔라피) 연동 스켈레톤**(`backend/src/messaging.ts`) — 견적 등록 시 가입 업체에게, 입찰 등록 시 견적 주인에게 발송(키 없으면 mock 로그). 향후 웹소켓·알림톡 템플릿 승인·서비스 지역 매칭으로 확장
-7. **서비스 라인 확장 + GNB 리디자인** (완료) — 가정/기업 이사 랜딩 분리(scope 기반 견적 종류 분리·이삿날 싱글 추가), 청소·창고보관·문서보관·파쇄 전용 랜딩 + 세부 상품 페이지, 견적 폼 부가 서비스 선택(요청사항 기록·MVP), 검색 자동완성, 이사트럭 인터랙션 헤더, 2단 헤더 + 회사 페이지(기업소개·기업문화·인증현황) + 무빙 프로젝트(실적·갤러리·포트폴리오·브이로그, 빈 상태 UI). **부가 서비스(청소·보관·문서)를 `QuoteRequest.addons` 구조화 컬럼[JSON]으로 분리 저장 — memo와 분리, 파트너·마이페이지·관리자에 칩 표시(`AddonChips`)** (완료). *향후*: 무빙 프로젝트 콘텐츠 백엔드화(글·사진·영상 업로드)
+7. **서비스 라인 확장 + GNB 리디자인** (완료) — 가정/기업 이사 랜딩 분리(scope 기반 견적 종류 분리·이삿날 싱글 추가), 청소·창고보관·문서보관·파쇄 전용 랜딩 + 세부 상품 페이지, 견적 폼 부가 서비스 선택(요청사항 기록·MVP), 검색 자동완성, 이사트럭 인터랙션 헤더, 2단 헤더 + 회사 페이지(기업소개·기업문화·인증현황) + 무빙 프로젝트(실적·갤러리·포트폴리오·브이로그, 빈 상태 UI). **부가 서비스(청소·보관·문서)를 `QuoteRequest.addons` 구조화 컬럼[JSON]으로 분리 저장 — memo와 분리, 파트너·마이페이지·관리자에 칩 표시(`AddonChips`)** (완료). **무빙 프로젝트 콘텐츠 백엔드화** (완료) — `ProjectPost`(갤러리·포트폴리오 kind 구분, 사진 Cloudinary)·`Vlog`(유튜브 URL, 썸네일 자동 추출) 모델 + CRUD API(`/api/projects`·`/api/vlogs`) + 갤러리·포트폴리오·브이로그 페이지 서버 연동 + 관리자 대시보드 "무빙 프로젝트" 탭(글·영상 등록/수정/삭제)
 8. **TypeScript 점진 도입** (진행) — (1단계 완료) 데이터 레이어 `.ts` 전환 + 공통 타입(`data/types.ts`). (2단계 완료) API 경계 타입(`data/apiTypes.ts`: `QuoteRequest`·`Bid`·`Review`·`PartnerProfile`·`User`) + `services/auth.ts`·`quotes.ts` 반환 타입 적용, `tsconfig`(`checkJs:false`)·`vite-env.d.ts`·`npm run typecheck`. (3단계 규칙) 화면은 `.jsx` 유지, **새 파일은 `.tsx`**, 기존은 손댈 때 전환. (3단계 진행) **API 서비스 전 계층 `.ts` 전환 완료** — `bids`·`reviews`·`partners`·`notices`·`qna`·`stories`·`notifications`에 반환·입력 타입 적용, `apiTypes`에 `Notice`·`Qna`·`PartnerStory`·`Notification`·`Rating`·`QuoteAddons` 추가. *향후*: 화면 컴포넌트 점진 전환

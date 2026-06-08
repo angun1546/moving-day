@@ -160,6 +160,29 @@ model PartnerProfile {
   updatedAt  DateTime @updatedAt
 }
 
+// 무빙 프로젝트 — 갤러리·포트폴리오 글(관리자 작성, 사진은 Cloudinary URL)
+// kind로 갤러리/포트폴리오 구분 — 필드가 같아 모델 하나로 공용
+model ProjectPost {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  kind      String // gallery | portfolio
+  title     String
+  excerpt   String // 요약/본문
+  image     String? // 대표 사진 URL (Cloudinary)
+
+  @@index([kind, createdAt])
+}
+
+// 무빙 브이로그 — 유튜브 영상 임베드(썸네일은 URL에서 자동 추출)
+model Vlog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  title     String
+  videoUrl  String // 유튜브 영상 URL
+
+  @@index([createdAt])
+}
+
 // 사용자 알림 — 서버 거래 이벤트(입찰·낙찰·거절·단계변경)에서 생성, 프론트가 폴링으로 조회
 model Notification {
   id        String   @id @default(cuid())

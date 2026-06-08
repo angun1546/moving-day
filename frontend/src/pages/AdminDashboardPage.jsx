@@ -16,6 +16,18 @@ import {
 } from '../services/notices'
 import { getQna, updateQna } from '../services/qna'
 import { getStories, updateStory } from '../services/stories'
+import {
+  getProjects,
+  createProject,
+  updateProject,
+  deleteProject,
+} from '../services/projects'
+import {
+  getVlogs,
+  createVlog,
+  updateVlog,
+  deleteVlog,
+} from '../services/vlogs'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -28,6 +40,7 @@ const SECTIONS = [
   { key: 'reviews', label: '리뷰 관리' },
   { key: 'qa', label: 'Q&A 답변' },
   { key: 'notice', label: '공지사항' },
+  { key: 'projects', label: '무빙 프로젝트' },
 ]
 
 function StatCard({ label, value }) {
@@ -344,6 +357,28 @@ function AdminDashboardPage() {
   const [editingNoticeId, setEditingNoticeId] = useState(null)
   const [tab, setTab] = useState('match') // 사이드바 선택 카테고리
 
+  // 무빙 프로젝트(갤러리·포트폴리오) + 브이로그
+  const [projects, setProjects] = useState([])
+  const [vlogs, setVlogs] = useState([])
+  useEffect(() => {
+    getProjects()
+      .then((d) => setProjects(Array.isArray(d) ? d : []))
+      .catch(() => setProjects([]))
+    getVlogs()
+      .then((d) => setVlogs(Array.isArray(d) ? d : []))
+      .catch(() => setVlogs([]))
+  }, [])
+  const [projOpen, setProjOpen] = useState(false)
+  const [editingProjId, setEditingProjId] = useState(null)
+  const [vlogOpen, setVlogOpen] = useState(false)
+  const [editingVlogId, setEditingVlogId] = useState(null)
+  const editingProj = editingProjId
+    ? projects.find((p) => p.id === editingProjId)
+    : null
+  const editingVlog = editingVlogId
+    ? vlogs.find((v) => v.id === editingVlogId)
+    : null
+
   // 견적·입찰 현황 (백엔드 — 입찰 포함)
   const [quotes, setQuotes] = useState([])
   useEffect(() => {
@@ -578,6 +613,105 @@ function AdminDashboardPage() {
   function cancelNotice() {
     setNoticeOpen(false)
     setEditingNoticeId(null)
+  }
+
+  // 무빙 프로젝트(갤러리·포트폴리오) 액션 — 사진은 FormData
+  async function submitProject(e) {
+    e.preventDefault()
+    const form = e.currentTarget
+    const fd = new FormData(form)
+    const title = fd.get('title')?.toString().trim()
+    const excerpt = fd.get('excerpt')?.toString().trim()
+    if (!title || !excerpt) return
+    // 사진을 고르지 않았으면 빈 파일 항목 제거
+    const img = fd.get('image')
+    if (img instanceof File && img.size === 0) fd.delete('image')
+    try {
+      if (editingProjId) {
+        const updated = await updateProject(editingProjId, fd)
+        setProjects((prev) =>
+          prev.map((p) => (p.id === editingProjId ? updated : p)),
+        )
+        setEditingProjId(null)
+      } else {
+        const created = await createProject(fd)
+        setProjects((prev) => [created, ...prev])
+      }
+      form.reset()
+      setProjOpen(false)
+    } catch (err) {
+      await confirm({
+        title: '저장 실패',
+        message: err.message || '저장에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
+  }
+  async function removeProject(id) {
+    if (!(await confirm({ title: '글 삭제', message: '이 글을 삭제할까요?', danger: true })))
+      return
+    try {
+      await deleteProject(id)
+      setProjects((prev) => prev.filter((p) => p.id !== id))
+    } catch (err) {
+      await confirm({
+        title: '삭제 실패',
+        message: err.message || '삭제에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
+  }
+  function startEditProj(p) {
+    setEditingProjId(p.id)
+    setProjOpen(true)
+  }
+
+  // 무빙 브이로그 액션 — 유튜브 URL
+  async function submitVlog(e) {
+    e.preventDefault()
+    const form = e.currentTarget
+    const fd = new FormData(form)
+    const title = fd.get('title')?.toString().trim()
+    const videoUrl = fd.get('videoUrl')?.toString().trim()
+    if (!title || !videoUrl) return
+    try {
+      if (editingVlogId) {
+        const updated = await updateVlog(editingVlogId, { title, videoUrl })
+        setVlogs((prev) =>
+          prev.map((v) => (v.id === editingVlogId ? updated : v)),
+        )
+        setEditingVlogId(null)
+      } else {
+        const created = await createVlog({ title, videoUrl })
+        setVlogs((prev) => [created, ...prev])
+      }
+      form.reset()
+      setVlogOpen(false)
+    } catch (err) {
+      await confirm({
+        title: '저장 실패',
+        message: err.message || '저장에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
+  }
+  async function removeVlog(id) {
+    if (!(await confirm({ title: '영상 삭제', message: '이 영상을 삭제할까요?', danger: true })))
+      return
+    try {
+      await deleteVlog(id)
+      setVlogs((prev) => prev.filter((v) => v.id !== id))
+    } catch (err) {
+      await confirm({
+        title: '삭제 실패',
+        message: err.message || '삭제에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
+  }
+  function startEditVlog(v) {
+    setEditingVlogId(v.id)
+    setVlogOpen(true)
   }
 
   return (
@@ -880,6 +1014,283 @@ function AdminDashboardPage() {
         perPage={noticePage.perPage}
         setPerPage={noticePage.setPerPage}
       />
+            </>
+          )}
+
+          {tab === 'projects' && (
+            <>
+              {/* 갤러리·포트폴리오 */}
+              <div className="flex items-end justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    갤러리·포트폴리오
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-500">
+                    등록한 글은 무빙 프로젝트 갤러리·포트폴리오 페이지에 바로 표시됩니다.
+                  </p>
+                </div>
+                {!projOpen && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingProjId(null)
+                      setProjOpen(true)
+                    }}
+                    className="shrink-0 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+                  >
+                    + 글 작성
+                  </button>
+                )}
+              </div>
+
+              {projOpen && (
+                <form
+                  onSubmit={submitProject}
+                  className="mt-4 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-gray-900">
+                      {editingProjId ? '글 수정' : '글 작성'}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProjOpen(false)
+                        setEditingProjId(null)
+                      }}
+                      className="text-sm text-gray-500 hover:text-brand"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">종류</span>
+                    <select
+                      name="kind"
+                      defaultValue={editingProj?.kind || 'gallery'}
+                      className={inputClass}
+                    >
+                      <option value="gallery">갤러리</option>
+                      <option value="portfolio">포트폴리오</option>
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">제목</span>
+                    <input
+                      type="text"
+                      name="title"
+                      required
+                      defaultValue={editingProj?.title || ''}
+                      placeholder="글 제목"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">내용</span>
+                    <textarea
+                      name="excerpt"
+                      rows={4}
+                      required
+                      defaultValue={editingProj?.excerpt || ''}
+                      placeholder="이사 현장 이야기를 적어주세요."
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">
+                      대표 사진 {editingProjId && '(새로 올리면 교체)'}
+                    </span>
+                    <input
+                      type="file"
+                      name="image"
+                      accept="image/*"
+                      className="mt-1 w-full text-sm text-gray-600"
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    className="w-full rounded-full bg-brand px-7 py-3 font-semibold text-white transition hover:bg-brand-dark"
+                  >
+                    {editingProjId ? '수정 저장' : '글 등록'}
+                  </button>
+                </form>
+              )}
+
+              <div className="mt-4 space-y-3">
+                {projects.length === 0 ? (
+                  <Empty />
+                ) : (
+                  projects.map((p) => (
+                    <article
+                      key={p.id}
+                      className="flex items-start gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+                    >
+                      {p.image && (
+                        <img
+                          src={p.image}
+                          alt={p.title}
+                          className="h-16 w-16 shrink-0 rounded-xl object-cover"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <span className="inline-block rounded-full bg-brand-light px-2.5 py-0.5 text-xs font-semibold text-brand-dark">
+                              {p.kind === 'portfolio' ? '포트폴리오' : '갤러리'}
+                            </span>
+                            <h3 className="mt-1 text-lg font-bold text-gray-900">
+                              {p.title}
+                            </h3>
+                            <p className="text-xs text-gray-400">
+                              {formatDate(p.createdAt)}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => startEditProj(p)}
+                              className="rounded-full border border-gray-300 px-3 py-1.5 font-semibold text-gray-600 transition hover:border-brand hover:text-brand"
+                            >
+                              수정
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeProject(p.id)}
+                              className="rounded-full border border-red-300 px-3 py-1.5 font-semibold text-red-500 transition hover:bg-red-50"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+                        <p className="mt-2 leading-relaxed whitespace-pre-line text-gray-700">
+                          {p.excerpt}
+                        </p>
+                      </div>
+                    </article>
+                  ))
+                )}
+              </div>
+
+              {/* 무빙 브이로그 */}
+              <div className="mt-12 flex items-end justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">무빙 브이로그</h2>
+                  <p className="mt-2 text-sm text-gray-500">
+                    유튜브 영상 링크를 등록하면 브이로그 페이지에 썸네일로 표시됩니다.
+                  </p>
+                </div>
+                {!vlogOpen && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingVlogId(null)
+                      setVlogOpen(true)
+                    }}
+                    className="shrink-0 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+                  >
+                    + 영상 등록
+                  </button>
+                )}
+              </div>
+
+              {vlogOpen && (
+                <form
+                  onSubmit={submitVlog}
+                  className="mt-4 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-gray-900">
+                      {editingVlogId ? '영상 수정' : '영상 등록'}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVlogOpen(false)
+                        setEditingVlogId(null)
+                      }}
+                      className="text-sm text-gray-500 hover:text-brand"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">제목</span>
+                    <input
+                      type="text"
+                      name="title"
+                      required
+                      defaultValue={editingVlog?.title || ''}
+                      placeholder="영상 제목"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">
+                      유튜브 링크
+                    </span>
+                    <input
+                      type="url"
+                      name="videoUrl"
+                      required
+                      defaultValue={editingVlog?.videoUrl || ''}
+                      placeholder="https://youtu.be/..."
+                      className={inputClass}
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    className="w-full rounded-full bg-brand px-7 py-3 font-semibold text-white transition hover:bg-brand-dark"
+                  >
+                    {editingVlogId ? '수정 저장' : '영상 등록'}
+                  </button>
+                </form>
+              )}
+
+              <div className="mt-4 space-y-3">
+                {vlogs.length === 0 ? (
+                  <Empty />
+                ) : (
+                  vlogs.map((v) => (
+                    <article
+                      key={v.id}
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {v.title}
+                        </h3>
+                        <a
+                          href={v.videoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs break-all text-brand hover:underline"
+                        >
+                          {v.videoUrl}
+                        </a>
+                        <p className="text-xs text-gray-400">
+                          {formatDate(v.createdAt)}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 gap-2 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => startEditVlog(v)}
+                          className="rounded-full border border-gray-300 px-3 py-1.5 font-semibold text-gray-600 transition hover:border-brand hover:text-brand"
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeVlog(v.id)}
+                          className="rounded-full border border-red-300 px-3 py-1.5 font-semibold text-red-500 transition hover:bg-red-50"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </article>
+                  ))
+                )}
+              </div>
             </>
           )}
         </div>

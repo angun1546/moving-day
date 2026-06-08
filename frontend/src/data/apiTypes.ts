@@ -140,3 +140,21 @@ export interface Rating {
   avg: number
   count: number
 }
+
+// 무빙 프로젝트 — 갤러리·포트폴리오 글(kind로 구분)
+export interface ProjectPost {
+  id: string
+  createdAt: string
+  kind: string // gallery | portfolio
+  title: string
+  excerpt: string
+  image?: string | null // 대표 사진 URL(Cloudinary)
+}
+
+// 무빙 브이로그 — 유튜브 영상
+export interface Vlog {
+  id: string
+  createdAt: string
+  title: string
+  videoUrl: string
+}
