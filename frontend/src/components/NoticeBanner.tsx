@@ -46,9 +46,9 @@ function NoticeBanner() {
   const n = notices[idx]
 
   return (
-    <div className="border-b border-brand-light bg-brand-light/50">
+    <div className="border-b border-brand-dark bg-brand">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
-        <span className="shrink-0 rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-white">
+        <span className="shrink-0 rounded-full bg-white px-2.5 py-0.5 text-xs font-bold text-brand">
           공지
         </span>
         <Link
@@ -58,11 +58,11 @@ function NoticeBanner() {
         >
           <span
             ref={textRef}
-            className="truncate text-sm font-medium text-brand-dark"
+            className="truncate text-sm font-medium text-white"
           >
             {n.title}
           </span>
-          <span className="hidden shrink-0 text-xs font-semibold text-brand sm:inline">
+          <span className="hidden shrink-0 text-xs font-semibold text-white/80 sm:inline">
             자세히 →
           </span>
         </Link>
@@ -70,7 +70,7 @@ function NoticeBanner() {
           type="button"
           onClick={() => setClosed(true)}
           aria-label="공지 닫기"
-          className="shrink-0 rounded-full p-1 text-brand-dark/50 transition hover:bg-white/70 hover:text-brand-dark"
+          className="shrink-0 rounded-full p-1 text-white/70 transition hover:bg-white/20 hover:text-white"
         >
           <svg
             width="16"
