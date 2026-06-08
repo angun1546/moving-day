@@ -89,7 +89,11 @@ function Logo({ onClick }) {
 
   return (
     <Link to={homePath} onClick={handle} className="flex shrink-0 items-center">
-      <img src="/logo-mark.png" alt="이삿날 The Moving Day" className="h-14 w-auto" />
+      <img
+        src="/logo-mark.png"
+        alt="이삿날 The Moving Day"
+        className="h-10 w-auto sm:h-14"
+      />
     </Link>
   )
 }
@@ -269,7 +273,7 @@ function Header() {
             {/* 메인 CTA */}
             <Link
               to="/quote"
-              className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark"
+              className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark sm:px-5"
             >
               견적신청
             </Link>
@@ -378,8 +382,11 @@ function Header() {
             )
           })}
 
-          {/* 보조 링크 (기업소개·기업문화·인증현황·공지사항) */}
+          {/* 고객 지원·커뮤니티 (불편사항·팁·FAQ·후기·공지) */}
           <div className="border-t border-gray-100 pt-2">
+            <p className="px-3 pb-1 text-xs font-semibold text-gray-400">
+              고객 지원
+            </p>
             {TOP_LINKS.map((l) => (
               <Link
                 key={l.label}

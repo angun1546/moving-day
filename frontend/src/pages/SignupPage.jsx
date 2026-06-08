@@ -186,7 +186,7 @@ function SignupPage() {
               onChange={(e) => setEmailId(e.target.value)}
               required
               placeholder="아이디"
-              className={`${inputClass} flex-1`}
+              className={`${inputClass} min-w-0 flex-1`}
             />
             <span className="text-gray-500">@</span>
             {isCustomDomain ? (

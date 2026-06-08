@@ -60,7 +60,7 @@ function Footer() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-3 gap-8 text-sm">
+          <div className="grid grid-cols-2 gap-6 text-sm sm:grid-cols-3 sm:gap-8">
             {COLUMNS.map((col) => (
               <div key={col.title}>
                 <p className="font-semibold text-gray-900">{col.title}</p>

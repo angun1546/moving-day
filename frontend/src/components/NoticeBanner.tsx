@@ -70,7 +70,7 @@ function NoticeBanner() {
           type="button"
           onClick={() => setClosed(true)}
           aria-label="공지 닫기"
-          className="shrink-0 rounded-full p-1 text-white/70 transition hover:bg-white/20 hover:text-white"
+          className="shrink-0 rounded-full p-2 text-white/70 transition hover:bg-white/20 hover:text-white"
         >
           <svg
             width="16"
