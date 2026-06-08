@@ -4,7 +4,15 @@ import { USER_PAGES, PARTNER_PAGES, searchPages } from '../data/searchIndex'
 
 // Hero용 큰 검색창 — 입력 시 연관 페이지를 드롭다운으로 추천, 검색 시 결과 페이지로 이동
 // scope: 'user' → /search, 'partner' → /partner/search
-function HeroSearch({ scope = 'user', suggestions = [], centered = false }) {
+function HeroSearch({
+  scope = 'user',
+  suggestions = [],
+  centered = false,
+}: {
+  scope?: 'user' | 'partner'
+  suggestions?: string[]
+  centered?: boolean
+}) {
   const [q, setQ] = useState('')
   const [focused, setFocused] = useState(false)
   const navigate = useNavigate()
@@ -21,7 +29,7 @@ function HeroSearch({ scope = 'user', suggestions = [], centered = false }) {
   const showDropdown = focused && q.trim().length > 0
 
   // 검색어로 결과 페이지 이동 (빈 값이면 전체 목록 페이지로)
-  function go(query) {
+  function go(query: string) {
     const v = query.trim()
     navigate(v ? `${base}?q=${encodeURIComponent(v)}` : base)
   }
