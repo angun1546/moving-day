@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMyQuotes, deleteQuote, updateQuote } from '../services/quotes'
 import { useConfirm } from '../context/ConfirmContext'
+import type { QuoteRequest } from '../data/apiTypes'
 import { formatDateTime } from '../utils/date'
 import StageProgress from './StageProgress'
 import DatePicker from './DatePicker'
@@ -19,12 +20,12 @@ const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20'
 
 // 마이페이지 내 견적 현황 — 신청 견적·입찰/낙찰 상태·취소·수정
-function MyQuotesBox({ email }) {
+function MyQuotesBox({ email }: { email: string }) {
   const confirm = useConfirm()
   const navigate = useNavigate()
-  const [quotes, setQuotes] = useState([])
+  const [quotes, setQuotes] = useState<QuoteRequest[]>([])
   const [loading, setLoading] = useState(true)
-  const [editId, setEditId] = useState(null)
+  const [editId, setEditId] = useState<string | null>(null)
 
   function load() {
     if (!email) {
@@ -42,7 +43,7 @@ function MyQuotesBox({ email }) {
   }, [email])
 
   // 견적의 입찰 비교 페이지로 (해당 견적 id를 기준으로)
-  function viewBids(q) {
+  function viewBids(q: QuoteRequest) {
     try {
       localStorage.setItem('movingday_last_quote_id', q.id)
     } catch {
@@ -51,7 +52,7 @@ function MyQuotesBox({ email }) {
     navigate('/quote/bids')
   }
 
-  async function remove(q) {
+  async function remove(q: QuoteRequest) {
     const ok = await confirm({
       title: '견적 취소',
       message: '이 견적을 취소할까요? 들어온 입찰도 함께 삭제됩니다.',
@@ -63,16 +64,17 @@ function MyQuotesBox({ email }) {
       await deleteQuote(q.id)
       setQuotes((prev) => prev.filter((x) => x.id !== q.id))
     } catch (err) {
-      await confirm({ title: '취소 실패', message: err.message, alertOnly: true })
+      const msg = err instanceof Error ? err.message : '취소에 실패했습니다.'
+      await confirm({ title: '취소 실패', message: msg, alertOnly: true })
     }
   }
 
-  async function saveEdit(e, q) {
+  async function saveEdit(e: FormEvent<HTMLFormElement>, q: QuoteRequest) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
     const data = {
-      moveType: fd.get('moveType'),
-      moveDate: fd.get('moveDate') || null,
+      moveType: fd.get('moveType')?.toString() ?? '',
+      moveDate: fd.get('moveDate')?.toString() || null,
       homeSize: fd.get('homeSize')?.toString().trim() || null,
       memo: fd.get('memo')?.toString().trim() || null,
     }
@@ -83,7 +85,8 @@ function MyQuotesBox({ email }) {
       )
       setEditId(null)
     } catch (err) {
-      await confirm({ title: '수정 실패', message: err.message, alertOnly: true })
+      const msg = err instanceof Error ? err.message : '수정에 실패했습니다.'
+      await confirm({ title: '수정 실패', message: msg, alertOnly: true })
     }
   }
 
@@ -167,7 +170,8 @@ function MyQuotesBox({ email }) {
                       </span>
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                          STATUS_STYLE[q.status] || STATUS_STYLE['접수']
+                          STATUS_STYLE[q.status as keyof typeof STATUS_STYLE] ||
+                          STATUS_STYLE['접수']
                         }`}
                       >
                         {q.status}

@@ -4,12 +4,13 @@ import { getMyBids } from '../services/bids'
 import { updateQuoteStage } from '../services/quotes'
 import { useConfirm } from '../context/ConfirmContext'
 import { MOVE_STAGES } from '../data/stages'
+import type { Bid, QuoteRequest } from '../data/apiTypes'
 import { usePagination } from '../hooks/usePagination'
 import Pagination from './Pagination'
 import StageProgress from './StageProgress'
 import { formatDateTime } from '../utils/date'
 
-const won = (n) => n.toLocaleString('ko-KR')
+const won = (n: number) => n.toLocaleString('ko-KR')
 
 const STATUS_STYLE = {
   입찰: 'bg-amber-100 text-amber-700',
@@ -18,9 +19,9 @@ const STATUS_STYLE = {
 }
 
 // 파트너 내 입찰 목록 + 낙찰건 이사 단계 진행 (페이지·마이페이지 공용)
-function PartnerBidsList({ email }) {
+function PartnerBidsList({ email }: { email: string }) {
   const confirm = useConfirm()
-  const [bids, setBids] = useState([])
+  const [bids, setBids] = useState<Bid[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,10 +39,10 @@ function PartnerBidsList({ email }) {
     usePagination(bids, 5)
 
   // 낙찰받은 건의 이사 단계 진행
-  async function advanceStage(b) {
+  async function advanceStage(b: Bid) {
     const q = b.quoteRequest
     if (!q) return
-    const idx = MOVE_STAGES.indexOf(q.stage)
+    const idx = MOVE_STAGES.indexOf(q.stage ?? '')
     const next = MOVE_STAGES[idx + 1]
     if (!next) return
     try {
@@ -49,14 +50,17 @@ function PartnerBidsList({ email }) {
       setBids((prev) =>
         prev.map((x) =>
           x.id === b.id
-            ? { ...x, quoteRequest: { ...x.quoteRequest, stage: next } }
+            ? {
+                ...x,
+                quoteRequest: { ...(x.quoteRequest as QuoteRequest), stage: next },
+              }
             : x,
         ),
       )
     } catch (err) {
       await confirm({
         title: '단계 변경 실패',
-        message: err.message || '단계 변경에 실패했습니다.',
+        message: err instanceof Error ? err.message : '단계 변경에 실패했습니다.',
         alertOnly: true,
       })
     }
@@ -88,7 +92,7 @@ function PartnerBidsList({ email }) {
   return (
     <>
       <div className="space-y-4">
-        {pageItems.map((b) => {
+        {pageItems.map((b: Bid) => {
           const q = b.quoteRequest
           return (
             <article
@@ -105,7 +109,8 @@ function PartnerBidsList({ email }) {
                     )}
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                        STATUS_STYLE[b.status] || STATUS_STYLE['입찰']
+                        STATUS_STYLE[b.status as keyof typeof STATUS_STYLE] ||
+                        STATUS_STYLE['입찰']
                       }`}
                     >
                       {b.status}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
@@ -28,7 +28,7 @@ const TOP_LINKS = [
 ]
 
 // 데스크톱 메뉴 바 링크 — 호버 컬러 스왑 + 하단 라인(활성 시 항상 표시)
-function PartnerNavLink({ item }) {
+function PartnerNavLink({ item }: { item: { to: string; label: string } }) {
   return (
     <NavLink
       to={item.to}
@@ -60,10 +60,10 @@ function PartnerLayout() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
-  const panelRef = useRef(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   // 파트너 로고는 무조건 파트너 메인('/partner')만 이동. 같은 페이지면 스크롤 업
-  function onLogoClick(e) {
+  function onLogoClick(e: MouseEvent) {
     e.preventDefault()
     close()
     if (pathname === '/partner') {
@@ -85,7 +85,7 @@ function PartnerLayout() {
     })
   }, [open])
 
-  const panelNavClass = ({ isActive }) =>
+  const panelNavClass = ({ isActive }: { isActive: boolean }) =>
     `block rounded-lg px-3 py-2.5 text-lg font-medium transition ${
       isActive
         ? 'bg-brand-bg text-brand'

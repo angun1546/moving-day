@@ -28,6 +28,7 @@ export interface Bid {
   message?: string | null
   eta?: string | null
   status: string // 입찰 | 낙찰 | 거절
+  quoteRequest?: QuoteRequest // 파트너 입찰 목록 조회 시 백엔드가 include(견적 정보)
 }
 
 export interface StageLog {

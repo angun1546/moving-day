@@ -1,10 +1,34 @@
-import { createContext, useCallback, useContext, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  type ReactNode,
+} from 'react'
 
 // 사이트 디자인에 맞춘 확인/알림 모달 — window.confirm/alert 대체
 // 사용: const confirm = useConfirm(); if (await confirm({ message })) { ... }
-const ConfirmContext = createContext(() => Promise.resolve(false))
+interface ConfirmOptions {
+  title?: string
+  message?: string
+  confirmText?: string
+  cancelText?: string
+  danger?: boolean
+  alertOnly?: boolean
+}
 
-function ConfirmModal({ opts, onResult }) {
+// 문자열이면 message로 취급
+type ConfirmFn = (opts: ConfirmOptions | string) => Promise<boolean>
+
+const ConfirmContext = createContext<ConfirmFn>(() => Promise.resolve(false))
+
+function ConfirmModal({
+  opts,
+  onResult,
+}: {
+  opts: ConfirmOptions
+  onResult: (result: boolean) => void
+}) {
   const {
     title = '확인',
     message = '',
@@ -56,18 +80,24 @@ function ConfirmModal({ opts, onResult }) {
   )
 }
 
-export function ConfirmProvider({ children }) {
-  const [state, setState] = useState(null) // { opts, resolve }
+interface ConfirmState {
+  opts: ConfirmOptions
+  resolve: (result: boolean) => void
+}
+
+export function ConfirmProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<ConfirmState | null>(null)
 
   // 문자열이면 message로 취급, 객체면 그대로
-  const confirm = useCallback((opts) => {
-    const normalized = typeof opts === 'string' ? { message: opts } : opts || {}
-    return new Promise((resolve) => {
+  const confirm = useCallback<ConfirmFn>((opts) => {
+    const normalized: ConfirmOptions =
+      typeof opts === 'string' ? { message: opts } : opts || {}
+    return new Promise<boolean>((resolve) => {
       setState({ opts: normalized, resolve })
     })
   }, [])
 
-  function handleResult(result) {
+  function handleResult(result: boolean) {
     setState((cur) => {
       if (cur) cur.resolve(result)
       return null
