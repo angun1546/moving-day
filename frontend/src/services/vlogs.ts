@@ -1,4 +1,5 @@
 import type { Vlog } from '../data/apiTypes'
+import { authHeaders } from './auth'
 
 // 무빙 브이로그 API — 유튜브 URL만 다룸(파일 업로드 없음)
 const BASE = import.meta.env.VITE_API_BASE ?? ''
@@ -13,7 +14,7 @@ export async function getVlogs(): Promise<Vlog[]> {
 export async function createVlog(data: Partial<Vlog>): Promise<Vlog> {
   const res = await fetch(API, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(data),
   })
   if (!res.ok) {
@@ -26,7 +27,7 @@ export async function createVlog(data: Partial<Vlog>): Promise<Vlog> {
 export async function updateVlog(id: string, data: Partial<Vlog>): Promise<Vlog> {
   const res = await fetch(`${API}/${id}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('수정에 실패했습니다.')
@@ -34,7 +35,10 @@ export async function updateVlog(id: string, data: Partial<Vlog>): Promise<Vlog>
 }
 
 export async function deleteVlog(id: string): Promise<{ ok: boolean }> {
-  const res = await fetch(`${API}/${id}`, { method: 'DELETE' })
+  const res = await fetch(`${API}/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
   if (!res.ok) throw new Error('삭제에 실패했습니다.')
   return res.json()
 }

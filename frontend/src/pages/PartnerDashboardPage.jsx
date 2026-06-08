@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useConfirm } from '../context/ConfirmContext'
 import { getQuotes } from '../services/quotes'
 import { createBid } from '../services/bids'
+import { getPartnerProfile } from '../services/partners'
 import { addNotification } from '../utils/notifications'
 import { formatDateTime } from '../utils/date'
 import { usePagination } from '../hooks/usePagination'
@@ -14,16 +15,6 @@ const won = (n) => n.toLocaleString('ko-KR')
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20'
 
-// 파트너 업체명 (localStorage 업체정보)
-function getCompany() {
-  try {
-    const p = JSON.parse(localStorage.getItem('movingday_partner_profile') || '{}')
-    return p.company || ''
-  } catch {
-    return ''
-  }
-}
-
 function PartnerDashboardPage() {
   const { user } = useAuth()
   const confirm = useConfirm()
@@ -31,6 +22,15 @@ function PartnerDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [openId, setOpenId] = useState(null) // 입찰 폼을 펼친 요청
   const [doneIds, setDoneIds] = useState([]) // 방금 입찰 제출한 요청
+  const [company, setCompany] = useState('') // 서버 업체 프로필의 업체명
+
+  // 업체명은 서버 프로필에서 — 입찰 시 사용 (localStorage에 없음)
+  useEffect(() => {
+    if (!user?.email) return
+    getPartnerProfile(user.email)
+      .then((p) => setCompany(p?.company || ''))
+      .catch(() => setCompany(''))
+  }, [user?.email])
 
   async function load() {
     try {
@@ -55,7 +55,6 @@ function PartnerDashboardPage() {
     const fd = new FormData(e.currentTarget)
     const price = fd.get('price')
     const message = fd.get('message')?.toString().trim() || ''
-    const company = getCompany()
     if (!company) {
       await confirm({
         title: '업체 정보 필요',

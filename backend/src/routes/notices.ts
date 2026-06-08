@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../db.ts'
+import { requireAdmin } from '../auth.ts'
 
 const router = Router()
 
@@ -17,7 +18,7 @@ router.get('/', async (_req, res) => {
 })
 
 // 공지 작성
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   const { title, body } = req.body ?? {}
   if (!title || !body) {
     return res.status(400).json({ message: '제목과 내용을 입력해 주세요.' })
@@ -32,7 +33,7 @@ router.post('/', async (req, res) => {
 })
 
 // 공지 수정
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAdmin, async (req, res) => {
   const { title, body } = req.body ?? {}
   try {
     const notice = await prisma.notice.update({
@@ -47,7 +48,7 @@ router.patch('/:id', async (req, res) => {
 })
 
 // 공지 삭제
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     await prisma.notice.delete({ where: { id: req.params.id } })
     res.json({ ok: true })

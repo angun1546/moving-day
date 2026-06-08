@@ -16,7 +16,7 @@ function Info({ label, value }) {
 }
 
 function MyPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, ready } = useAuth()
   // 활동 카운트는 실제 데이터 기준 — 견적·리뷰는 서버, 질문은 본인 것만
   const [reviews, setReviews] = useState([])
   const [quoteCount, setQuoteCount] = useState(0)
@@ -38,6 +38,7 @@ function MyPage() {
       .catch(() => setQuestions([]))
   }, [])
 
+  if (!ready) return null // 로그인 상태 복원 전 깜빡임 방지
   if (!user) {
     return (
       <section className="mx-auto max-w-md px-4 py-24 text-center">

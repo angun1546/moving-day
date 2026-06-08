@@ -2,6 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import { prisma } from '../db.ts'
 import { uploadBuffer } from '../cloudinary.ts'
+import { requireAuth, type AuthedRequest } from '../auth.ts'
 
 const router = Router()
 
@@ -47,12 +48,13 @@ router.get('/:email', async (req, res) => {
 //  파일을 새로 올리면 교체, 안 올리면 existing* 로 기존 유지
 router.put(
   '/',
+  requireAuth,
   upload.fields([
     { name: 'profileImg', maxCount: 1 },
     { name: 'workPhotos', maxCount: 8 },
     { name: 'certs', maxCount: 5 },
   ]),
-  async (req, res) => {
+  async (req: AuthedRequest, res) => {
     const {
       email,
       company,
@@ -69,6 +71,11 @@ router.put(
 
     if (!email || !company || !bizNo || !ceo || !phone) {
       return res.status(400).json({ message: '필수 항목을 모두 입력해 주세요.' })
+    }
+
+    // 본인 프로필만 수정 가능 (관리자는 예외)
+    if (req.authUser?.email !== email && req.authUser?.role !== 'admin') {
+      return res.status(403).json({ message: '본인 업체 정보만 수정할 수 있습니다.' })
     }
 
     const files = (req.files ?? {}) as Record<string, Express.Multer.File[]>

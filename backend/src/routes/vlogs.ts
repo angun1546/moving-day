@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../db.ts'
+import { requireAdmin } from '../auth.ts'
 
 // 무빙 브이로그 — 유튜브 영상 임베드(썸네일은 프론트가 URL에서 추출)
 const router = Router()
@@ -16,7 +17,7 @@ router.get('/', async (_req, res) => {
 })
 
 // POST /api/vlogs — 영상 등록
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   const { title, videoUrl } = req.body ?? {}
   if (!title || !videoUrl) {
     return res.status(400).json({ message: '제목과 영상 링크를 입력해 주세요.' })
@@ -31,7 +32,7 @@ router.post('/', async (req, res) => {
 })
 
 // PATCH /api/vlogs/:id — 수정
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAdmin, async (req, res) => {
   const { title, videoUrl } = req.body ?? {}
   try {
     const vlog = await prisma.vlog.update({
@@ -46,7 +47,7 @@ router.patch('/:id', async (req, res) => {
 })
 
 // DELETE /api/vlogs/:id — 삭제
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     await prisma.vlog.delete({ where: { id: req.params.id } })
     res.json({ ok: true })

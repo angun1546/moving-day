@@ -1,5 +1,6 @@
 // 리뷰 API 클라이언트 (업체 평점 집계 포함)
 import type { Review, Rating } from '../data/apiTypes'
+import { authHeaders } from './auth'
 
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 const API = `${BASE}/api/reviews`
@@ -43,7 +44,7 @@ export async function updateReview(
 ): Promise<Review> {
   const res = await fetch(`${API}/${id}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('리뷰 수정에 실패했습니다.')
@@ -52,7 +53,10 @@ export async function updateReview(
 
 // 리뷰 삭제
 export async function deleteReview(id: string): Promise<{ ok: boolean }> {
-  const res = await fetch(`${API}/${id}`, { method: 'DELETE' })
+  const res = await fetch(`${API}/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
   if (!res.ok) throw new Error('리뷰 삭제에 실패했습니다.')
   return res.json()
 }

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import { prisma } from '../db.ts'
 import { uploadBuffer } from '../cloudinary.ts'
+import { requireAdmin } from '../auth.ts'
 
 // 무빙 프로젝트 — 갤러리·포트폴리오 글(kind로 구분). 대표 사진 1장(Cloudinary)
 const router = Router()
@@ -31,7 +32,7 @@ router.get('/', async (req, res) => {
 })
 
 // POST /api/projects — 글 작성(사진 선택)
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
   const { kind, title, excerpt } = req.body ?? {}
   if (!kind || !title || !excerpt) {
     return res.status(400).json({ message: '종류·제목·내용을 입력해 주세요.' })
@@ -52,7 +53,7 @@ router.post('/', upload.single('image'), async (req, res) => {
 })
 
 // PATCH /api/projects/:id — 수정(새 사진 올리면 교체, 아니면 기존 유지)
-router.patch('/:id', upload.single('image'), async (req, res) => {
+router.patch('/:id', requireAdmin, upload.single('image'), async (req, res) => {
   const { kind, title, excerpt } = req.body ?? {}
   try {
     let image: string | undefined // undefined면 기존 값 유지
@@ -71,7 +72,7 @@ router.patch('/:id', upload.single('image'), async (req, res) => {
 })
 
 // DELETE /api/projects/:id — 삭제
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     await prisma.projectPost.delete({ where: { id: req.params.id } })
     res.json({ ok: true })

@@ -99,27 +99,35 @@ router.patch('/:id/accept', async (req, res) => {
     if (!bid) {
       return res.status(404).json({ message: '입찰을 찾을 수 없습니다.' })
     }
+    // 이미 낙찰 처리된 견적이면 재낙찰/중복 낙찰 차단
+    const target = await prisma.quoteRequest.findUnique({
+      where: { id: bid.quoteRequestId },
+      select: { status: true },
+    })
+    if (target?.status === '완료') {
+      return res.status(409).json({ message: '이미 낙찰 처리된 견적입니다.' })
+    }
     // 거절될 다른 입찰 파트너 목록 (updateMany 전에 미리 확보)
     const losers = await prisma.bid.findMany({
       where: { quoteRequestId: bid.quoteRequestId, id: { not: bid.id } },
       select: { bidderEmail: true },
     })
 
-    await prisma.bid.update({
-      where: { id: bid.id },
-      data: { status: '낙찰' },
-    })
-    await prisma.bid.updateMany({
-      where: { quoteRequestId: bid.quoteRequestId, id: { not: bid.id } },
-      data: { status: '거절' },
-    })
-    await prisma.quoteRequest.update({
-      where: { id: bid.quoteRequestId },
-      data: { status: '완료', stage: '낙찰완료' },
-    })
-    await prisma.stageLog.create({
-      data: { quoteRequestId: bid.quoteRequestId, stage: '낙찰완료' },
-    })
+    // 선택 입찰 낙찰·나머지 거절·견적 완료·단계 로그를 원자적으로 처리
+    await prisma.$transaction([
+      prisma.bid.update({ where: { id: bid.id }, data: { status: '낙찰' } }),
+      prisma.bid.updateMany({
+        where: { quoteRequestId: bid.quoteRequestId, id: { not: bid.id } },
+        data: { status: '거절' },
+      }),
+      prisma.quoteRequest.update({
+        where: { id: bid.quoteRequestId },
+        data: { status: '완료', stage: '낙찰완료' },
+      }),
+      prisma.stageLog.create({
+        data: { quoteRequestId: bid.quoteRequestId, stage: '낙찰완료' },
+      }),
+    ])
 
     // 낙찰 파트너에게 축하, 나머지 파트너에게 거절 알림
     await notify(
@@ -151,18 +159,24 @@ router.patch('/:id/cancel', async (req, res) => {
     if (!bid) {
       return res.status(404).json({ message: '입찰을 찾을 수 없습니다.' })
     }
-    await prisma.bid.updateMany({
-      where: { quoteRequestId: bid.quoteRequestId },
-      data: { status: '입찰' },
-    })
-    await prisma.quoteRequest.update({
-      where: { id: bid.quoteRequestId },
-      data: { status: '상담중', stage: null },
-    })
-    // 낙찰 취소 시 진행 이력 초기화
-    await prisma.stageLog.deleteMany({
-      where: { quoteRequestId: bid.quoteRequestId },
-    })
+    // 낙찰된 입찰만 취소 가능 (낙찰 안 된 견적의 이력이 잘못 삭제되는 것 방지)
+    if (bid.status !== '낙찰') {
+      return res.status(409).json({ message: '낙찰된 입찰만 취소할 수 있습니다.' })
+    }
+    // 입찰 복원·견적 상담중·진행 이력 초기화를 원자적으로 처리
+    await prisma.$transaction([
+      prisma.bid.updateMany({
+        where: { quoteRequestId: bid.quoteRequestId },
+        data: { status: '입찰' },
+      }),
+      prisma.quoteRequest.update({
+        where: { id: bid.quoteRequestId },
+        data: { status: '상담중', stage: null },
+      }),
+      prisma.stageLog.deleteMany({
+        where: { quoteRequestId: bid.quoteRequestId },
+      }),
+    ])
 
     // 낙찰됐던 파트너에게 취소 알림
     await notify(

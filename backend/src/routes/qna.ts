@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../db.ts'
+import { requireAdmin } from '../auth.ts'
 
 const router = Router()
 
@@ -23,6 +24,9 @@ router.post('/', async (req, res) => {
   if (!scope || !name || !q) {
     return res.status(400).json({ message: '필수 항목을 입력해 주세요.' })
   }
+  if (scope !== 'user' && scope !== 'partner') {
+    return res.status(400).json({ message: '잘못된 요청입니다.' })
+  }
   try {
     const qna = await prisma.qna.create({
       data: { scope, name, q, authorEmail: authorEmail || null },
@@ -35,7 +39,7 @@ router.post('/', async (req, res) => {
 })
 
 // 수정 (관리자 답변 a, 숨김 hidden) — 보낸 필드만 변경
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAdmin, async (req, res) => {
   const { a, hidden } = req.body ?? {}
   try {
     const qna = await prisma.qna.update({
@@ -50,7 +54,7 @@ router.patch('/:id', async (req, res) => {
 })
 
 // 질문 삭제
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     await prisma.qna.delete({ where: { id: req.params.id } })
     res.json({ ok: true })

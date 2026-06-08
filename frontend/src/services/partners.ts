@@ -1,5 +1,6 @@
 // 파트너 업체 프로필 API 클라이언트
 import type { PartnerProfile } from '../data/apiTypes'
+import { authHeaders } from './auth'
 
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 const API = `${BASE}/api/partners`
@@ -22,7 +23,11 @@ export async function getPartnerProfile(
 export async function savePartnerProfile(
   formData: FormData,
 ): Promise<PartnerProfile> {
-  const res = await fetch(API, { method: 'PUT', body: formData })
+  const res = await fetch(API, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: formData,
+  })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err.message ?? '업체 정보 저장에 실패했습니다.')

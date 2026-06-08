@@ -4,8 +4,9 @@ import MyQuotesBox from '../components/MyQuotesBox'
 
 // 내 견적 현황 페이지 — 마이페이지 활동 카드 "견적 신청"에서 진입
 function MyQuotesPage() {
-  const { user } = useAuth()
+  const { user, ready } = useAuth()
 
+  if (!ready) return null // 로그인 상태 복원 전 깜빡임 방지
   if (!user) {
     return (
       <section className="mx-auto max-w-md px-4 py-24 text-center">

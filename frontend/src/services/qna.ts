@@ -1,5 +1,6 @@
 // Q&A 문의 API 클라이언트 (scope: user | partner)
 import type { Qna } from '../data/apiTypes'
+import { authHeaders } from './auth'
 
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 const API = `${BASE}/api/qna`
@@ -29,7 +30,7 @@ export async function createQna(data: Partial<Qna>): Promise<Qna> {
 export async function updateQna(id: string, data: Partial<Qna>): Promise<Qna> {
   const res = await fetch(`${API}/${id}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('Q&A 수정에 실패했습니다.')
@@ -38,7 +39,10 @@ export async function updateQna(id: string, data: Partial<Qna>): Promise<Qna> {
 
 // 질문 삭제
 export async function deleteQna(id: string): Promise<{ ok: boolean }> {
-  const res = await fetch(`${API}/${id}`, { method: 'DELETE' })
+  const res = await fetch(`${API}/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
   if (!res.ok) throw new Error('Q&A 삭제에 실패했습니다.')
   return res.json()
 }

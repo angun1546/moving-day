@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../db.ts'
+import { requireAdmin } from '../auth.ts'
 
 const router = Router()
 
@@ -69,7 +70,7 @@ router.post('/', async (req, res) => {
 })
 
 // 리뷰 수정 (관리자 수정·숨김 토글·답변) — 보낸 필드만 변경
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAdmin, async (req, res) => {
   const { name, text, rating, moveType, company, hidden, reply } = req.body ?? {}
   try {
     const review = await prisma.review.update({
@@ -92,7 +93,7 @@ router.patch('/:id', async (req, res) => {
 })
 
 // 리뷰 삭제
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     await prisma.review.delete({ where: { id: req.params.id } })
     res.json({ ok: true })

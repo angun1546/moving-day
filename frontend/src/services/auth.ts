@@ -10,6 +10,12 @@ export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY)
 export const clearToken = (): void => localStorage.removeItem(TOKEN_KEY)
 const setToken = (t: string): void => localStorage.setItem(TOKEN_KEY, t)
 
+// 인증이 필요한 요청(관리자·본인) 헤더 — 토큰 없으면 빈 객체
+export const authHeaders = (): Record<string, string> => {
+  const t = getToken()
+  return t ? { Authorization: `Bearer ${t}` } : {}
+}
+
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API}${path}`, {
     method: 'POST',

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../db.ts'
+import { requireAdmin } from '../auth.ts'
 
 const router = Router()
 
@@ -38,7 +39,7 @@ router.post('/', async (req, res) => {
 })
 
 // 수정 (관리자 수정·숨김 토글·답변) — 보낸 필드만
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAdmin, async (req, res) => {
   const { company, text, rating, hidden, reply } = req.body ?? {}
   try {
     const story = await prisma.partnerStory.update({
@@ -59,7 +60,7 @@ router.patch('/:id', async (req, res) => {
 })
 
 // 삭제
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     await prisma.partnerStory.delete({ where: { id: req.params.id } })
     res.json({ ok: true })

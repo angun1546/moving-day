@@ -1,5 +1,6 @@
 // 파트너 스토리 API 클라이언트
 import type { PartnerStory } from '../data/apiTypes'
+import { authHeaders } from './auth'
 
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 const API = `${BASE}/api/stories`
@@ -34,7 +35,7 @@ export async function updateStory(
 ): Promise<PartnerStory> {
   const res = await fetch(`${API}/${id}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('파트너 스토리 수정에 실패했습니다.')
@@ -43,7 +44,10 @@ export async function updateStory(
 
 // 삭제
 export async function deleteStory(id: string): Promise<{ ok: boolean }> {
-  const res = await fetch(`${API}/${id}`, { method: 'DELETE' })
+  const res = await fetch(`${API}/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
   if (!res.ok) throw new Error('파트너 스토리 삭제에 실패했습니다.')
   return res.json()
 }

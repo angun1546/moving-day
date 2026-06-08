@@ -6,7 +6,7 @@ const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
 
 function AccountEditPage() {
-  const { user, updateUser, headerMode, setHeaderMode, displayMode, setDisplayMode } =
+  const { user, updateUser, headerMode, setHeaderMode, displayMode, setDisplayMode, ready } =
     useAuth()
   const [params] = useSearchParams()
   const isPartner = params.get('role') === 'partner'
@@ -14,6 +14,7 @@ function AccountEditPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
+  if (!ready) return null // 로그인 상태 복원 전 깜빡임 방지
   if (!user) {
     return (
       <section className="mx-auto max-w-md px-4 py-24 text-center">
