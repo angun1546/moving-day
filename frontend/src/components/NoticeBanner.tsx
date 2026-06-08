@@ -46,7 +46,7 @@ function NoticeBanner() {
   const n = notices[idx]
 
   return (
-    <div className="border-b border-brand-dark bg-brand">
+    <div className="bg-brand-dark">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
         <span className="shrink-0 rounded-full bg-white px-2.5 py-0.5 text-xs font-bold text-brand">
           공지
