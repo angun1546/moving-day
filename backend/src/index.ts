@@ -11,6 +11,8 @@ import qnaRouter from './routes/qna.ts'
 import storiesRouter from './routes/stories.ts'
 import projectsRouter from './routes/projects.ts'
 import vlogsRouter from './routes/vlogs.ts'
+import complaintsRouter from './routes/complaints.ts'
+import tipsRouter from './routes/tips.ts'
 
 // 배포 환경(프로덕션 또는 원격 DB)에서는 JWT_SECRET이 반드시 필요 — 누락 시 시작 거부
 // 원격 DB(Turso libsql/https/wss)는 실제 배포로 간주 → NODE_ENV 미설정이어도 강제
@@ -87,6 +89,12 @@ app.use('/api/projects', projectsRouter)
 
 // 무빙 브이로그 API
 app.use('/api/vlogs', vlogsRouter)
+
+// 불편사항 접수 API
+app.use('/api/complaints', complaintsRouter)
+
+// 팁 게시판 API
+app.use('/api/tips', tipsRouter)
 
 // 에러 처리 (사진 업로드 용량/개수 초과 등)
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

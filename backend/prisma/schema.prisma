@@ -183,6 +183,31 @@ model Vlog {
   @@index([createdAt])
 }
 
+// 불편사항 접수 — 사용자가 제출, 관리자가 상태·답변 처리
+model Complaint {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  name        String // 작성자 표시명
+  contact     String // 연락처(전화/이메일)
+  content     String // 불편사항 내용
+  status      String   @default("접수") // 접수 | 처리중 | 완료
+  reply       String? // 관리자 답변
+  authorEmail String? // 작성자 식별(회원)
+
+  @@index([createdAt])
+}
+
+// 팁 게시판 — 관리자 작성, 모든 사용자 열람(이사 팁 글)
+model Tip {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  title     String
+  content   String
+  category  String? // 분류(선택)
+
+  @@index([createdAt])
+}
+
 // 사용자 알림 — 서버 거래 이벤트(입찰·낙찰·거절·단계변경)에서 생성, 프론트가 폴링으로 조회
 model Notification {
   id        String   @id @default(cuid())

@@ -48,11 +48,12 @@ const MENU = [
   },
 ]
 
-// 상단 줄 보조 링크 (로고 오른쪽) — 회사 소개·공지
+// 상단 줄 보조 링크 (로고 오른쪽) — 고객 지원·커뮤니티
 const TOP_LINKS = [
-  { to: '/about', label: '기업소개' },
-  { to: '/culture', label: '기업문화' },
-  { to: '/certifications', label: '인증현황' },
+  { to: '/complaint', label: '불편사항 접수' },
+  { to: '/tips', label: '팁 게시판' },
+  { to: '/faq', label: 'FAQ' },
+  { to: '/reviews', label: '후기' },
   { to: '/notice', label: '공지사항' },
 ]
 

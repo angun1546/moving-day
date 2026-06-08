@@ -141,6 +141,8 @@ cd frontend && npm install && npm run dev                          # 5173
 | `PartnerProfile` | id, email(파트너 1:1 unique), company, bizNo, ceo, phone, trucks, intro, regions(JSON), profileImg(URL), workPhotos(JSON URL), certs(JSON [{url,name,isImage}]), createdAt, updatedAt — 업체 프로필·사진·자격증 |
 | `ProjectPost` | id, kind(gallery/portfolio), title, excerpt, image(대표 사진 URL·nullable), createdAt — 무빙 프로젝트 갤러리·포트폴리오 글(관리자 작성) |
 | `Vlog` | id, title, videoUrl(유튜브), createdAt — 무빙 브이로그(썸네일은 URL에서 자동 추출) |
+| `Complaint` | id, name, contact, content, status(접수/처리중/완료), reply(관리자 답변·nullable), authorEmail(nullable), createdAt — 불편사항 접수(제출 공개·처리 관리자) |
+| `Tip` | id, title, content, category(nullable), createdAt — 팁 게시판(조회 공개·작성 관리자) |
 
 ### 클라이언트 localStorage 키 (영속화)
 | 키 | 용도 |
@@ -199,9 +201,17 @@ cd frontend && npm install && npm run dev                          # 5173
 | PATCH | `/api/projects/:id` | 프로젝트 글 수정 (사진 새로 올리면 교체) |
 | DELETE | `/api/projects/:id` | 프로젝트 글 삭제 |
 | GET | `/api/vlogs` | 브이로그 목록 (최신순) |
-| POST | `/api/vlogs` | 브이로그 등록 (유튜브 URL) |
-| PATCH | `/api/vlogs/:id` | 브이로그 수정 |
-| DELETE | `/api/vlogs/:id` | 브이로그 삭제 |
+| POST | `/api/vlogs` | 브이로그 등록 (유튜브 URL) **[관리자]** |
+| PATCH | `/api/vlogs/:id` | 브이로그 수정 **[관리자]** |
+| DELETE | `/api/vlogs/:id` | 브이로그 삭제 **[관리자]** |
+| GET | `/api/complaints` | 불편사항 목록 **[관리자]** |
+| POST | `/api/complaints` | 불편사항 접수 (공개·회원/비회원) |
+| PATCH | `/api/complaints/:id` | 불편사항 상태·답변 처리 **[관리자]** |
+| DELETE | `/api/complaints/:id` | 불편사항 삭제 **[관리자]** |
+| GET | `/api/tips` | 팁 목록 (공개, 최신순) |
+| POST | `/api/tips` | 팁 작성 **[관리자]** |
+| PATCH | `/api/tips/:id` | 팁 수정 **[관리자]** |
+| DELETE | `/api/tips/:id` | 팁 삭제 **[관리자]** |
 
 ## 배포
 
@@ -278,3 +288,4 @@ Start Command     npm start
 6. **실시간 알림** (핵심 완료) — 서버 `Notification` 테이블 + 거래 이벤트(입찰·낙찰·거절·단계변경) 20초 폴링 알림. **SMS/카카오 알림톡(솔라피) 연동 스켈레톤**(`backend/src/messaging.ts`) — 견적 등록 시 가입 업체에게, 입찰 등록 시 견적 주인에게 발송(키 없으면 mock 로그). 향후 웹소켓·알림톡 템플릿 승인·서비스 지역 매칭으로 확장
 7. **서비스 라인 확장 + GNB 리디자인** (완료) — 가정/기업 이사 랜딩 분리(scope 기반 견적 종류 분리·이삿날 싱글 추가), 청소·창고보관·문서보관·파쇄 전용 랜딩 + 세부 상품 페이지, 견적 폼 부가 서비스 선택(요청사항 기록·MVP), 검색 자동완성, 이사트럭 인터랙션 헤더, 2단 헤더 + 회사 페이지(기업소개·기업문화·인증현황) + 무빙 프로젝트(실적·갤러리·포트폴리오·브이로그, 빈 상태 UI). **부가 서비스(청소·보관·문서)를 `QuoteRequest.addons` 구조화 컬럼[JSON]으로 분리 저장 — memo와 분리, 파트너·마이페이지·관리자에 칩 표시(`AddonChips`)** (완료). **무빙 프로젝트 콘텐츠 백엔드화** (완료) — `ProjectPost`(갤러리·포트폴리오 kind 구분, 사진 Cloudinary)·`Vlog`(유튜브 URL, 썸네일 자동 추출) 모델 + CRUD API(`/api/projects`·`/api/vlogs`) + 갤러리·포트폴리오·브이로그 페이지 서버 연동 + 관리자 대시보드 "무빙 프로젝트" 탭(글·영상 등록/수정/삭제)
 8. **TypeScript 점진 도입** (진행) — (1단계 완료) 데이터 레이어 `.ts` 전환 + 공통 타입(`data/types.ts`). (2단계 완료) API 경계 타입(`data/apiTypes.ts`: `QuoteRequest`·`Bid`·`Review`·`PartnerProfile`·`User`) + `services/auth.ts`·`quotes.ts` 반환 타입 적용, `tsconfig`(`checkJs:false`)·`vite-env.d.ts`·`npm run typecheck`. (3단계 규칙) 화면은 `.jsx` 유지, **새 파일은 `.tsx`**, 기존은 손댈 때 전환. (3단계 진행) **API 서비스 전 계층 `.ts` 전환 완료** — `bids`·`reviews`·`partners`·`notices`·`qna`·`stories`·`notifications`에 반환·입력 타입 적용, `apiTypes`에 `Notice`·`Qna`·`PartnerStory`·`Notification`·`Rating`·`QuoteAddons` 추가. (3단계 진행) **화면 컴포넌트 `.tsx` 전환 시작** — 1차: 가드(`RequireAdmin`·`RequirePartner`)·리프 컴포넌트(`ActivityCard`·`CtaBanner`·`ProcessSteps`) + 토대 `AuthContext` 타입화(`AuthValue` 인터페이스, `useAuth` 반환 타입). 2차: `MenuIcon`(SVGLineElement ref)·`MovingTruck`·`TopButton`·`QuoteSteps`·`StageProgress`(StageLog[] props)·`Faq`·`Pagination`(setter props). 3차: `HeroSearch`(scope·suggestions·centered props 타입)+`HeroSection` 묶음(상위가 하위 의존 → 하위부터 타입화). 4차: `NoticeBanner`(Notice[]·HTMLSpanElement ref)·`Reviews`(Review[])·`BentoServices`(ServiceBox props)·`UserMenu`(User props·HTMLDivElement ref·MouseEvent). 5차: `PageTransition`·`Footer`·`DatePicker`(name·min/maxYear props)·`ReviewCarousel`(`CarouselReview` 타입·Stars/ArrowBtn/ReviewCard props). 6차: `PartnerLayout`·`MyQuotesBox`·`PartnerBidsList`(QuoteRequest/Bid props·FormData 강제·인덱스 캐스트) + 토대 `ConfirmContext` 타입화(`ConfirmFn`·`ConfirmOptions`, `useConfirm`) + `apiTypes.Bid.quoteRequest` relation 추가. **공용 컴포넌트 7/9 + 컨텍스트 2개(Auth·Confirm) 완료**, `Header`·`BellIcon`(최대 2개)은 '손댈 때' 보류, 페이지(34개)도 '손댈 때' 규칙 유지
+9. **보안·무결성 점검 + 고객 지원 라인** (완료) — **버그 점검 수정**: 파트너 입찰 업체명을 서버 프로필에서 조회(입찰 불가 버그), 낙찰 `accept`/`cancel` 상태 가드+`$transaction` 원자화, **인증 게이트**(`requireAuth`/`requireAdmin` — notices·reviews·qna·stories·projects·vlogs 작성/수정/삭제 관리자 전용, partners 프로필 본인 소유권, JWT 시크릿 원격 DB 강제, 프론트 `authHeaders` Bearer 첨부), `AuthContext.ready` 깜빡임 제거. **상단 헤더 메뉴 개편**: 기업소개·기업문화·인증현황 → **불편사항 접수·팁 게시판·FAQ·후기·공지사항**(유저·파트너·관리자). **불편사항 접수**(`Complaint`: 제출 공개·관리자 상태/답변 처리, `/complaint`)·**팁 게시판**(`Tip`: 조회 공개·관리자 CRUD, `/tips`) 풀스택 신규

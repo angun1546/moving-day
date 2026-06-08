@@ -159,3 +159,24 @@ export interface Vlog {
   title: string
   videoUrl: string
 }
+
+// 불편사항 접수 — 사용자 제출·관리자 처리
+export interface Complaint {
+  id: string
+  createdAt: string
+  name: string
+  contact: string
+  content: string
+  status: string // 접수 | 처리중 | 완료
+  reply?: string | null
+  authorEmail?: string | null
+}
+
+// 팁 게시판 — 관리자 작성 글
+export interface Tip {
+  id: string
+  createdAt: string
+  title: string
+  content: string
+  category?: string | null
+}
