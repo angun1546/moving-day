@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 import { useAuth } from '../context/AuthContext'
+import type { User } from '../data/apiTypes'
 
 // 로그인 시 사용자 메뉴 — 닉네임/이름 클릭 → 마이페이지·회원정보 수정·로그아웃 (유저/파트너 헤더 공용)
-function UserMenu({ user, logout }) {
+function UserMenu({ user, logout }: { user: User; logout: () => void }) {
   const { pathname } = useLocation()
   const { headerMode } = useAuth()
   // 헤더 표시 이름 — 회원정보 수정에서 선택한 모드대로
@@ -15,14 +16,14 @@ function UserMenu({ user, logout }) {
   const myPagePath = isPartner ? '/partner/mypage' : '/mypage'
   const accountPath = isPartner ? '/account?role=partner' : '/account'
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  const dropdownRef = useRef(null)
+  const ref = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // 외부 클릭 시 닫기
   useEffect(() => {
     if (!open) return
-    function handle(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', handle)
     return () => document.removeEventListener('mousedown', handle)

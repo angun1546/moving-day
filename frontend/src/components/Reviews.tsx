@@ -5,10 +5,11 @@ import { getReviewAuthorName } from '../utils/userDisplay'
 import { formatDate } from '../utils/date'
 import { getReviews } from '../services/reviews'
 import { useAuth } from '../context/AuthContext'
+import type { Review } from '../data/apiTypes'
 
 // 메인 리뷰 섹션 — 작성된 리뷰가 있으면 캐러셀, 없으면 빈 상태
 function Reviews() {
-  const [reviews, setReviews] = useState([])
+  const [reviews, setReviews] = useState<Review[]>([])
   const { user, displayMode } = useAuth()
 
   useEffect(() => {

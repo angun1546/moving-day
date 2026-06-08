@@ -44,7 +44,21 @@ const SERVICES = [
 const boxClass =
   'flex flex-col items-start justify-between gap-4 rounded-3xl border border-brand-light bg-brand-light/30 p-8 transition sm:flex-row sm:items-center'
 
-function ServiceBox({ icon, title, desc, to, cta, soon }) {
+function ServiceBox({
+  icon,
+  title,
+  desc,
+  to,
+  cta,
+  soon,
+}: {
+  icon: string
+  title: string
+  desc: string
+  to: string
+  cta: string
+  soon?: boolean
+}) {
   const body = (
     <>
       <div>

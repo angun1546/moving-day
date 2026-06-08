@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import gsap from 'gsap'
 import { getNotices } from '../services/notices'
+import type { Notice } from '../data/apiTypes'
 
 // 최근 공지 릴레이 배너 — 헤더 아래·검색창 위. 일정 간격마다 다음 공지로 GSAP 전환
 function NoticeBanner() {
-  const [notices, setNotices] = useState([])
+  const [notices, setNotices] = useState<Notice[]>([])
   const [idx, setIdx] = useState(0)
-  const textRef = useRef(null)
+  const textRef = useRef<HTMLSpanElement>(null)
   const first = useRef(true)
 
   useEffect(() => {
