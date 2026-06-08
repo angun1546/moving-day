@@ -1,12 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import gsap from 'gsap'
 
 // 라우트 전환 시 부드러운 페이드+슬라이드 인 (이전·다음 이동 공통)
 // 모든 페이지에 동일 강도로 적용 — App·PartnerLayout 양쪽 Outlet을 감쌈
-function PageTransition({ children }) {
+function PageTransition({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // 페이지 진입 시 스크롤 최상단으로 + fade-in 동시 진행

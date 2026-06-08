@@ -36,7 +36,7 @@ function Footer() {
   // 팝업 열렸을 때 Esc로 닫기
   useEffect(() => {
     if (!privacyOpen) return
-    function onKey(e) {
+    function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setPrivacyOpen(false)
     }
     document.addEventListener('keydown', onKey)
@@ -110,7 +110,7 @@ function Footer() {
                     // 페이지 링크
                     return (
                       <li key={item.label}>
-                        <Link to={item.to} className="transition hover:text-brand">
+                        <Link to={item.to ?? '#'} className="transition hover:text-brand">
                           {item.label}
                         </Link>
                       </li>

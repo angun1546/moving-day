@@ -1,8 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+// 캐러셀이 표시하는 리뷰 1건(Reviews.tsx의 display 가공 결과)
+interface CarouselReview {
+  id: string
+  name: string
+  rating: number
+  tag: string
+  text: string
+  company: string
+  date: string
+}
+
 // 별점 표시 (소수점 미지원, 1~5 정수)
-function Stars({ rating }) {
+function Stars({ rating }: { rating: number }) {
   return (
     <span className="text-amber-400" aria-label={`별점 ${rating}점`}>
       {'★'.repeat(rating)}
@@ -12,7 +23,15 @@ function Stars({ rating }) {
 }
 
 // 화살표 버튼 (좌/우 chevron SVG)
-function ArrowBtn({ dir, disabled, onClick }) {
+function ArrowBtn({
+  dir,
+  disabled,
+  onClick,
+}: {
+  dir: number
+  disabled: boolean
+  onClick: () => void
+}) {
   return (
     <button
       type="button"
@@ -46,7 +65,7 @@ function ArrowBtn({ dir, disabled, onClick }) {
 }
 
 // 리뷰 카드
-function ReviewCard({ review }) {
+function ReviewCard({ review }: { review: CarouselReview }) {
   return (
     <article className="flex h-full flex-col rounded-3xl border border-gray-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
       <div className="flex items-center justify-between">
@@ -81,8 +100,15 @@ function ReviewCarousel({
   reviews,
   background = 'plain',
   viewAllPath,
+}: {
+  label?: string
+  title: string
+  description?: string
+  reviews: CarouselReview[]
+  background?: string
+  viewAllPath?: string
 }) {
-  const trackRef = useRef(null)
+  const trackRef = useRef<HTMLDivElement>(null)
   const [atStart, setAtStart] = useState(true)
   const [atEnd, setAtEnd] = useState(false)
 
@@ -91,10 +117,10 @@ function ReviewCarousel({
     const track = trackRef.current
     if (!track) return
     function check() {
-      setAtStart(track.scrollLeft <= 1)
-      setAtEnd(
-        track.scrollLeft + track.clientWidth >= track.scrollWidth - 1,
-      )
+      const t = trackRef.current
+      if (!t) return
+      setAtStart(t.scrollLeft <= 1)
+      setAtEnd(t.scrollLeft + t.clientWidth >= t.scrollWidth - 1)
     }
     check()
     track.addEventListener('scroll', check, { passive: true })
@@ -106,10 +132,10 @@ function ReviewCarousel({
   }, [reviews])
 
   // 카드 한 장 너비만큼 부드럽게 이동
-  function scroll(dir) {
+  function scroll(dir: number) {
     const track = trackRef.current
     if (!track) return
-    const card = track.firstElementChild
+    const card = track.firstElementChild as HTMLElement | null
     if (!card) return
     track.scrollBy({ left: dir * card.offsetWidth, behavior: 'smooth' })
   }

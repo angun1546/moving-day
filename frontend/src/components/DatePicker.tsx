@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 // 스크롤에 닫히지 않는 커스텀 날짜 선택 (네이티브 input[type=date] 대체)
 // 폼 전송은 hidden input(name)으로, 외부 클릭 시에만 닫힘
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
-const pad = (n) => String(n).padStart(2, '0')
-const fmt = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`
+const pad = (n: number) => String(n).padStart(2, '0')
+const fmt = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`
 
 const triggerClass =
   'w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-left text-gray-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -15,10 +15,16 @@ function DatePicker({
   placeholder = '날짜를 선택하세요',
   minYear,
   maxYear,
+}: {
+  name: string
+  defaultValue?: string
+  placeholder?: string
+  minYear?: number
+  maxYear?: number
 }) {
   const [value, setValue] = useState(defaultValue)
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement>(null)
 
   const base = value ? new Date(value) : new Date()
   const [view, setView] = useState({
@@ -29,8 +35,8 @@ function DatePicker({
   // 외부 클릭 시에만 닫기 (스크롤·휠에는 영향 없음)
   useEffect(() => {
     if (!open) return
-    function onDown(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
@@ -48,7 +54,7 @@ function DatePicker({
   for (let i = 0; i < firstDay; i += 1) cells.push(null)
   for (let d = 1; d <= daysInMonth; d += 1) cells.push(d)
 
-  function move(delta) {
+  function move(delta: number) {
     let m = view.m + delta
     let y = view.y
     if (m < 0) {
@@ -61,7 +67,7 @@ function DatePicker({
     setView({ y, m })
   }
 
-  function pick(d) {
+  function pick(d: number) {
     setValue(fmt(view.y, view.m, d))
     setOpen(false)
   }
