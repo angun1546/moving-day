@@ -7,6 +7,7 @@ import { getPartnerProfile } from '../services/partners'
 import { getStories } from '../services/stories'
 import { getQna } from '../services/qna'
 import { getMyBids } from '../services/bids'
+import { getMyComplaints } from '../services/complaints'
 
 function Info({ label, value }) {
   return (
@@ -36,6 +37,7 @@ function PartnerMyPage() {
   const [stories, setStories] = useState([])
   const [questions, setQuestions] = useState([])
   const [bidCount, setBidCount] = useState(0)
+  const [complaintCount, setComplaintCount] = useState(0)
   useEffect(() => {
     if (!user?.email) return
     getStories()
@@ -55,6 +57,9 @@ function PartnerMyPage() {
     getMyBids(user.email)
       .then((d) => setBidCount(Array.isArray(d) ? d.length : 0))
       .catch(() => setBidCount(0))
+    getMyComplaints(user.email)
+      .then((d) => setComplaintCount(Array.isArray(d) ? d.length : 0))
+      .catch(() => setComplaintCount(0))
   }, [user?.email])
   // 업체 정보 — 서버에서 로드
   const [profile, setProfile] = useState(null)
@@ -170,7 +175,7 @@ function PartnerMyPage() {
 
       {/* 활동 내역 — 클릭 시 해당 페이지로 이동 */}
       <h2 className="mt-10 text-lg font-bold text-gray-900">활동 내역</h2>
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <ActivityCard
           to="/partner/dashboard"
           label="받은 입찰"
@@ -185,6 +190,11 @@ function PartnerMyPage() {
           to="/partner/faq"
           label="내 질문"
           count={questions.length}
+        />
+        <ActivityCard
+          to="/partner/complaint"
+          label="내 불편사항"
+          count={complaintCount}
         />
       </div>
 

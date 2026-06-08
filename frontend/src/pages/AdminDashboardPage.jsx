@@ -28,6 +28,12 @@ import {
   updateVlog,
   deleteVlog,
 } from '../services/vlogs'
+import {
+  getComplaints,
+  updateComplaint,
+  deleteComplaint,
+} from '../services/complaints'
+import { getTips, createTip, updateTip, deleteTip } from '../services/tips'
 
 const inputClass =
   'mt-1 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -41,7 +47,16 @@ const SECTIONS = [
   { key: 'qa', label: 'Q&A 답변' },
   { key: 'notice', label: '공지사항' },
   { key: 'projects', label: '무빙 프로젝트' },
+  { key: 'complaints', label: '불편사항' },
+  { key: 'tips', label: '팁 게시판' },
 ]
+
+const complaintStatusStyle = {
+  접수: 'bg-gray-100 text-gray-600',
+  처리중: 'bg-amber-100 text-amber-700',
+  완료: 'bg-brand-light text-brand-dark',
+}
+const COMPLAINT_STATUS = ['접수', '처리중', '완료']
 
 function StatCard({ label, value }) {
   return (
@@ -379,6 +394,23 @@ function AdminDashboardPage() {
     ? vlogs.find((v) => v.id === editingVlogId)
     : null
 
+  // 불편사항 접수 + 팁 게시판
+  const [complaints, setComplaints] = useState([])
+  const [tips, setTips] = useState([])
+  useEffect(() => {
+    getComplaints()
+      .then((d) => setComplaints(Array.isArray(d) ? d : []))
+      .catch(() => setComplaints([]))
+    getTips()
+      .then((d) => setTips(Array.isArray(d) ? d : []))
+      .catch(() => setTips([]))
+  }, [])
+  const [tipOpen, setTipOpen] = useState(false)
+  const [editingTipId, setEditingTipId] = useState(null)
+  const editingTip = editingTipId
+    ? tips.find((t) => t.id === editingTipId)
+    : null
+
   // 견적·입찰 현황 (백엔드 — 입찰 포함)
   const [quotes, setQuotes] = useState([])
   useEffect(() => {
@@ -442,6 +474,7 @@ function AdminDashboardPage() {
   const totalBids = quotes.reduce((sum, m) => sum + (m.bids?.length ?? 0), 0)
   const hiddenReviews = allReviews.filter((r) => r.hidden).length
   const pendingQa = allInquiries.filter((i) => !i.a).length
+  const pendingComplaints = complaints.filter((c) => c.status !== '완료').length
 
   // 리뷰 액션 — 어느 큐인지 _kind로 분기해 같은 키에 반영
   // 고객 리뷰(_kind==='user')는 서버 반영, 파트너 스토리는 기존 localStorage
@@ -714,6 +747,77 @@ function AdminDashboardPage() {
     setVlogOpen(true)
   }
 
+  // 불편사항 처리 (관리자 — 상태·답변·삭제)
+  async function setComplaintStatus(id, status) {
+    try {
+      const updated = await updateComplaint(id, { status })
+      setComplaints((prev) => prev.map((c) => (c.id === id ? updated : c)))
+    } catch {
+      // 무시
+    }
+  }
+  async function saveComplaintReply(id, reply) {
+    try {
+      const updated = await updateComplaint(id, { reply })
+      setComplaints((prev) => prev.map((c) => (c.id === id ? updated : c)))
+    } catch {
+      // 무시
+    }
+  }
+  async function removeComplaint(id) {
+    if (!(await confirm({ title: '삭제', message: '이 접수를 삭제할까요?', danger: true })))
+      return
+    try {
+      await deleteComplaint(id)
+      setComplaints((prev) => prev.filter((c) => c.id !== id))
+    } catch {
+      // 무시
+    }
+  }
+
+  // 팁 게시판 (관리자 — 작성·수정·삭제)
+  async function submitTip(e) {
+    e.preventDefault()
+    const form = e.currentTarget
+    const fd = new FormData(form)
+    const title = fd.get('title')?.toString().trim()
+    const content = fd.get('content')?.toString().trim()
+    const category = fd.get('category')?.toString().trim() || undefined
+    if (!title || !content) return
+    try {
+      if (editingTipId) {
+        const updated = await updateTip(editingTipId, { title, content, category })
+        setTips((prev) => prev.map((t) => (t.id === editingTipId ? updated : t)))
+        setEditingTipId(null)
+      } else {
+        const created = await createTip({ title, content, category })
+        setTips((prev) => [created, ...prev])
+      }
+      form.reset()
+      setTipOpen(false)
+    } catch (err) {
+      await confirm({
+        title: '저장 실패',
+        message: err.message || '저장에 실패했습니다.',
+        alertOnly: true,
+      })
+    }
+  }
+  async function removeTip(id) {
+    if (!(await confirm({ title: '팁 삭제', message: '이 글을 삭제할까요?', danger: true })))
+      return
+    try {
+      await deleteTip(id)
+      setTips((prev) => prev.filter((t) => t.id !== id))
+    } catch {
+      // 무시
+    }
+  }
+  function startEditTip(t) {
+    setEditingTipId(t.id)
+    setTipOpen(true)
+  }
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-10">
       <p className="font-inter text-sm font-semibold tracking-wider text-brand uppercase">
@@ -725,11 +829,12 @@ function AdminDashboardPage() {
       </p>
 
       {/* 통계 (Bento) */}
-      <dl className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-5">
+      <dl className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
         <StatCard label="진행 중 견적" value={inProgress} />
         <StatCard label="누적 입찰" value={totalBids} />
         <StatCard label="숨김 리뷰" value={hiddenReviews} />
         <StatCard label="미답변 Q&A" value={pendingQa} />
+        <StatCard label="미처리 불편사항" value={pendingComplaints} />
         <StatCard label="공지" value={notices.length} />
       </dl>
 
@@ -1287,6 +1392,225 @@ function AdminDashboardPage() {
                           삭제
                         </button>
                       </div>
+                    </article>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+
+          {tab === 'complaints' && (
+            <>
+              <h2 className="text-xl font-bold text-gray-900">
+                불편사항 접수 <span className="text-brand">{complaints.length}</span>
+              </h2>
+              <p className="mt-2 text-sm text-gray-500">
+                접수된 불편사항의 상태를 변경하고 답변을 남길 수 있습니다.
+              </p>
+              <div className="mt-4 space-y-3">
+                {complaints.length === 0 ? (
+                  <Empty />
+                ) : (
+                  complaints.map((c) => (
+                    <article
+                      key={c.id}
+                      className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${complaintStatusStyle[c.status] || complaintStatusStyle['접수']}`}
+                            >
+                              {c.status}
+                            </span>
+                            <span className="font-semibold text-gray-900">
+                              {c.name}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {c.contact}
+                            </span>
+                          </div>
+                          <p className="mt-2 leading-relaxed whitespace-pre-line text-gray-700">
+                            {c.content}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            {formatDate(c.createdAt)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeComplaint(c.id)}
+                          className="shrink-0 rounded-full border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500">
+                          상태
+                        </span>
+                        {COMPLAINT_STATUS.map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setComplaintStatus(c.id, s)}
+                            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                              c.status === s
+                                ? 'bg-brand text-white'
+                                : 'border border-gray-300 text-gray-600 hover:border-brand hover:text-brand'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                      <textarea
+                        defaultValue={c.reply || ''}
+                        rows={2}
+                        placeholder="답변을 입력하고 포커스를 벗어나면 저장됩니다."
+                        className={inputClass}
+                        onBlur={(e) => {
+                          if (e.target.value !== (c.reply || ''))
+                            saveComplaintReply(c.id, e.target.value)
+                        }}
+                      />
+                    </article>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+
+          {tab === 'tips' && (
+            <>
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">팁 게시판</h2>
+                  <p className="mt-2 text-sm text-gray-500">
+                    여기서 작성·수정·삭제한 팁은 팁 게시판 페이지에 바로 반영됩니다.
+                  </p>
+                </div>
+                {!tipOpen && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingTipId(null)
+                      setTipOpen(true)
+                    }}
+                    className="shrink-0 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+                  >
+                    + 팁 작성
+                  </button>
+                )}
+              </div>
+
+              {tipOpen && (
+                <form
+                  onSubmit={submitTip}
+                  className="mt-4 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-gray-900">
+                      {editingTipId ? '팁 수정' : '팁 작성'}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTipOpen(false)
+                        setEditingTipId(null)
+                      }}
+                      className="text-sm text-gray-500 hover:text-brand"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">제목</span>
+                    <input
+                      type="text"
+                      name="title"
+                      required
+                      defaultValue={editingTip?.title || ''}
+                      placeholder="팁 제목"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">
+                      분류 (선택)
+                    </span>
+                    <input
+                      type="text"
+                      name="category"
+                      defaultValue={editingTip?.category || ''}
+                      placeholder="예: 포장, 일정, 비용"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-semibold text-gray-800">내용</span>
+                    <textarea
+                      name="content"
+                      rows={5}
+                      required
+                      defaultValue={editingTip?.content || ''}
+                      placeholder="팁 내용을 입력하세요."
+                      className={inputClass}
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    className="w-full rounded-full bg-brand px-7 py-3 font-semibold text-white transition hover:bg-brand-dark"
+                  >
+                    {editingTipId ? '수정 저장' : '팁 등록'}
+                  </button>
+                </form>
+              )}
+
+              <div className="mt-4 space-y-3">
+                {tips.length === 0 ? (
+                  <Empty />
+                ) : (
+                  tips.map((t) => (
+                    <article
+                      key={t.id}
+                      className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          {t.category && (
+                            <span className="inline-block rounded-full bg-brand-light px-2.5 py-0.5 text-xs font-semibold text-brand-dark">
+                              {t.category}
+                            </span>
+                          )}
+                          <h3 className="mt-1 text-lg font-bold text-gray-900">
+                            {t.title}
+                          </h3>
+                          <p className="text-xs text-gray-400">
+                            {formatDate(t.createdAt)}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-2 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => startEditTip(t)}
+                            className="rounded-full border border-gray-300 px-3 py-1.5 font-semibold text-gray-600 transition hover:border-brand hover:text-brand"
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeTip(t.id)}
+                            className="rounded-full border border-red-300 px-3 py-1.5 font-semibold text-red-500 transition hover:bg-red-50"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+                      <p className="mt-3 leading-relaxed whitespace-pre-line text-gray-700">
+                        {t.content}
+                      </p>
                     </article>
                   ))
                 )}

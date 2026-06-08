@@ -4,6 +4,7 @@ import { useConfirm } from '../context/ConfirmContext'
 import { formatDate } from '../utils/date'
 import {
   getComplaints,
+  getMyComplaints,
   createComplaint,
   updateComplaint,
   deleteComplaint,
@@ -26,6 +27,7 @@ function ComplaintPage() {
   const confirm = useConfirm()
   const [done, setDone] = useState(false)
   const [items, setItems] = useState<Complaint[]>([])
+  const [mine, setMine] = useState<Complaint[]>([])
 
   // 관리자만 접수 목록 조회
   useEffect(() => {
@@ -34,6 +36,15 @@ function ComplaintPage() {
       .then((d) => setItems(Array.isArray(d) ? d : []))
       .catch(() => setItems([]))
   }, [isAdmin])
+
+  // 로그인 사용자(비관리자)는 본인 접수 내역 조회
+  function loadMine() {
+    if (!user?.email || isAdmin) return
+    getMyComplaints(user.email)
+      .then((d) => setMine(Array.isArray(d) ? d : []))
+      .catch(() => setMine([]))
+  }
+  useEffect(loadMine, [user?.email, isAdmin])
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -52,6 +63,7 @@ function ComplaintPage() {
       })
       form.reset()
       setDone(true)
+      loadMine()
     } catch (err) {
       await confirm({
         title: '접수 실패',
@@ -151,6 +163,45 @@ function ComplaintPage() {
             접수하기
           </button>
         </form>
+      )}
+
+      {/* 로그인 사용자: 내 접수 내역 (읽기 전용) */}
+      {user && !isAdmin && mine.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-xl font-bold text-gray-900">
+            내 접수 내역 <span className="text-brand">{mine.length}</span>
+          </h2>
+          <div className="mt-4 space-y-3">
+            {mine.map((c) => (
+              <article
+                key={c.id}
+                className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusStyle[c.status] || statusStyle['접수']}`}
+                  >
+                    {c.status}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {formatDate(c.createdAt)}
+                  </span>
+                </div>
+                <p className="mt-2 leading-relaxed whitespace-pre-line text-gray-700">
+                  {c.content}
+                </p>
+                {c.reply && (
+                  <div className="mt-3 rounded-xl bg-brand-bg p-3">
+                    <p className="text-xs font-semibold text-brand">답변</p>
+                    <p className="mt-1 text-sm leading-relaxed whitespace-pre-line text-gray-700">
+                      {c.reply}
+                    </p>
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* 관리자: 접수 목록 처리 */}

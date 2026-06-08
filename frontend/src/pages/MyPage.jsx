@@ -5,6 +5,7 @@ import ActivityCard from '../components/ActivityCard'
 import { getReviews } from '../services/reviews'
 import { getMyQuotes } from '../services/quotes'
 import { getQna } from '../services/qna'
+import { getMyComplaints } from '../services/complaints'
 
 function Info({ label, value }) {
   return (
@@ -37,6 +38,13 @@ function MyPage() {
       .then((d) => setQuestions(Array.isArray(d) ? d : []))
       .catch(() => setQuestions([]))
   }, [])
+  const [complaintCount, setComplaintCount] = useState(0)
+  useEffect(() => {
+    if (!user?.email) return
+    getMyComplaints(user.email)
+      .then((d) => setComplaintCount(Array.isArray(d) ? d.length : 0))
+      .catch(() => setComplaintCount(0))
+  }, [user?.email])
 
   if (!ready) return null // 로그인 상태 복원 전 깜빡임 방지
   if (!user) {
@@ -74,7 +82,7 @@ function MyPage() {
 
       {/* 활동 내역 — 클릭 시 해당 페이지로 이동 */}
       <h2 className="mt-10 text-lg font-bold text-gray-900">활동 내역</h2>
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <ActivityCard to="/mypage/quotes" label="견적 신청" count={quoteCount} />
         <ActivityCard
           to="/reviews"
@@ -86,6 +94,7 @@ function MyPage() {
           label="내 질문"
           count={questions.filter((q) => q.authorEmail === user.email).length}
         />
+        <ActivityCard to="/complaint" label="내 불편사항" count={complaintCount} />
       </div>
 
       {/* 액션 */}

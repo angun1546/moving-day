@@ -18,6 +18,20 @@ router.get('/', requireAdmin, async (_req, res) => {
   }
 })
 
+// 내 접수 목록 (본인 — authorEmail 기준, 최신순)
+router.get('/mine/:email', async (req, res) => {
+  try {
+    const list = await prisma.complaint.findMany({
+      where: { authorEmail: req.params.email },
+      orderBy: { createdAt: 'desc' },
+    })
+    res.json(list)
+  } catch (err) {
+    console.error('내 불편사항 조회 실패:', err)
+    res.status(500).json({ message: '서버 오류로 조회에 실패했습니다.' })
+  }
+})
+
 // 접수 (공개 — 회원·비회원 모두)
 router.post('/', async (req, res) => {
   const { name, contact, content, authorEmail } = req.body ?? {}
