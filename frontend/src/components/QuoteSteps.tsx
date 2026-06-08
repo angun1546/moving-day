@@ -1,7 +1,7 @@
 // 견적 신청 진행 단계 표시 (방식 → 종류 → 정보 입력)
 const STEPS = ['견적 방식', '이사 종류', '정보 입력']
 
-function QuoteSteps({ current }) {
+function QuoteSteps({ current }: { current: number }) {
   return (
     <ol className="mx-auto mb-10 flex max-w-lg items-center">
       {STEPS.map((label, idx) => {

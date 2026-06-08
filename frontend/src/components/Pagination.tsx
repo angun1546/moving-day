@@ -1,7 +1,19 @@
 // 공용 페이지네이션 — 페이지당 개수 선택 + 이전/다음 + 페이지 번호(최대 5개)
 const PER_OPTIONS = [5, 10, 15, 20, 30, 40]
 
-function Pagination({ page, setPage, totalPages, perPage, setPerPage }) {
+function Pagination({
+  page,
+  setPage,
+  totalPages,
+  perPage,
+  setPerPage,
+}: {
+  page: number
+  setPage: (n: number) => void
+  totalPages: number
+  perPage: number
+  setPerPage?: (n: number) => void
+}) {
   const showPages = totalPages > 1
   const showPerPage = typeof setPerPage === 'function'
   if (!showPages && !showPerPage) return null

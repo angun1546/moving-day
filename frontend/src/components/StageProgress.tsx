@@ -1,11 +1,18 @@
 import { MOVE_STAGES } from '../data/stages'
 import { formatDateTime } from '../utils/date'
+import type { StageLog } from '../data/apiTypes'
 
 // 낙찰 후 진행 현황 — 택배식 세로 타임라인 (각 단계 도달 시각 표시)
-function StageProgress({ stage, logs = [] }) {
-  const idx = MOVE_STAGES.indexOf(stage)
+function StageProgress({
+  stage,
+  logs = [],
+}: {
+  stage: string | null
+  logs?: StageLog[]
+}) {
+  const idx = MOVE_STAGES.indexOf(stage ?? '')
   // 단계별 첫 기록 시각
-  const logMap = {}
+  const logMap: Record<string, string> = {}
   logs.forEach((l) => {
     if (!logMap[l.stage]) logMap[l.stage] = l.createdAt
   })

@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 
 // 햄버거 ↔ X (GSAP: power2.inOut, 정중앙 회전) — 유저/파트너 헤더 공용
-function MenuIcon({ open }) {
-  const top = useRef(null)
-  const mid = useRef(null)
-  const bot = useRef(null)
+function MenuIcon({ open }: { open: boolean }) {
+  const top = useRef<SVGLineElement>(null)
+  const mid = useRef<SVGLineElement>(null)
+  const bot = useRef<SVGLineElement>(null)
 
   useEffect(() => {
     const o = { duration: 0.4, ease: 'power2.inOut', transformOrigin: '50% 50%' }
