@@ -1,7 +1,15 @@
 import { Link } from 'react-router-dom'
 
 // 마이페이지 활동 내역 카드 — 클릭 시 해당 페이지로 이동
-function ActivityCard({ to, label, count = 0 }) {
+function ActivityCard({
+  to,
+  label,
+  count = 0,
+}: {
+  to: string
+  label: string
+  count?: number
+}) {
   return (
     <Link
       to={to}
