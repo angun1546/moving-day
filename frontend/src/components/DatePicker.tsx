@@ -7,7 +7,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
 const fmt = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`
 
 const triggerClass =
-  'w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-left text-gray-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20'
+  'w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-left text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
 
 function DatePicker({
   name,
@@ -72,16 +72,34 @@ function DatePicker({
     setOpen(false)
   }
 
+  // 직접 타이핑 — 숫자만 받아 YYYY-MM-DD로 자동 포맷
+  function onType(raw: string) {
+    const digits = raw.replace(/\D/g, '').slice(0, 8)
+    let out = digits.slice(0, 4)
+    if (digits.length > 4) out += '-' + digits.slice(4, 6)
+    if (digits.length > 6) out += '-' + digits.slice(6, 8)
+    setValue(out)
+    // 8자리(완전한 날짜) 입력 시 달력 뷰도 맞춰 이동
+    if (digits.length === 8) {
+      const y = Number(digits.slice(0, 4))
+      const m = Number(digits.slice(4, 6)) - 1
+      if (m >= 0 && m <= 11) setView({ y, m })
+    }
+  }
+
   return (
     <div ref={ref} className="relative mt-1">
-      <input type="hidden" name={name} value={value} />
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
+      <input
+        type="text"
+        name={name}
+        value={value}
+        onChange={(e) => onType(e.target.value)}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        inputMode="numeric"
+        maxLength={10}
         className={triggerClass}
-      >
-        {value || <span className="text-gray-400">{placeholder}</span>}
-      </button>
+      />
 
       {open && (
         <div className="absolute z-20 mt-1 w-72 rounded-2xl border border-gray-200 bg-white p-3 shadow-xl">

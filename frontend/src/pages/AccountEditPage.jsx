@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const inputClass =
@@ -9,9 +9,9 @@ function AccountEditPage() {
   const { user, updateUser, headerMode, setHeaderMode, displayMode, setDisplayMode, ready } =
     useAuth()
   const [params] = useSearchParams()
+  const navigate = useNavigate()
   const isPartner = params.get('role') === 'partner'
   const backPath = isPartner ? '/partner/mypage' : '/mypage'
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
   if (!ready) return null // 로그인 상태 복원 전 깜빡임 방지
@@ -56,7 +56,8 @@ function AccountEditPage() {
       setDisplayMode(fd.get('displayMode') || 'nickname')
     }
     setHeaderMode(fd.get('headerMode') || 'nickname')
-    setSaved(true)
+    // 저장 직후 마이페이지로 이동
+    navigate(backPath)
   }
 
   return (
@@ -75,12 +76,6 @@ function AccountEditPage() {
           {error}
         </div>
       )}
-      {saved && (
-        <div className="mt-6 rounded-xl border border-brand-light bg-brand-bg px-4 py-3 text-sm font-semibold text-brand-dark">
-          ✓ 회원정보가 저장되었습니다. (마이페이지에 즉시 반영)
-        </div>
-      )}
-
       <form onSubmit={submit} className="mt-8 space-y-4">
         <label className="block">
           <span className="text-sm font-semibold text-gray-800">닉네임</span>
