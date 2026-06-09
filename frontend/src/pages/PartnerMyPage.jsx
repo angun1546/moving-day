@@ -57,7 +57,7 @@ function PartnerMyPage() {
     getMyBids(user.email)
       .then((d) => setBidCount(Array.isArray(d) ? d.length : 0))
       .catch(() => setBidCount(0))
-    getMyComplaints(user.email)
+    getMyComplaints()
       .then((d) => setComplaintCount(Array.isArray(d) ? d.length : 0))
       .catch(() => setComplaintCount(0))
   }, [user?.email])

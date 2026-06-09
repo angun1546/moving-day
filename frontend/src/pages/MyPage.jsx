@@ -41,7 +41,7 @@ function MyPage() {
   const [complaintCount, setComplaintCount] = useState(0)
   useEffect(() => {
     if (!user?.email) return
-    getMyComplaints(user.email)
+    getMyComplaints()
       .then((d) => setComplaintCount(Array.isArray(d) ? d.length : 0))
       .catch(() => setComplaintCount(0))
   }, [user?.email])

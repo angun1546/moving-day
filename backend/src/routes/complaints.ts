@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../db.ts'
-import { requireAdmin } from '../auth.ts'
+import { requireAdmin, requireAuth, type AuthedRequest } from '../auth.ts'
 
 // 불편사항 접수 — 제출은 공개, 목록·처리·삭제는 관리자
 const router = Router()
@@ -18,11 +18,11 @@ router.get('/', requireAdmin, async (_req, res) => {
   }
 })
 
-// 내 접수 목록 (본인 — authorEmail 기준, 최신순)
-router.get('/mine/:email', async (req, res) => {
+// 내 접수 목록 (본인 — 토큰의 이메일 기준, 최신순)
+router.get('/mine', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const list = await prisma.complaint.findMany({
-      where: { authorEmail: req.params.email },
+      where: { authorEmail: req.authUser!.email },
       orderBy: { createdAt: 'desc' },
     })
     res.json(list)

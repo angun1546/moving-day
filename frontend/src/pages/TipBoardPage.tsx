@@ -93,6 +93,7 @@ function TipBoardPage() {
 
       {isAdmin && open && (
         <form
+          key={editId ?? 'new'}
           onSubmit={submit}
           className="mt-6 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
         >

@@ -899,15 +899,15 @@ function AdminDashboardPage() {
                 <AddonChips addons={m.addons} />
               </div>
               <div className="text-right text-sm">
-                <p className="text-gray-400">입찰 {m.bids.length}건</p>
-                {m.bids.length > 0 && (
+                <p className="text-gray-400">입찰 {m.bids?.length ?? 0}건</p>
+                {(m.bids?.length ?? 0) > 0 && (
                   <p className="font-inter font-bold text-brand">
                     최저 {won(Math.min(...m.bids.map((b) => b.price)))}원
                   </p>
                 )}
               </div>
             </div>
-            {m.bids.length > 0 && (
+            {(m.bids?.length ?? 0) > 0 && (
               <div className="mt-4 border-t border-gray-100 pt-3">
                 <p className="text-xs font-semibold text-gray-500">입찰 내역</p>
                 <ul className="mt-2 space-y-1 text-sm">
@@ -1024,6 +1024,7 @@ function AdminDashboardPage() {
 
       {noticeOpen && (
         <form
+          key={editingNoticeId ?? 'new'}
           onSubmit={submitNotice}
           className="mt-4 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
         >
@@ -1150,6 +1151,7 @@ function AdminDashboardPage() {
 
               {projOpen && (
                 <form
+                  key={editingProjId ?? 'new'}
                   onSubmit={submitProject}
                   className="mt-4 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
                 >
@@ -1300,6 +1302,7 @@ function AdminDashboardPage() {
 
               {vlogOpen && (
                 <form
+                  key={editingVlogId ?? 'new'}
                   onSubmit={submitVlog}
                   className="mt-4 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
                 >
@@ -1507,6 +1510,7 @@ function AdminDashboardPage() {
 
               {tipOpen && (
                 <form
+                  key={editingTipId ?? 'new'}
                   onSubmit={submitTip}
                   className="mt-4 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
                 >

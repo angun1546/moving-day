@@ -40,7 +40,7 @@ function ComplaintPage() {
   // 로그인 사용자(비관리자)는 본인 접수 내역 조회
   function loadMine() {
     if (!user?.email || isAdmin) return
-    getMyComplaints(user.email)
+    getMyComplaints()
       .then((d) => setMine(Array.isArray(d) ? d : []))
       .catch(() => setMine([]))
   }

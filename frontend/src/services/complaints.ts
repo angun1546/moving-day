@@ -12,10 +12,9 @@ export async function getComplaints(): Promise<Complaint[]> {
   return res.json()
 }
 
-// 내 접수 목록 (본인)
-export async function getMyComplaints(email: string): Promise<Complaint[]> {
-  if (!email) return []
-  const res = await fetch(`${API}/mine/${encodeURIComponent(email)}`)
+// 내 접수 목록 (본인 — 토큰 기준)
+export async function getMyComplaints(): Promise<Complaint[]> {
+  const res = await fetch(`${API}/mine`, { headers: authHeaders() })
   if (!res.ok) throw new Error('내 불편사항 조회에 실패했습니다.')
   return res.json()
 }
