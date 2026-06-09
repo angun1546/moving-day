@@ -227,7 +227,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | `DATABASE_URL` | Turso DB URL | `libsql://<db>.turso.io` |
 | `DATABASE_AUTH_TOKEN` | Turso 토큰 | (시크릿) |
 | `JWT_SECRET` | JWT 서명 키(긴 임의 문자열) | (시크릿) |
-| `FRONTEND_URL` | CORS 화이트리스트(콤마 다중) | `https://moving-day-zeta.vercel.app,http://localhost:5173` |
+| `FRONTEND_URL` | CORS 화이트리스트(콤마 다중) | `https://themovingday.com,https://www.themovingday.com,https://moving-day-zeta.vercel.app,http://localhost:5173` |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary 계정 이름 | `movingday` |
 | `CLOUDINARY_API_KEY` | (시크릿) | |
 | `CLOUDINARY_API_SECRET` | (시크릿) | |
@@ -277,6 +277,22 @@ Start Command     npm start
 3. **Render**에서 GitHub 저장소 연결해 위 표대로 Web Service 생성, Environment에 7개 환경변수 입력 → Deploy
 4. Render 도메인(예: `https://movingday-api.onrender.com`) 확정되면 `vercel.json`의 rewrite 대상 URL이 맞는지 확인 (필요 시 수정 후 push)
 5. **Vercel** 대시보드에서 자동 재배포 — 그 다음 `/api/health`가 `{ok:true}` 반환하면 연결 성공
+
+### 커스텀 도메인 연결 (가비아 → Vercel)
+
+서비스 도메인은 **`themovingday.com`**(루트가 메인, `www`는 루트로 리다이렉트).
+
+1. **Vercel** → 프로젝트 → Settings → Domains에 `themovingday.com`(Primary)과 `www.themovingday.com`(루트로 Redirect) 추가
+2. **가비아** → My가비아 → 도메인 → DNS 정보 → DNS 관리에서 레코드 설정 (가비아는 루트 `@`에 CNAME 불가 → A 레코드 사용)
+
+   | 호스트 | 타입 | 값 | TTL |
+   |---|---|---|---|
+   | `@` | A | `76.76.21.21` (Vercel 화면 값 우선) | 3600 |
+   | `www` | CNAME | `cname.vercel-dns.com.` | 3600 |
+
+   > 가비아 기본 파킹 A 레코드(`@`)가 이미 있으면 새로 추가하지 말고 위 IP로 **수정**.
+3. **Render** → `movingday-api` → Environment의 `FRONTEND_URL`에 `https://themovingday.com,https://www.themovingday.com` 포함되도록 갱신 → 자동 재배포 (CORS 허용)
+4. DNS 전파 후(10분~수 시간) `https://themovingday.com` 접속, Vercel이 SSL 자동 발급. `vercel.json` rewrite는 그대로 동작하므로 수정 불필요
 
 ## 로드맵
 
