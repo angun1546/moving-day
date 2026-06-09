@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "concurrently -n backend,frontend -c green,cyan \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
-    "build": "cd frontend && npm run build"
+    "build": "cd frontend && npm run build",
+    "deploy": "ssh root@1.201.122.204 \"bash -lc 'cd /var/www/moving-day && git pull && bash deploy.sh'\""
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
