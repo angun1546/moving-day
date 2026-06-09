@@ -192,6 +192,7 @@ model Complaint {
   content     String // 불편사항 내용
   status      String   @default("접수") // 접수 | 처리중 | 완료
   reply       String? // 관리자 답변
+  hidden      Boolean  @default(false) // 관리자 숨김 — 작성자 '내 불편사항'에서 가림
   authorEmail String? // 작성자 식별(회원)
 
   @@index([createdAt])

@@ -22,7 +22,7 @@ router.get('/', requireAdmin, async (_req, res) => {
 router.get('/mine', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const list = await prisma.complaint.findMany({
-      where: { authorEmail: req.authUser!.email },
+      where: { authorEmail: req.authUser!.email, hidden: false },
       orderBy: { createdAt: 'desc' },
     })
     res.json(list)
@@ -49,13 +49,13 @@ router.post('/', async (req, res) => {
   }
 })
 
-// 처리 (관리자 — 상태·답변) — 보낸 필드만 변경
+// 처리 (관리자 — 상태·답변·숨김) — 보낸 필드만 변경
 router.patch('/:id', requireAdmin, async (req, res) => {
-  const { status, reply } = req.body ?? {}
+  const { status, reply, hidden } = req.body ?? {}
   try {
     const complaint = await prisma.complaint.update({
       where: { id: req.params.id },
-      data: { status, reply },
+      data: { status, reply, hidden },
     })
     res.json(complaint)
   } catch (err) {

@@ -463,11 +463,13 @@ function AdminDashboardPage() {
     ].sort((a, b) => b._sort - a._sort)
   }, [userQa, partnerQa])
 
-  // 매칭·리뷰·Q&A·공지 목록 페이지네이션 (5개씩)
+  // 매칭·리뷰·Q&A·공지·불편사항 목록 페이지네이션 (5개씩)
   const matchPage = usePagination(quotes, 5)
   const reviewPage = usePagination(allReviews, 5)
   const qaPage = usePagination(allInquiries, 5)
   const noticePage = usePagination(notices, 5)
+  const complaintPage = usePagination(complaints, 5)
+  const tipPage = usePagination(tips, 5)
 
   // 통계
   const inProgress = quotes.filter((m) => m.status !== '완료').length
@@ -760,6 +762,14 @@ function AdminDashboardPage() {
     try {
       const updated = await updateComplaint(id, { reply })
       setComplaints((prev) => prev.map((c) => (c.id === id ? updated : c)))
+    } catch {
+      // 무시
+    }
+  }
+  async function toggleComplaintHide(c) {
+    try {
+      const updated = await updateComplaint(c.id, { hidden: !c.hidden })
+      setComplaints((prev) => prev.map((x) => (x.id === c.id ? updated : x)))
     } catch {
       // 무시
     }
@@ -1414,7 +1424,7 @@ function AdminDashboardPage() {
                 {complaints.length === 0 ? (
                   <Empty />
                 ) : (
-                  complaints.map((c) => (
+                  complaintPage.pageItems.map((c) => (
                     <article
                       key={c.id}
                       className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
@@ -1427,6 +1437,11 @@ function AdminDashboardPage() {
                             >
                               {c.status}
                             </span>
+                            {c.hidden && (
+                              <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-600">
+                                숨김
+                              </span>
+                            )}
                             <span className="font-semibold text-gray-900">
                               {c.name}
                             </span>
@@ -1441,13 +1456,22 @@ function AdminDashboardPage() {
                             {formatDate(c.createdAt)}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeComplaint(c.id)}
-                          className="shrink-0 rounded-full border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50"
-                        >
-                          삭제
-                        </button>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleComplaintHide(c)}
+                            className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-brand hover:text-brand"
+                          >
+                            {c.hidden ? '노출' : '숨김'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeComplaint(c.id)}
+                            className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50"
+                          >
+                            삭제
+                          </button>
+                        </div>
                       </div>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <span className="text-xs font-semibold text-gray-500">
@@ -1482,6 +1506,13 @@ function AdminDashboardPage() {
                   ))
                 )}
               </div>
+              <Pagination
+                page={complaintPage.page}
+                setPage={complaintPage.setPage}
+                totalPages={complaintPage.totalPages}
+                perPage={complaintPage.perPage}
+                setPerPage={complaintPage.setPerPage}
+              />
             </>
           )}
 
@@ -1576,7 +1607,7 @@ function AdminDashboardPage() {
                 {tips.length === 0 ? (
                   <Empty />
                 ) : (
-                  tips.map((t) => (
+                  tipPage.pageItems.map((t) => (
                     <article
                       key={t.id}
                       className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
@@ -1619,6 +1650,13 @@ function AdminDashboardPage() {
                   ))
                 )}
               </div>
+              <Pagination
+                page={tipPage.page}
+                setPage={tipPage.setPage}
+                totalPages={tipPage.totalPages}
+                perPage={tipPage.perPage}
+                setPerPage={tipPage.setPerPage}
+              />
             </>
           )}
         </div>

@@ -169,6 +169,7 @@ export interface Complaint {
   content: string
   status: string // 접수 | 처리중 | 완료
   reply?: string | null
+  hidden?: boolean // 관리자 숨김 여부
   authorEmail?: string | null
 }
 
