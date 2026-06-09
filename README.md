@@ -30,7 +30,7 @@ Moving-day/
 - **타입(점진 도입)**: TypeScript — 데이터 레이어·API 경계부터 `.ts`로 전환(`tsconfig` `checkJs:false`로 `.jsx`는 비검사). 화면은 `.jsx` 유지, **새 파일은 `.tsx`**로 작성하고 기존은 손댈 때 전환(스트랭글러). 검사: `npm run typecheck`(`tsc --noEmit`)
 - **백엔드**: Node.js, Express 5, Prisma 7, SQLite (better-sqlite3 어댑터), multer, JWT
 - **주소 검색**: 다음(카카오) 우편번호 서비스
-- **배포**: Vercel (frontend 단독) — backend는 풀스택 단계에서 Render/Turso 예정
+- **배포**: 가비아 g클라우드(리눅스 VM) 단일 서버 — Nginx + Node(PM2) + SQLite + Let's Encrypt. 도메인 `themovingday.com`
 
 ## 주요 기능
 
@@ -222,7 +222,7 @@ cd frontend && npm install && npm run dev                          # 5173
 - **요청 흐름**:
   - `/` → Nginx가 `frontend/dist` 정적 서빙 (React SPA, `try_files`로 새로고침 대응)
   - `/api/*`·`/uploads/*` → Nginx가 백엔드(`localhost:4000`)로 프록시
-- **DB**: SQLite 파일(`backend/prisma/prod.db`). Prisma 7 드라이버 어댑터 — `DATABASE_URL`이 `file:...`면 `better-sqlite3`, `libsql://...`면 Turso로 자동 분기(`src/db.ts`)
+- **DB**: SQLite 파일(`backend/prisma/prod.db`). Prisma 7 드라이버 어댑터(`better-sqlite3`) — `DATABASE_URL=file:...`로 연결(`src/db.ts`)
 - **사진 업로드**: Cloudinary — multer가 메모리에 받은 버퍼를 공용 헬퍼(`src/cloudinary.ts`)의 `upload_stream`으로 전송, `secure_url`을 DB에 저장. 견적 사진·파트너 프로필 사진·자격증(이미지+PDF, `resource_type` 분기)에 공통 사용
 
 ### 백엔드 환경변수 (`backend/.env`) — 시크릿은 절대 저장소에 두지 않음
@@ -244,7 +244,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | `SOLAPI_ALIMTALK_TEMPLATE_QUOTE` | 견적 도착 알림톡 템플릿 ID(선택) | (선택) |
 | `SOLAPI_ALIMTALK_TEMPLATE_BID` | 입찰 도착 알림톡 템플릿 ID(선택) | (선택) |
 
-> `JWT_SECRET`/`DATABASE_URL`이 `file:`이 아닌 원격(`libsql://`)이거나 `NODE_ENV=production`이면 시작 시 `JWT_SECRET` 누락을 거부합니다.
+> `NODE_ENV=production`이면 시작 시 `JWT_SECRET` 누락을 거부합니다.
 > SMS: `SOLAPI_API_KEY`·`SOLAPI_API_SECRET`·`SOLAPI_SENDER` **3개만 있으면 문자 실제 발송**. 셋 중 하나라도 없으면 **mock 모드(콘솔 로그만)**.
 > 알림톡: 위 3개 + `SOLAPI_KAKAO_PF_ID` + 템플릿 ID(`..._QUOTE`/`..._BID`)까지 설정되면 **알림톡 우선·실패 시 SMS 자동 대체**. 템플릿 변수 — 견적: `#{이사종류}#{출발지}#{도착지}`, 입찰: `#{업체명}#{금액}`. (`backend/src/messaging.ts`)
 >

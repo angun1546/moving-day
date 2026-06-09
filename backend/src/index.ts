@@ -14,17 +14,8 @@ import vlogsRouter from './routes/vlogs.ts'
 import complaintsRouter from './routes/complaints.ts'
 import tipsRouter from './routes/tips.ts'
 
-// 배포 환경(프로덕션 또는 원격 DB)에서는 JWT_SECRET이 반드시 필요 — 누락 시 시작 거부
-// 원격 DB(Turso libsql/https/wss)는 실제 배포로 간주 → NODE_ENV 미설정이어도 강제
-const dbUrl = process.env.DATABASE_URL ?? ''
-const isRemoteDb =
-  dbUrl.startsWith('libsql://') ||
-  dbUrl.startsWith('https://') ||
-  dbUrl.startsWith('wss://')
-if (
-  (process.env.NODE_ENV === 'production' || isRemoteDb) &&
-  !process.env.JWT_SECRET
-) {
+// 배포 환경(NODE_ENV=production)에서는 JWT_SECRET이 반드시 필요 — 누락 시 시작 거부
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET 환경변수가 설정되지 않았습니다.')
   process.exit(1)
 }
@@ -33,7 +24,7 @@ const app = express()
 const port = Number(process.env.PORT ?? 4000)
 
 // CORS — FRONTEND_URL 환경변수 화이트리스트 (콤마로 다중 도메인 허용)
-//  예) FRONTEND_URL="https://moving-day.vercel.app,http://localhost:5173"
+//  예) FRONTEND_URL="https://themovingday.com,https://www.themovingday.com,http://localhost:5173"
 const allowed = (process.env.FRONTEND_URL ?? 'http://localhost:5173')
   .split(',')
   .map((s) => s.trim())

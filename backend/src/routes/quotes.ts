@@ -149,7 +149,11 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
       quoteTemplate
         ? {
             templateId: quoteTemplate,
-            variables: { 이사종류: moveType, 출발지: fromRegion, 도착지: toRegion },
+            variables: {
+              '#{이사종류}': moveType,
+              '#{출발지}': fromRegion,
+              '#{도착지}': toRegion,
+            },
           }
         : undefined,
     )

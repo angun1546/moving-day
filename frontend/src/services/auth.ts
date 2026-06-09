@@ -1,7 +1,7 @@
 import type { User, AuthResult } from '../data/apiTypes'
 
-// 배포 환경에서는 VITE_API_BASE로 백엔드 절대 URL 주입 (예: https://moving-day-api.onrender.com)
-// 로컬은 비워두면 vite proxy(/api → :4000)가 그대로 처리한다.
+// 다른 도메인의 백엔드를 쓸 때만 VITE_API_BASE로 절대 URL 주입.
+// 가비아 단일 서버(Nginx 프록시)·로컬(vite proxy)은 비워두면 /api → :4000으로 연결된다.
 const BASE = import.meta.env.VITE_API_BASE ?? ''
 const API = `${BASE}/api/auth`
 const TOKEN_KEY = 'movingday_token'

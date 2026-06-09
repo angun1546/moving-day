@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
       to: quote?.phone,
       text: `[이삿날] ${company}님이 견적을 보냈어요. ${won}원\n앱에서 비교하고 선택하세요.`,
       kakao: bidTemplate
-        ? { templateId: bidTemplate, variables: { 업체명: company, 금액: won } }
+        ? { templateId: bidTemplate, variables: { '#{업체명}': company, '#{금액}': won } }
         : undefined,
     })
 
