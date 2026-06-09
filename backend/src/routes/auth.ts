@@ -11,7 +11,8 @@ const router = Router()
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const GENDERS = ['남', '여']
-const ADMIN_EMAIL = 'admin@movingday.com'
+// 관리자 이메일 — 코드에 두지 않고 환경변수(.env)로. 이 이메일로 가입 시 role=admin 자동 부여
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? ''
 
 // 외부에 노출할 사용자 정보 (비밀번호 제외)
 function publicUser(u: {

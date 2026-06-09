@@ -13,7 +13,8 @@
     "db:studio": "prisma studio",
     "test:sms": "node --env-file-if-exists=.env scripts/test-sms.ts",
     "reset:admin": "node --env-file-if-exists=.env scripts/reset-admin-password.ts",
-    "clear:content": "node --env-file-if-exists=.env scripts/clear-content.ts"
+    "clear:content": "node --env-file-if-exists=.env scripts/clear-content.ts",
+    "migrate:admin-email": "node --env-file-if-exists=.env scripts/migrate-admin-email.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",

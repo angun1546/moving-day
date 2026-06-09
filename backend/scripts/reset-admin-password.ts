@@ -10,9 +10,13 @@ import { hashPassword } from '../src/auth.ts'
 // 안전장치: 비번 인자가 없으면 아무것도 바꾸지 않고 종료한다.
 // ──────────────────────────────────────────────
 
-const ADMIN_EMAIL = 'admin@movingday.com'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? ''
 const newPw = process.argv[2]
 
+if (!ADMIN_EMAIL) {
+  console.error('❌ ADMIN_EMAIL 환경변수가 설정되지 않았습니다(.env 확인).')
+  process.exit(1)
+}
 if (!newPw) {
   console.error('❌ 새 비밀번호를 인자로 넣어주세요.')
   console.error("   예) npm run reset:admin -- 'Movingday!2026#'")

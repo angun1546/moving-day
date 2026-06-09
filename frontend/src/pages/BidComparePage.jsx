@@ -119,7 +119,7 @@ function BidComparePage() {
         type: 'bid',
         message: `${b.company}가 낙찰되었습니다.`,
         link: '/admin',
-        to: 'admin@movingday.com',
+        to: 'admin',
       })
     } catch (err) {
       await confirm({
@@ -147,7 +147,7 @@ function BidComparePage() {
         type: 'bid',
         message: `${pickedBid.company} 낙찰이 취소되었습니다.`,
         link: '/admin',
-        to: 'admin@movingday.com',
+        to: 'admin',
       })
       setPicked(null)
       setBids((prev) => prev.map((x) => ({ ...x, status: '입찰' })))

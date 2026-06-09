@@ -233,6 +233,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | `PORT` | 백엔드 포트(Nginx 프록시 대상) | `4000` |
 | `DATABASE_URL` | DB 경로. 서버는 SQLite 파일 절대경로 | `file:/var/www/moving-day/backend/prisma/prod.db` |
 | `JWT_SECRET` | JWT 서명 키(긴 임의 문자열, `openssl rand -base64 48`) | (시크릿) |
+| `ADMIN_EMAIL` | 관리자 이메일 — 이 이메일로 가입 시 role=admin 자동 부여(코드 비노출) | (시크릿) |
 | `FRONTEND_URL` | CORS 화이트리스트(콤마 다중) | `https://themovingday.com,https://www.themovingday.com` |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary 계정 이름 | `movingday` |
 | `CLOUDINARY_API_KEY` | (시크릿) | |
