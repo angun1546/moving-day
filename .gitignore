@@ -14,6 +14,7 @@ build/
 **/src/generated/
 *.db
 *.db-journal
+*.db.bak*
 
 # 로그/임시
 *.log

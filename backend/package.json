@@ -12,7 +12,8 @@
     "db:seed": "node prisma/seed.ts",
     "db:studio": "prisma studio",
     "test:sms": "node --env-file-if-exists=.env scripts/test-sms.ts",
-    "reset:admin": "node --env-file-if-exists=.env scripts/reset-admin-password.ts"
+    "reset:admin": "node --env-file-if-exists=.env scripts/reset-admin-password.ts",
+    "clear:content": "node --env-file-if-exists=.env scripts/clear-content.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
