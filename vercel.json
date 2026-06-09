@@ -1,9 +1,0 @@
-{
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "https://movingday-api.onrender.com/api/:path*" },
-    { "source": "/uploads/:path*", "destination": "https://movingday-api.onrender.com/uploads/:path*" },
-    { "source": "/(.*)", "destination": "/" }
-  ]
-}

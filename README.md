@@ -215,19 +215,25 @@ cd frontend && npm install && npm run dev                          # 5173
 
 ## 배포
 
-- **Frontend**: Vercel 자동 빌드 (GitHub `main` push 시 자동 배포, `frontend/dist`). `/api/*`·`/uploads/*`는 `vercel.json` rewrites로 Render 백엔드로 프록시
-- **Backend**: Render Web Service (`movingday-api`). DB는 Turso(libSQL), 견적 사진은 Cloudinary
-- **DB**: Turso (libSQL) — Prisma 7 `@prisma/adapter-libsql` 어댑터로 연결. 로컬 dev는 그대로 `better-sqlite3` (URL이 `file:...`면 자동 분기)
-- **사진 업로드**: Cloudinary — multer가 메모리에 받은 버퍼를 공용 헬퍼(`src/cloudinary.ts`)의 `upload_stream`으로 전송, `secure_url`을 DB에 저장. 견적 사진(이미지)·파트너 프로필 사진·자격증(이미지+PDF, `resource_type` 분기)에 공통 사용
+**가비아 g클라우드(리눅스 VM) 단일 서버**에 프론트·백엔드·DB를 모두 올려 운영합니다. (2026-06 Vercel+Render → 가비아로 이전)
 
-### 백엔드(Render) 환경변수 — 시크릿은 절대 저장소에 두지 않음
+- **구성**: Ubuntu + Nginx(리버스 프록시·정적 서빙) + Node(PM2 상주 실행) + SQLite 파일 + Let's Encrypt(certbot)
+- **도메인**: `themovingday.com` (가비아 등록·**가비아 네임서버**, `www`는 루트로 따라감)
+- **요청 흐름**:
+  - `/` → Nginx가 `frontend/dist` 정적 서빙 (React SPA, `try_files`로 새로고침 대응)
+  - `/api/*`·`/uploads/*` → Nginx가 백엔드(`localhost:4000`)로 프록시
+- **DB**: SQLite 파일(`backend/prisma/prod.db`). Prisma 7 드라이버 어댑터 — `DATABASE_URL`이 `file:...`면 `better-sqlite3`, `libsql://...`면 Turso로 자동 분기(`src/db.ts`)
+- **사진 업로드**: Cloudinary — multer가 메모리에 받은 버퍼를 공용 헬퍼(`src/cloudinary.ts`)의 `upload_stream`으로 전송, `secure_url`을 DB에 저장. 견적 사진·파트너 프로필 사진·자격증(이미지+PDF, `resource_type` 분기)에 공통 사용
+
+### 백엔드 환경변수 (`backend/.env`) — 시크릿은 절대 저장소에 두지 않음
 
 | 변수 | 설명 | 예시 |
 |---|---|---|
-| `DATABASE_URL` | Turso DB URL | `libsql://<db>.turso.io` |
-| `DATABASE_AUTH_TOKEN` | Turso 토큰 | (시크릿) |
-| `JWT_SECRET` | JWT 서명 키(긴 임의 문자열) | (시크릿) |
-| `FRONTEND_URL` | CORS 화이트리스트(콤마 다중) | `https://themovingday.com,https://www.themovingday.com,https://moving-day-zeta.vercel.app,http://localhost:5173` |
+| `NODE_ENV` | 배포 환경 표시 | `production` |
+| `PORT` | 백엔드 포트(Nginx 프록시 대상) | `4000` |
+| `DATABASE_URL` | DB 경로. 서버는 SQLite 파일 절대경로 | `file:/var/www/moving-day/backend/prisma/prod.db` |
+| `JWT_SECRET` | JWT 서명 키(긴 임의 문자열, `openssl rand -base64 48`) | (시크릿) |
+| `FRONTEND_URL` | CORS 화이트리스트(콤마 다중) | `https://themovingday.com,https://www.themovingday.com` |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary 계정 이름 | `movingday` |
 | `CLOUDINARY_API_KEY` | (시크릿) | |
 | `CLOUDINARY_API_SECRET` | (시크릿) | |
@@ -238,61 +244,90 @@ cd frontend && npm install && npm run dev                          # 5173
 | `SOLAPI_ALIMTALK_TEMPLATE_QUOTE` | 견적 도착 알림톡 템플릿 ID(선택) | (선택) |
 | `SOLAPI_ALIMTALK_TEMPLATE_BID` | 입찰 도착 알림톡 템플릿 ID(선택) | (선택) |
 
+> `JWT_SECRET`/`DATABASE_URL`이 `file:`이 아닌 원격(`libsql://`)이거나 `NODE_ENV=production`이면 시작 시 `JWT_SECRET` 누락을 거부합니다.
 > SMS: `SOLAPI_API_KEY`·`SOLAPI_API_SECRET`·`SOLAPI_SENDER` **3개만 있으면 문자 실제 발송**. 셋 중 하나라도 없으면 **mock 모드(콘솔 로그만)**.
 > 알림톡: 위 3개 + `SOLAPI_KAKAO_PF_ID` + 템플릿 ID(`..._QUOTE`/`..._BID`)까지 설정되면 **알림톡 우선·실패 시 SMS 자동 대체**. 템플릿 변수 — 견적: `#{이사종류}#{출발지}#{도착지}`, 입찰: `#{업체명}#{금액}`. (`backend/src/messaging.ts`)
+>
+> 프론트는 API를 `/api/...` 상대경로로 호출하므로 같은 도메인의 Nginx가 백엔드로 프록시합니다(별도 `VITE_API_BASE` 불필요).
 
-### 프론트엔드(Vercel) 환경변수 — 선택
+### 서버 구축 순서 (처음 한 번)
 
-| 변수 | 설명 | 기본 동작 |
-|---|---|---|
-| `VITE_API_BASE` | 백엔드 절대 URL (선택) | 비워두면 `vercel.json` rewrites가 `/api/*`를 Render로 자동 프록시 |
+1. **가비아 g클라우드** 서버 생성 — Ubuntu LTS, 공인 IP 할당, 보안 그룹(방화벽)에 **22·80·443**(TCP, `0.0.0.0/0`) 허용
+2. **접속·기본 세팅** (SSH `root` 접속 후):
+   ```bash
+   apt update && apt upgrade -y
+   curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+   apt install -y nodejs git build-essential
+   ```
+3. **코드 받기**:
+   ```bash
+   mkdir -p /var/www && cd /var/www
+   git clone https://github.com/angun1546/moving-day.git
+   ```
+4. **백엔드** (`.env`는 위 표 참고해 작성):
+   ```bash
+   cd /var/www/moving-day/backend
+   npm install
+   nano .env                                # 환경변수 작성
+   npx prisma generate
+   npx prisma migrate deploy                # prod.db 생성 + 스키마 적용
+   npm install -g pm2
+   pm2 start npm --name movingday-api -- start
+   pm2 save && pm2 startup                  # 출력된 명령을 한 번 더 실행(부팅 자동시작)
+   curl http://localhost:4000/api/health    # {"ok":true} 확인
+   ```
+5. **프론트 빌드**:
+   ```bash
+   cd /var/www/moving-day/frontend
+   npm install && npm run build             # frontend/dist 생성
+   ```
+6. **Nginx** (`/etc/nginx/sites-available/themovingday`):
+   ```nginx
+   server {
+       listen 80;
+       server_name themovingday.com www.themovingday.com;
+       root /var/www/moving-day/frontend/dist;
+       index index.html;
+       client_max_body_size 20M;
+       location / { try_files $uri $uri/ /index.html; }
+       location /api/ {
+           proxy_pass http://localhost:4000;
+           proxy_http_version 1.1;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+       }
+       location /uploads/ { proxy_pass http://localhost:4000; }
+   }
+   ```
+   ```bash
+   apt install -y nginx
+   ln -s /etc/nginx/sites-available/themovingday /etc/nginx/sites-enabled/
+   rm -f /etc/nginx/sites-enabled/default
+   nginx -t && systemctl reload nginx
+   ```
+7. **도메인(DNS)** — 가비아: 네임서버를 **가비아 네임서버**(`ns.gabia.co.kr` 등)로 설정 후, DNS 관리에서 `@` A → **서버 공인 IP**, `www` CNAME → `themovingday.com.`
+8. **HTTPS** (DNS가 서버를 가리킨 뒤):
+   ```bash
+   apt install -y certbot python3-certbot-nginx
+   certbot --nginx -d themovingday.com -d www.themovingday.com
+   ```
+   → http→https 자동 리다이렉트 설정 + 인증서 자동 갱신
 
-> `vercel.json`에 `/api/:path*` → `https://movingday-api.onrender.com/api/:path*` rewrite가 이미 설정돼 있어서 별도 지정 없이 동작합니다. 디버깅이나 다른 백엔드 도메인을 쓰고 싶을 때만 채우세요.
+### 업데이트 배포 (코드 변경을 서버에 반영)
 
-### Render Web Service 설정
-
+```bash
+cd /var/www/moving-day && git pull
+# 백엔드 변경 시:
+cd backend && npm install && npx prisma migrate deploy && pm2 restart movingday-api
+# 프론트 변경 시:
+cd /var/www/moving-day/frontend && npm install && npm run build
 ```
-Name              movingday-api
-Region            Oregon (US West) — Turso DB와 같은 리전으로 맞춰 쿼리 왕복 최소화
-Root Directory    backend
-Build Command     npm install
-Start Command     npm start
-```
 
-### Turso 초기 스키마 적용 (한 번만)
+### 데모 시드(선택)
 
-`backend/prisma/turso-init.sql`(최종 스키마 1:1, 빈 DB에 통째로 붙여넣기 가능)을 한 번 적용하면 됩니다.
-
-- **웹 대시보드 (Windows 권장)**: Turso 대시보드 → DB → SQL 콘솔(Studio)에 `turso-init.sql` 내용을 붙여넣고 실행
-- **CLI (WSL/Mac/Linux)**: `turso db shell movingday-angun1546 < backend/prisma/turso-init.sql`
-
-이후 새 마이그레이션은 `prisma/migrations/<새 이름>/migration.sql`만 추가 적용합니다.
-
-데모용 더미 리뷰가 필요하면 `npm run db:seed`(빈 DB일 때만 6건 삽입, 멱등)를 실행합니다. 로컬은 `DATABASE_URL=file:./prisma/dev.db npm run db:seed`, Turso는 `.env`가 설정된 상태에서 `npm run db:seed`.
-
-### 배포 순서 (처음 한 번)
-
-1. **Cloudinary** 가입 → Dashboard에서 `Cloud name` / `API Key` / `API Secret` 확보
-2. **Turso** 가입 후 DB 생성 (Windows는 CLI 공식 바이너리가 없어 **웹 대시보드 권장** — Create Database로 DB 생성, Region은 Render와 같은 Oregon, Database URL 복사 + Create Token으로 토큰 발급, SQL 콘솔에 `turso-init.sql` 적용). CLI 환경이면 `turso db create` / `turso db show` / `turso db tokens create` 사용
-3. **Render**에서 GitHub 저장소 연결해 위 표대로 Web Service 생성, Environment에 7개 환경변수 입력 → Deploy
-4. Render 도메인(예: `https://movingday-api.onrender.com`) 확정되면 `vercel.json`의 rewrite 대상 URL이 맞는지 확인 (필요 시 수정 후 push)
-5. **Vercel** 대시보드에서 자동 재배포 — 그 다음 `/api/health`가 `{ok:true}` 반환하면 연결 성공
-
-### 커스텀 도메인 연결 (가비아 → Vercel)
-
-서비스 도메인은 **`themovingday.com`**(루트가 메인, `www`는 루트로 리다이렉트).
-
-1. **Vercel** → 프로젝트 → Settings → Domains에 `themovingday.com`(Primary)과 `www.themovingday.com`(루트로 Redirect) 추가
-2. **가비아** → My가비아 → 도메인 → DNS 정보 → DNS 관리에서 레코드 설정 (가비아는 루트 `@`에 CNAME 불가 → A 레코드 사용)
-
-   | 호스트 | 타입 | 값 | TTL |
-   |---|---|---|---|
-   | `@` | A | `76.76.21.21` (Vercel 화면 값 우선) | 3600 |
-   | `www` | CNAME | `cname.vercel-dns.com.` | 3600 |
-
-   > 가비아 기본 파킹 A 레코드(`@`)가 이미 있으면 새로 추가하지 말고 위 IP로 **수정**.
-3. **Render** → `movingday-api` → Environment의 `FRONTEND_URL`에 `https://themovingday.com,https://www.themovingday.com` 포함되도록 갱신 → 자동 재배포 (CORS 허용)
-4. DNS 전파 후(10분~수 시간) `https://themovingday.com` 접속, Vercel이 SSL 자동 발급. `vercel.json` rewrite는 그대로 동작하므로 수정 불필요
+`npm run db:seed` — 빈 DB일 때만 더미 리뷰 6건 삽입(멱등). 로컬은 `DATABASE_URL=file:./prisma/dev.db npm run db:seed`.
 
 ## 로드맵
 
