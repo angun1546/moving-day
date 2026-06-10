@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
     const etaText = eta || '미정'
     void sendMessage({
       to: quote?.phone,
-      text: `[이삿날] ${company}님이 입찰했어요. ${won}원\n${fromText} → ${toText} · 예정일 ${moveDateText}\n앱에서 비교하고 선택하세요.`,
+      text: `[이삿날] ${company}님이 입찰했어요. ${won}원\n${fromText} → ${toText} · 예정일 ${moveDateText}\n앱에서 비교하고 선택하세요.\n\n※ 본 알림은 회원님이 등록하신 견적 요청에 새로운 입찰이 도착할 때마다 발송되며, 견적 신청 시 수신에 동의하신 알림입니다.`,
       kakao: bidTemplate
         ? {
             templateId: bidTemplate,
