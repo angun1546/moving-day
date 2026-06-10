@@ -120,10 +120,17 @@ router.patch('/:id/accept', async (req, res) => {
     if (!bid) {
       return res.status(404).json({ message: '입찰을 찾을 수 없습니다.' })
     }
-    // 이미 낙찰 처리된 견적이면 재낙찰/중복 낙찰 차단
+    // 이미 낙찰 처리된 견적이면 재낙찰/중복 낙찰 차단 (낙찰 알림용 고객·이사 정보도 함께 조회)
     const target = await prisma.quoteRequest.findUnique({
       where: { id: bid.quoteRequestId },
-      select: { status: true },
+      select: {
+        status: true,
+        name: true,
+        phone: true,
+        fromRegion: true,
+        toRegion: true,
+        moveDate: true,
+      },
     })
     if (target?.status === '완료') {
       return res.status(409).json({ message: '이미 낙찰 처리된 견적입니다.' })
@@ -157,6 +164,38 @@ router.patch('/:id/accept', async (req, res) => {
       '축하해요! 고객이 회원님의 입찰을 선택했어요.',
       '/partner/bids',
     )
+
+    // 낙찰 파트너에게 낙찰 알림톡/SMS — 고객 연락처 전달(거래 성사로 공개)
+    // 파트너 연락처는 프로필에서 조회, 선택값은 '미정' 폴백
+    const winner = await prisma.partnerProfile.findUnique({
+      where: { email: bid.bidderEmail },
+      select: { phone: true },
+    })
+    const awardTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_AWARD
+    const awardWon = bid.price.toLocaleString()
+    const aFrom = target?.fromRegion ?? '미정'
+    const aTo = target?.toRegion ?? '미정'
+    const aDate = target?.moveDate || '미정'
+    const custName = target?.name ?? '미정'
+    const custPhone = target?.phone ?? '미정'
+    void sendMessage({
+      to: winner?.phone,
+      text: `[이삿날] 낙찰되었습니다! ${awardWon}원\n${custName} 고객 · ${custPhone}\n${aFrom} → ${aTo} · 예정일 ${aDate}\n고객에게 연락해 일정을 확정하세요.`,
+      kakao: awardTemplate
+        ? {
+            templateId: awardTemplate,
+            variables: {
+              '#{금액}': awardWon,
+              '#{고객명}': custName,
+              '#{연락처}': custPhone,
+              '#{출발지}': aFrom,
+              '#{도착지}': aTo,
+              '#{이사예정일}': aDate,
+            },
+          }
+        : undefined,
+    })
+
     for (const l of losers) {
       await notify(
         l.bidderEmail,
