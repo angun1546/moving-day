@@ -29,7 +29,13 @@ router.post('/', async (req, res) => {
     // 견적 정보 (인앱 알림용 이메일 + 문자 발송용 연락처)
     const quote = await prisma.quoteRequest.findUnique({
       where: { id: quoteRequestId },
-      select: { userEmail: true, phone: true },
+      select: {
+        userEmail: true,
+        phone: true,
+        fromRegion: true,
+        toRegion: true,
+        moveDate: true,
+      },
     })
 
     // 인앱 알림 (회원만 — 비회원이면 notify가 알아서 생략)
@@ -44,11 +50,26 @@ router.post('/', async (req, res) => {
     // 알림톡 템플릿(SOLAPI_ALIMTALK_TEMPLATE_BID)이 설정돼 있으면 알림톡 우선, 아니면 SMS
     const bidTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_BID
     const won = Number(price).toLocaleString()
+    // 선택 입력값은 빈 값이면 알림톡 변수 치환이 깨지므로 '미정' 폴백
+    const fromText = quote?.fromRegion ?? '미정'
+    const toText = quote?.toRegion ?? '미정'
+    const moveDateText = quote?.moveDate || '미정'
+    const etaText = eta || '미정'
     void sendMessage({
       to: quote?.phone,
-      text: `[이삿날] ${company}님이 견적을 보냈어요. ${won}원\n앱에서 비교하고 선택하세요.`,
+      text: `[이삿날] ${company}님이 입찰했어요. ${won}원\n${fromText} → ${toText} · 예정일 ${moveDateText}\n앱에서 비교하고 선택하세요.`,
       kakao: bidTemplate
-        ? { templateId: bidTemplate, variables: { '#{업체명}': company, '#{금액}': won } }
+        ? {
+            templateId: bidTemplate,
+            variables: {
+              '#{업체명}': company,
+              '#{금액}': won,
+              '#{출발지}': fromText,
+              '#{도착지}': toText,
+              '#{이사예정일}': moveDateText,
+              '#{예상일정}': etaText,
+            },
+          }
         : undefined,
     })
 
