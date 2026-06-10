@@ -77,7 +77,7 @@ Moving-day/
 - **아이디(username) 로그인**: 로그인 수단은 **이메일이 아니라 아이디**(`username`, 영문 시작·영문/숫자/`_` 4~20자, 고유). 이메일은 **회원가입 정보·아이디 찾기·본인인증 용도**로만 사용(로그인 수단 아님). 기존 회원은 마이그레이션에서 **아이디=이메일 값으로 백필**되어 그대로 로그인 가능. 내부 신원 키(`authorEmail`·`userEmail`·`toEmail`·`bidderEmail` 등 컬럼명은 유지, **값은 아이디**)도 아이디 기준
 - **회원가입**: **아이디(실시간 중복확인 `GET /api/auth/check-username`)**·이메일 도메인 분리(직접 입력 포함, 실시간 중복확인)·닉네임(15자)·**비밀번호(영문+숫자+특수문자 8자 이상, 프론트·백엔드 검증)**·비밀번호 확인·표시 방식 선택(닉네임/실명 마스킹). **휴대폰+이메일 본인인증 필수**
 - **로그인**: 아이디+비밀번호 → 로그인 후 **`user.role` 기준 자동 리다이렉트**(admin→/admin, partner→/partner, customer→/)
-- **아이디·비밀번호 찾기**(`/find-account`): **아이디 찾기 = 이름+전화로 가입 아이디 전체 공개**(마스킹 없음). 비밀번호 찾기 = 휴대폰/이메일 인증(둘 중 선택) 후 재설정
+- **아이디·비밀번호 찾기**(`/find-account`): **아이디 찾기 = 이름+전화 일치 + 휴대폰 SMS 인증번호까지 통과해야** 가입 아이디 전체 공개(마스킹 없음·본인만). 비밀번호 찾기 = 휴대폰/이메일 인증(둘 중 선택) 후 재설정
 - **역할(role) 분리**: 가입 진입 경로로 역할 자동 결정(파트너 사이트 가입→partner, 일반→customer, `admin@movingday.com`→admin·서버 부여). **파트너 영역(입찰·대시보드·업체정보)은 `RequirePartner` 가드로 partner/admin만 접근**(고객 계정은 파트너 랜딩으로). admin 위장 입력은 서버가 이메일로 검증해 차단
 - **회원정보 수정**(`/account`): 닉네임·전화번호·**헤더 표시 방식**(닉네임/실명)·리뷰/FAQ 표시 방식·**비밀번호 변경(영문+숫자+특수문자 8자 이상, 회원가입과 동일 룰)** — 마이페이지·헤더에 즉시 반영
 - **클라이언트 오버라이드**: 이메일 키 기반 localStorage로 닉네임/전화 영속화(백엔드 컬럼 추가 전까지)
@@ -167,7 +167,8 @@ cd frontend && npm install && npm run dev                          # 5173
 | POST | `/api/auth/login` | 로그인(**아이디+비밀번호**) → JWT 토큰 |
 | GET | `/api/auth/check-username` | 아이디 중복확인 (회원가입 실시간) |
 | GET | `/api/auth/check-email` | 이메일 중복확인 (회원가입 실시간) |
-| POST | `/api/auth/find-email` | 아이디 찾기 — 이름+전화 → 가입 아이디 전체 반환 |
+| POST | `/api/auth/find-id/send-code` | 아이디 찾기 ① 이름+전화 일치 시 SMS 인증번호 발송 |
+| POST | `/api/auth/find-id/confirm` | 아이디 찾기 ② 인증번호 통과 시 가입 아이디 전체 반환 |
 | GET | `/api/auth/me` | 내 정보 (Authorization: Bearer) |
 | POST | `/api/quotes` | 견적 신청 (사진 Cloudinary 업로드) |
 | GET | `/api/quotes` | 견적 목록 (입찰 포함 — 파트너·관리자) |

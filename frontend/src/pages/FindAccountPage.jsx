@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  findUsername,
+  findIdSendCode,
+  findIdConfirm,
   resetSendPhoneCode,
   resetVerifyPhoneCode,
   resetSendEmailCode,
@@ -14,6 +15,143 @@ const inputClass =
 const btnClass =
   'w-full rounded-full bg-brand px-7 py-4 font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60'
 const pwRule = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
+
+// 아이디 찾기 — 이름+전화 입력 후 휴대폰 인증(SMS)까지 통과해야 아이디 공개
+function FindId() {
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [code, setCode] = useState('')
+  const [sent, setSent] = useState(false)
+  const [remain, setRemain] = useState(0)
+  const [foundId, setFoundId] = useState('')
+  const [msg, setMsg] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  // 인증번호 3분 카운트다운
+  useEffect(() => {
+    if (remain <= 0) return
+    const id = setInterval(() => setRemain((r) => (r <= 1 ? 0 : r - 1)), 1000)
+    return () => clearInterval(id)
+  }, [remain])
+
+  async function onSend() {
+    setError('')
+    setMsg('')
+    setLoading(true)
+    try {
+      const r = await findIdSendCode(name, phone)
+      setSent(true)
+      setRemain(180)
+      if (r?.devCode) {
+        setCode(r.devCode)
+        setMsg(`개발 모드 인증번호: ${r.devCode}`)
+      } else {
+        setMsg('인증번호를 문자로 보냈어요. 시간 안에 입력해 주세요.')
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function onConfirm() {
+    setError('')
+    setLoading(true)
+    try {
+      const uname = await findIdConfirm(name, phone, code)
+      setFoundId(uname)
+      setRemain(0)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (foundId) {
+    return (
+      <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-5 text-center">
+        <p className="text-sm text-gray-600">회원님의 아이디</p>
+        <p className="mt-1 text-lg font-bold text-gray-900">{foundId}</p>
+        <Link
+          to="/login"
+          className="mt-4 inline-block rounded-full bg-brand px-6 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
+        >
+          로그인하러 가기
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-6 space-y-3">
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        readOnly={sent}
+        required
+        placeholder="이름"
+        className={`${inputClass} ${sent ? 'bg-gray-50' : ''}`}
+      />
+      <div className="flex gap-2">
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          readOnly={sent}
+          required
+          placeholder="가입한 휴대폰 번호 (010-1234-5678)"
+          className={`${inputClass} min-w-0 flex-1 ${sent ? 'bg-gray-50' : ''}`}
+        />
+        <button
+          type="button"
+          onClick={onSend}
+          disabled={loading || !name || !phone}
+          className="shrink-0 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {sent ? '재발송' : '인증번호 받기'}
+        </button>
+      </div>
+      {sent && (
+        <>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="인증번호 6자리"
+              className={`${inputClass} min-w-0 flex-1`}
+            />
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={loading || !code}
+              className="shrink-0 rounded-xl bg-gray-800 px-4 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              확인
+            </button>
+          </div>
+          <p className="text-xs text-red-500">
+            {remain > 0
+              ? `남은 시간 ${Math.floor(remain / 60)}:${String(remain % 60).padStart(2, '0')}`
+              : '인증 시간이 만료되었어요. 다시 받아 주세요.'}
+          </p>
+        </>
+      )}
+      {msg && <p className="text-xs text-gray-500">{msg}</p>}
+    </div>
+  )
+}
 
 // 비밀번호 재설정 — 휴대폰/이메일 인증(둘 중 선택) 후 새 비밀번호 설정
 function PwReset() {
@@ -246,31 +384,6 @@ function PwReset() {
 
 function FindAccountPage() {
   const [tab, setTab] = useState('id') // id | pw
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [foundId, setFoundId] = useState('') // 아이디 찾기 결과(username 전체)
-
-  function switchTab(t) {
-    setTab(t)
-    setError('')
-    setFoundId('')
-  }
-
-  async function onFindId(e) {
-    e.preventDefault()
-    setError('')
-    setFoundId('')
-    setLoading(true)
-    const fd = new FormData(e.currentTarget)
-    try {
-      const uname = await findUsername(fd.get('name'), fd.get('phone'))
-      setFoundId(uname)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <section className="mx-auto max-w-md px-4 py-16">
@@ -281,7 +394,7 @@ function FindAccountPage() {
       <div className="mt-8 flex gap-2">
         <button
           type="button"
-          onClick={() => switchTab('id')}
+          onClick={() => setTab('id')}
           className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
             tab === 'id' ? 'bg-brand text-white' : 'bg-gray-100 text-gray-600'
           }`}
@@ -290,7 +403,7 @@ function FindAccountPage() {
         </button>
         <button
           type="button"
-          onClick={() => switchTab('pw')}
+          onClick={() => setTab('pw')}
           className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition ${
             tab === 'pw' ? 'bg-brand text-white' : 'bg-gray-100 text-gray-600'
           }`}
@@ -299,42 +412,8 @@ function FindAccountPage() {
         </button>
       </div>
 
-      {/* 아이디 찾기 */}
-      {tab === 'id' && (
-        <>
-          {error && (
-            <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-          {foundId ? (
-            <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-5 text-center">
-              <p className="text-sm text-gray-600">회원님의 아이디</p>
-              <p className="mt-1 text-lg font-bold text-gray-900">{foundId}</p>
-              <Link
-                to="/login"
-                className="mt-4 inline-block rounded-full bg-brand px-6 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
-              >
-                로그인하러 가기
-              </Link>
-            </div>
-          ) : (
-            <form onSubmit={onFindId} className="mt-6 space-y-4">
-              <input name="name" type="text" required placeholder="이름" className={inputClass} />
-              <input
-                name="phone"
-                type="tel"
-                required
-                placeholder="전화번호 (010-1234-5678)"
-                className={inputClass}
-              />
-              <button type="submit" disabled={loading} className={btnClass}>
-                {loading ? '찾는 중...' : '아이디 찾기'}
-              </button>
-            </form>
-          )}
-        </>
-      )}
+      {/* 아이디 찾기 — 이름+전화 + 휴대폰 인증 */}
+      {tab === 'id' && <FindId />}
 
       {/* 비밀번호 찾기 — 휴대폰/이메일 인증 후 재설정 */}
       {tab === 'pw' && <PwReset />}

@@ -263,19 +263,54 @@ router.post('/login', async (req, res) => {
   }
 })
 
-// 아이디 찾기 — 이름+전화 일치하는 회원의 아이디(username)를 전체 공개로 반환
-router.post('/find-email', async (req, res) => {
+// 아이디 찾기 — 이름+전화 일치 회원 조회 헬퍼 (동명이인은 전화로 대조)
+async function findUserByNamePhone(name: unknown, phone: unknown) {
+  const users = await prisma.user.findMany({ where: { name: String(name ?? '').trim() } })
+  return users.find((u) => onlyDigits(u.phone) === onlyDigits(phone)) ?? null
+}
+
+// 아이디 찾기 ① 인증번호 발송 — 이름+전화가 일치하는 가입자에게만 SMS 발송
+router.post('/find-id/send-code', async (req, res) => {
   const { name, phone } = req.body ?? {}
-  if (!name || !phone) {
-    return res.status(400).json({ message: '이름과 전화번호를 입력해 주세요.' })
+  if (!name || onlyDigits(phone).length < 10) {
+    return res.status(400).json({ message: '이름과 휴대폰 번호를 정확히 입력해 주세요.' })
   }
   try {
-    // 동명이인 대비 — 이름으로 후보 조회 후 전화번호(숫자만)로 대조
-    const users = await prisma.user.findMany({ where: { name: String(name).trim() } })
-    const target = users.find((u) => onlyDigits(u.phone) === onlyDigits(phone))
+    const target = await findUserByNamePhone(name, phone)
     if (!target) {
       return res.status(404).json({ message: '일치하는 가입 정보가 없습니다.' })
     }
+    const digits = onlyDigits(phone)
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    phoneCodes.set('findid:' + digits, { code, expires: Date.now() + CODE_TTL })
+    await sendMessage({
+      to: digits,
+      text: `[이삿날] 아이디 찾기 인증번호 ${code}\n3분 안에 입력해 주세요.`,
+    })
+    res.json(isSmsLive() ? { ok: true } : { ok: true, devCode: code })
+  } catch (err) {
+    console.error('아이디 찾기 인증 발송 실패:', err)
+    res.status(500).json({ message: '서버 오류로 발송에 실패했습니다.' })
+  }
+})
+
+// 아이디 찾기 ② 인증번호 확인 — 통과 시에만 아이디(username) 전체 반환
+router.post('/find-id/confirm', async (req, res) => {
+  const { name, phone, code } = req.body ?? {}
+  const digits = onlyDigits(phone)
+  const rec = phoneCodes.get('findid:' + digits)
+  if (!rec || rec.expires < Date.now()) {
+    return res.status(400).json({ message: '인증번호가 만료되었습니다. 다시 받아 주세요.' })
+  }
+  if (rec.code !== String(code ?? '').trim()) {
+    return res.status(400).json({ message: '인증번호가 일치하지 않습니다.' })
+  }
+  try {
+    const target = await findUserByNamePhone(name, phone)
+    if (!target) {
+      return res.status(404).json({ message: '일치하는 가입 정보가 없습니다.' })
+    }
+    phoneCodes.delete('findid:' + digits) // 1회용 — 확인 후 소진
     res.json({ username: target.username })
   } catch (err) {
     console.error('아이디 찾기 실패:', err)

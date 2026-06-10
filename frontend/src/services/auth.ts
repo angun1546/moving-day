@@ -73,9 +73,21 @@ export async function verifyEmailCode(email: string, code: string): Promise<void
   await post('/verify-email-code', { email, code })
 }
 
-// 아이디 찾기 — 이름+전화로 가입 아이디(username) 전체를 반환
-export async function findUsername(name: string, phone: string): Promise<string> {
-  const data = await post<{ username: string }>('/find-email', { name, phone })
+// 아이디 찾기 ① 인증번호 발송 — devCode는 SMS 키 미설정(mock)일 때만
+export async function findIdSendCode(
+  name: string,
+  phone: string,
+): Promise<{ devCode?: string }> {
+  return post('/find-id/send-code', { name, phone })
+}
+
+// 아이디 찾기 ② 인증번호 확인 — 통과 시 가입 아이디(username) 전체 반환
+export async function findIdConfirm(
+  name: string,
+  phone: string,
+  code: string,
+): Promise<string> {
+  const data = await post<{ username: string }>('/find-id/confirm', { name, phone, code })
   return data.username
 }
 
