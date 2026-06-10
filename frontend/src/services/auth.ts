@@ -77,6 +77,28 @@ export async function resetPassword(payload: {
   await post('/reset-password', payload)
 }
 
+// ── 비밀번호 재설정 — SMS/이메일 인증 방식 ──
+export async function resetSendPhoneCode(phone: string): Promise<{ devCode?: string }> {
+  return post('/reset/send-phone-code', { phone })
+}
+export async function resetVerifyPhoneCode(phone: string, code: string): Promise<void> {
+  await post('/reset/verify-phone-code', { phone, code })
+}
+export async function resetSendEmailCode(email: string): Promise<{ devCode?: string }> {
+  return post('/reset/send-email-code', { email })
+}
+export async function resetVerifyEmailCode(email: string, code: string): Promise<void> {
+  await post('/reset/verify-email-code', { email, code })
+}
+export async function resetPasswordAuth(payload: {
+  method: 'phone' | 'email'
+  phone?: string
+  email?: string
+  newPassword: string
+}): Promise<void> {
+  await post('/reset/password', payload)
+}
+
 export async function signup(payload: unknown): Promise<User> {
   const data = await post<AuthResult>('/signup', payload)
   setToken(data.token)
