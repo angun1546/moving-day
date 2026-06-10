@@ -143,9 +143,12 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
     const partners = await prisma.partnerProfile.findMany({
       select: { phone: true },
     })
+    // 선택 입력값은 빈 값이면 알림톡 변수 치환이 깨지므로 '미정' 폴백
+    const moveDateText = moveDate || '미정'
+    const homeSizeText = homeSize || '미정'
     void sendMessageToMany(
       partners.map((p) => p.phone),
-      `[이삿날] 새 견적 요청이 도착했어요. (${moveType} · ${fromRegion} → ${toRegion})\n파트너센터에서 입찰하세요.`,
+      `[이삿날] 새 견적 요청 도착\n${moveType} · ${fromRegion} → ${toRegion}\n예정일 ${moveDateText} · 규모 ${homeSizeText} · ${method}\n파트너센터에서 입찰하세요.`,
       quoteTemplate
         ? {
             templateId: quoteTemplate,
@@ -153,6 +156,9 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
               '#{이사종류}': moveType,
               '#{출발지}': fromRegion,
               '#{도착지}': toRegion,
+              '#{이사예정일}': moveDateText,
+              '#{이사규모}': homeSizeText,
+              '#{견적방식}': method,
             },
           }
         : undefined,
