@@ -87,6 +87,9 @@ function SignupPage() {
     <section className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-3xl font-bold text-gray-900">회원가입</h1>
       <p className="mt-3 text-gray-600">이삿날과 함께 더 편하게 이사하세요.</p>
+      <p className="mt-2 text-sm text-gray-400">
+        <span className="text-red-500">*</span> 표시는 반드시 입력해야 하는 항목입니다.
+      </p>
 
       {error && (
         <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -95,21 +98,31 @@ function SignupPage() {
       )}
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
-        <input
-          name="name"
-          type="text"
-          required
-          placeholder="이름"
-          className={inputClass}
-        />
-        <input
-          name="nickname"
-          type="text"
-          required
-          maxLength={15}
-          placeholder="닉네임 (15자 이내)"
-          className={inputClass}
-        />
+        <label className="block">
+          <span className="text-xs font-medium text-gray-500">
+            이름 <span className="text-red-500">*</span>
+          </span>
+          <input
+            name="name"
+            type="text"
+            required
+            placeholder="이름"
+            className={`${inputClass} mt-1`}
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs font-medium text-gray-500">
+            닉네임 <span className="text-red-500">*</span>
+          </span>
+          <input
+            name="nickname"
+            type="text"
+            required
+            maxLength={15}
+            placeholder="닉네임 (15자 이내)"
+            className={`${inputClass} mt-1`}
+          />
+        </label>
 
         {/* 리뷰·FAQ 표시 방식 (닉네임 / 실명 일부 가림) */}
         <div>
@@ -144,15 +157,20 @@ function SignupPage() {
 
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="text-xs font-medium text-gray-500">생년월일</span>
+            <span className="text-xs font-medium text-gray-500">
+              생년월일 <span className="text-red-500">*</span>
+            </span>
             <DatePicker
               name="birthDate"
               maxYear={new Date().getFullYear()}
               placeholder="생년월일 선택"
+              required
             />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-gray-500">성별</span>
+            <span className="text-xs font-medium text-gray-500">
+              성별 <span className="text-red-500">*</span>
+            </span>
             <select
               name="gender"
               required
@@ -168,17 +186,24 @@ function SignupPage() {
           </label>
         </div>
 
-        <input
-          name="phone"
-          type="tel"
-          required
-          placeholder="전화번호 (010-1234-5678)"
-          className={inputClass}
-        />
+        <label className="block">
+          <span className="text-xs font-medium text-gray-500">
+            전화번호 <span className="text-red-500">*</span>
+          </span>
+          <input
+            name="phone"
+            type="tel"
+            required
+            placeholder="전화번호 (010-1234-5678)"
+            className={`${inputClass} mt-1`}
+          />
+        </label>
 
         {/* 이메일: 아이디 + 도메인 선택/직접 입력 */}
         <div>
-          <span className="text-xs font-medium text-gray-500">이메일</span>
+          <span className="text-xs font-medium text-gray-500">
+            이메일 <span className="text-red-500">*</span>
+          </span>
           <div className="mt-1 flex items-center gap-2">
             <input
               type="text"
@@ -220,22 +245,32 @@ function SignupPage() {
           </select>
         </div>
 
-        <input
-          name="password"
-          type="password"
-          required
-          minLength={8}
-          placeholder="비밀번호 (영문·숫자·특수문자 8자 이상)"
-          className={inputClass}
-        />
-        <input
-          name="passwordConfirm"
-          type="password"
-          required
-          minLength={8}
-          placeholder="비밀번호 확인"
-          className={inputClass}
-        />
+        <label className="block">
+          <span className="text-xs font-medium text-gray-500">
+            비밀번호 <span className="text-red-500">*</span>
+          </span>
+          <input
+            name="password"
+            type="password"
+            required
+            minLength={8}
+            placeholder="비밀번호 (영문·숫자·특수문자 8자 이상)"
+            className={`${inputClass} mt-1`}
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs font-medium text-gray-500">
+            비밀번호 확인 <span className="text-red-500">*</span>
+          </span>
+          <input
+            name="passwordConfirm"
+            type="password"
+            required
+            minLength={8}
+            placeholder="비밀번호 확인"
+            className={`${inputClass} mt-1`}
+          />
+        </label>
 
         <button
           type="submit"

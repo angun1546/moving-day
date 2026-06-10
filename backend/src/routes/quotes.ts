@@ -73,7 +73,16 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
   } = req.body ?? {}
 
   // 필수값 검증
-  if (!name || !phone || !moveType || !fromRegion || !toRegion || !method) {
+  if (
+    !name ||
+    !phone ||
+    !moveType ||
+    !fromRegion ||
+    !toRegion ||
+    !method ||
+    !moveDate ||
+    !homeSize
+  ) {
     return res.status(400).json({ message: '필수 항목을 모두 입력해 주세요.' })
   }
   if (!MOVE_TYPES.includes(moveType)) {

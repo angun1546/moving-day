@@ -15,12 +15,14 @@ function DatePicker({
   placeholder = '날짜를 선택하세요',
   minYear,
   maxYear,
+  required = false,
 }: {
   name: string
   defaultValue?: string
   placeholder?: string
   minYear?: number
   maxYear?: number
+  required?: boolean
 }) {
   const [value, setValue] = useState(defaultValue)
   const [open, setOpen] = useState(false)
@@ -98,6 +100,7 @@ function DatePicker({
         placeholder={placeholder}
         inputMode="numeric"
         maxLength={10}
+        required={required}
         className={triggerClass}
       />
 

@@ -220,17 +220,19 @@ function QuoteFormPage() {
         )}
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <Field label="이사 예정일">
+          <Field label="이사 예정일" required>
             <DatePicker
               name="moveDate"
               minYear={new Date().getFullYear()}
               placeholder="이사 예정일 선택"
+              required
             />
           </Field>
-          <Field label="주거 형태 / 평형">
+          <Field label="주거 형태 / 평형" required>
             <input
               type="text"
               name="homeSize"
+              required
               placeholder="예: 원룸, 25평대"
               className={inputClass}
             />
