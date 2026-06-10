@@ -1,8 +1,30 @@
 import { Router } from 'express'
 import { prisma } from '../db.ts'
 import { requireAdmin } from '../auth.ts'
+import { notify } from '../notify.ts'
+import { sendMessage } from '../messaging.ts'
 
 const router = Router()
+
+// Q&A 답변 알림 — 인앱 + 카톡/SMS (질문자 본인에게)
+async function notifyQnaAnswer(q: { scope: string; authorEmail: string | null }) {
+  if (!q.authorEmail) return // 비회원 질문은 수신처 없음
+  try {
+    const link = q.scope === 'partner' ? '/partner/faq' : '/faq'
+    await notify(q.authorEmail, 'reply', '문의하신 질문에 관리자 답변이 등록됐어요.', link)
+    const user = await prisma.user.findUnique({ where: { username: q.authorEmail } })
+    const replyTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_REPLY
+    void sendMessage({
+      to: user?.phone ?? null,
+      text: `[이삿날] 문의하신 질문에 관리자 답변이 등록되었습니다.\n홈페이지에서 확인해 주세요.`,
+      kakao: replyTemplate
+        ? { templateId: replyTemplate, variables: { '#{종류}': '문의' } }
+        : undefined,
+    })
+  } catch (err) {
+    console.error('Q&A 답변 알림 실패:', err)
+  }
+}
 
 // scope(user|partner)별 Q&A 목록 (최신순)
 router.get('/:scope', async (req, res) => {
@@ -42,10 +64,15 @@ router.post('/', async (req, res) => {
 router.patch('/:id', requireAdmin, async (req, res) => {
   const { a, hidden } = req.body ?? {}
   try {
+    // 답변이 '새로' 달렸는지 판단하려 직전 상태를 먼저 조회
+    const before = await prisma.qna.findUnique({ where: { id: req.params.id } })
     const qna = await prisma.qna.update({
       where: { id: req.params.id },
       data: { a, hidden },
     })
+    const answerAdded =
+      String(a ?? '').trim() && !String(before?.a ?? '').trim()
+    if (answerAdded) void notifyQnaAnswer(qna)
     res.json(qna)
   } catch (err) {
     console.error('Q&A 수정 실패:', err)
