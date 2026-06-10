@@ -3,7 +3,7 @@ import multer from 'multer'
 import { v2 as cloudinary } from 'cloudinary'
 import { prisma } from '../db.ts'
 import { notify } from '../notify.ts'
-import { sendMessageToMany } from '../messaging.ts'
+import { sendMessage, sendMessageToMany } from '../messaging.ts'
 
 const router = Router()
 
@@ -212,13 +212,22 @@ router.patch('/:id/stage', async (req, res) => {
       await prisma.stageLog.create({
         data: { quoteRequestId: req.params.id, stage },
       })
-      // 견적 주인에게 진행 단계 변경 알림
+      // 견적 주인에게 진행 단계 변경 알림 (인앱)
       await notify(
         quote.userEmail,
         'stage',
         `이사 진행 상태가 '${stage}'(으)로 업데이트됐어요.`,
         '/mypage',
       )
+      // 견적 주인 연락처로 진행 단계 알림톡/SMS
+      const stageTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_STAGE
+      void sendMessage({
+        to: quote.phone,
+        text: `[이삿날] 이사 진행 상태가 '${stage}'(으)로 업데이트되었습니다.\n마이페이지에서 확인하세요.`,
+        kakao: stageTemplate
+          ? { templateId: stageTemplate, variables: { '#{진행단계}': stage } }
+          : undefined,
+      })
     }
     res.json(quote)
   } catch (err) {
