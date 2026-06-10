@@ -232,7 +232,7 @@ router.patch('/:id/stage', async (req, res) => {
       const stageTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_STAGE
       void sendMessage({
         to: quote.phone,
-        text: `[이삿날] 이사 진행 상태가 '${stage}'(으)로 업데이트되었습니다.\n마이페이지에서 확인하세요.`,
+        text: `[이삿날] 회원님이 신청·계약하신 이사 건의 진행 상태가 '${stage}'(으)로 업데이트되었습니다.\n마이페이지에서 확인하세요.`,
         kakao: stageTemplate
           ? { templateId: stageTemplate, variables: { '#{진행단계}': stage } }
           : undefined,
