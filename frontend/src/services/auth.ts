@@ -51,6 +51,16 @@ export async function verifyPhoneCode(phone: string, code: string): Promise<void
   await post('/verify-code', { phone, code })
 }
 
+// 이메일 인증번호 발송 (가입 전 본인인증) — devCode는 메일 키 미설정(mock)일 때만
+export async function sendEmailCode(email: string): Promise<{ devCode?: string }> {
+  return post('/send-email-code', { email })
+}
+
+// 이메일 인증번호 확인 — 실패 시 throw
+export async function verifyEmailCode(email: string, code: string): Promise<void> {
+  await post('/verify-email-code', { email, code })
+}
+
 // 아이디(이메일) 찾기 — 마스킹된 이메일 반환(예: an***@gmail.com)
 export async function findEmail(name: string, phone: string): Promise<string> {
   const data = await post<{ email: string }>('/find-email', { name, phone })

@@ -7,6 +7,7 @@ import {
   authMiddleware,
 } from '../auth.ts'
 import { sendMessage, isSmsLive } from '../messaging.ts'
+import { sendMail, isMailLive } from '../mailer.ts'
 
 const router = Router()
 
@@ -16,6 +17,8 @@ const GENDERS = ['남', '여']
 // 휴대폰 인증번호 — 메모리 보관(서버 단일 PM2 프로세스). 재시작 시 초기화되어도 무방.
 const phoneCodes = new Map<string, { code: string; expires: number }>() // 발송한 코드
 const verifiedPhones = new Map<string, number>() // 인증 완료된 번호 → 만료시각
+const emailCodes = new Map<string, { code: string; expires: number }>() // 이메일 발송 코드
+const verifiedEmails = new Map<string, number>() // 인증 완료된 이메일 → 만료시각
 const CODE_TTL = 3 * 60 * 1000 // 인증번호 유효 3분
 const VERIFIED_TTL = 30 * 60 * 1000 // 인증 후 30분 내 가입 유효
 
@@ -82,6 +85,12 @@ router.post('/signup', async (req, res) => {
   if (!vexp || vexp < Date.now()) {
     return res.status(400).json({ message: '휴대폰 본인인증을 완료해 주세요.' })
   }
+  // 이메일 본인인증 필수 — verify-email-code 통과한 이메일만 가입 허용
+  const normEmail = String(email).trim()
+  const vemail = verifiedEmails.get(normEmail)
+  if (!vemail || vemail < Date.now()) {
+    return res.status(400).json({ message: '이메일 인증을 완료해 주세요.' })
+  }
 
   try {
     const exists = await prisma.user.findUnique({ where: { email } })
@@ -109,6 +118,7 @@ router.post('/signup', async (req, res) => {
       },
     })
     verifiedPhones.delete(normPhone) // 1회용 — 가입 완료 후 인증 상태 소진
+    verifiedEmails.delete(normEmail)
     res.status(201).json({ token: signToken(user.id), user: publicUser(user) })
   } catch (err) {
     console.error('회원가입 실패:', err)
@@ -160,6 +170,48 @@ router.post('/verify-code', (req, res) => {
   }
   phoneCodes.delete(phone)
   verifiedPhones.set(phone, Date.now() + VERIFIED_TTL)
+  res.json({ ok: true })
+})
+
+// 이메일 인증번호 발송 (6자리, 3분 유효) — Gmail SMTP(키 없으면 콘솔 mock)
+router.post('/send-email-code', async (req, res) => {
+  const email = String(req.body?.email ?? '').trim()
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).json({ message: '올바른 이메일을 입력해 주세요.' })
+  }
+  try {
+    const exists = await prisma.user.findUnique({ where: { email } })
+    if (exists) {
+      return res.status(409).json({ message: '이미 가입된 이메일입니다.' })
+    }
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    emailCodes.set(email, { code, expires: Date.now() + CODE_TTL })
+    await sendMail(
+      email,
+      '[이삿날] 이메일 인증번호',
+      `이삿날 회원가입 인증번호는 ${code} 입니다.\n3분 안에 입력해 주세요.`,
+    )
+    // 메일 키가 없으면(mock) 개발 편의로 인증번호를 응답에 포함 — 키 설정 시 자동 제거
+    res.json(isMailLive() ? { ok: true } : { ok: true, devCode: code })
+  } catch (err) {
+    console.error('이메일 인증 발송 실패:', err)
+    res.status(500).json({ message: '서버 오류로 발송에 실패했습니다.' })
+  }
+})
+
+// 이메일 인증번호 확인 — 일치하면 가입 가능 상태로 등록
+router.post('/verify-email-code', (req, res) => {
+  const email = String(req.body?.email ?? '').trim()
+  const code = String(req.body?.code ?? '').trim()
+  const rec = emailCodes.get(email)
+  if (!rec || rec.expires < Date.now()) {
+    return res.status(400).json({ message: '인증번호가 만료되었습니다. 다시 받아 주세요.' })
+  }
+  if (rec.code !== code) {
+    return res.status(400).json({ message: '인증번호가 일치하지 않습니다.' })
+  }
+  emailCodes.delete(email)
+  verifiedEmails.set(email, Date.now() + VERIFIED_TTL)
   res.json({ ok: true })
 })
 

@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { checkEmail, sendPhoneCode, verifyPhoneCode } from '../services/auth'
+import {
+  checkEmail,
+  sendPhoneCode,
+  verifyPhoneCode,
+  sendEmailCode,
+  verifyEmailCode,
+} from '../services/auth'
 import DatePicker from '../components/DatePicker'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -105,6 +111,66 @@ function SignupPage() {
     }
   }
 
+  // 이메일 본인인증 (인증번호)
+  const [emailCode, setEmailCode] = useState('')
+  const [emailCodeSent, setEmailCodeSent] = useState(false)
+  const [emailVerified, setEmailVerified] = useState(false)
+  const [emailVerifyMsg, setEmailVerifyMsg] = useState('')
+  const [emailRemain, setEmailRemain] = useState(0)
+  const [emailSending, setEmailSending] = useState(false)
+
+  // 이메일 인증번호 3분 카운트다운
+  useEffect(() => {
+    if (emailRemain <= 0) return
+    const id = setInterval(() => setEmailRemain((r) => (r <= 1 ? 0 : r - 1)), 1000)
+    return () => clearInterval(id)
+  }, [emailRemain])
+
+  // 이메일이 바뀌면 인증 상태 초기화(다른 이메일은 재인증)
+  useEffect(() => {
+    setEmailVerified(false)
+    setEmailCodeSent(false)
+  }, [fullEmail])
+
+  async function onSendEmailCode() {
+    setEmailVerifyMsg('')
+    if (!EMAIL_RE.test(fullEmail)) {
+      setEmailVerifyMsg('이메일을 정확히 입력해 주세요.')
+      return
+    }
+    if (emailStatus === 'taken') {
+      setEmailVerifyMsg('이미 가입된 이메일입니다.')
+      return
+    }
+    setEmailSending(true)
+    try {
+      const r = await sendEmailCode(fullEmail)
+      setEmailCodeSent(true)
+      setEmailRemain(180)
+      if (r?.devCode) {
+        setEmailCode(r.devCode)
+        setEmailVerifyMsg(`개발 모드 인증번호: ${r.devCode} (메일 발송 미설정 상태)`)
+      } else {
+        setEmailVerifyMsg('인증번호를 메일로 보냈어요. 메일함을 확인해 주세요.')
+      }
+    } catch (err) {
+      setEmailVerifyMsg(err.message)
+    } finally {
+      setEmailSending(false)
+    }
+  }
+
+  async function onVerifyEmailCode() {
+    setEmailVerifyMsg('')
+    try {
+      await verifyEmailCode(fullEmail, emailCode)
+      setEmailVerified(true)
+      setEmailRemain(0)
+    } catch (err) {
+      setEmailVerifyMsg(err.message)
+    }
+  }
+
   // 비밀번호 확인 실시간 일치 여부
   const [pw, setPw] = useState('')
   const [pwConfirm, setPwConfirm] = useState('')
@@ -145,6 +211,12 @@ function SignupPage() {
     // 휴대폰 본인인증 필수
     if (!phoneVerified) {
       setError('휴대폰 본인인증을 완료해 주세요.')
+      return
+    }
+
+    // 이메일 본인인증 필수
+    if (!emailVerified) {
+      setError('이메일 인증을 완료해 주세요.')
       return
     }
 
@@ -389,8 +461,58 @@ function SignupPage() {
               이미 가입된 이메일입니다. 다른 이메일을 사용해 주세요.
             </p>
           )}
-          {emailStatus === 'available' && (
+          {emailStatus === 'available' && !emailVerified && (
             <p className="mt-1 text-xs text-green-600">사용 가능한 이메일입니다.</p>
+          )}
+
+          {/* 이메일 인증 */}
+          {emailVerified ? (
+            <p className="mt-2 text-xs text-green-600">이메일 인증이 완료되었어요.</p>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onSendEmailCode}
+                disabled={emailSending || emailStatus !== 'available'}
+                className="mt-2 w-full rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {emailSending
+                  ? '발송 중...'
+                  : emailCodeSent
+                    ? '인증번호 재발송'
+                    : '이메일 인증하기'}
+              </button>
+              {emailCodeSent && (
+                <>
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={emailCode}
+                      onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="인증번호 6자리"
+                      className={`${inputClass} min-w-0 flex-1`}
+                    />
+                    <button
+                      type="button"
+                      onClick={onVerifyEmailCode}
+                      className="shrink-0 rounded-xl bg-gray-800 px-4 text-sm font-semibold text-white transition hover:bg-black"
+                    >
+                      확인
+                    </button>
+                  </div>
+                  <p className="mt-1 text-xs text-red-500">
+                    {emailRemain > 0
+                      ? `남은 시간 ${Math.floor(emailRemain / 60)}:${String(emailRemain % 60).padStart(2, '0')}`
+                      : '인증 시간이 만료되었어요. 다시 받아 주세요.'}
+                  </p>
+                </>
+              )}
+              {emailVerifyMsg && (
+                <p className="mt-1 text-xs text-gray-500">{emailVerifyMsg}</p>
+              )}
+            </>
           )}
         </div>
 
