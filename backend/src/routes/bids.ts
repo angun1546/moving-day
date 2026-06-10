@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { prisma } from '../db.ts'
 import { notify } from '../notify.ts'
-import { sendMessage } from '../messaging.ts'
+import { sendMessage, sendMessageToMany } from '../messaging.ts'
 
 const router = Router()
 
@@ -202,6 +202,20 @@ router.patch('/:id/accept', async (req, res) => {
         'reject',
         '아쉽게도 이번 견적은 다른 업체로 결정되었어요.',
         '/partner/bids',
+      )
+    }
+
+    // 거절 파트너들에게 거절 알림톡/SMS — 변수 없는 고정 통보
+    if (losers.length > 0) {
+      const rejectTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_REJECT
+      const loserProfiles = await prisma.partnerProfile.findMany({
+        where: { email: { in: losers.map((l) => l.bidderEmail) } },
+        select: { phone: true },
+      })
+      void sendMessageToMany(
+        loserProfiles.map((p) => p.phone),
+        '[이삿날] 아쉽게도 이번 견적은 다른 업체로 결정되었습니다.\n다음 기회에 다시 입찰해 주세요.',
+        rejectTemplate ? { templateId: rejectTemplate, variables: {} } : undefined,
       )
     }
 
