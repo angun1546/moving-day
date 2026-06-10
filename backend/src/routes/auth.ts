@@ -257,38 +257,6 @@ router.post('/find-email', async (req, res) => {
   }
 })
 
-// 비밀번호 재설정 — 이메일+이름+전화 3값이 모두 일치하면 새 비밀번호로 변경
-router.post('/reset-password', async (req, res) => {
-  const { email, name, phone, newPassword } = req.body ?? {}
-  if (!email || !name || !phone || !newPassword) {
-    return res.status(400).json({ message: '모든 항목을 입력해 주세요.' })
-  }
-  const pwRule = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
-  if (!pwRule.test(String(newPassword))) {
-    return res
-      .status(400)
-      .json({ message: '비밀번호는 영문·숫자·특수문자를 포함해 8자 이상이어야 합니다.' })
-  }
-  try {
-    const user = await prisma.user.findUnique({ where: { email: String(email).trim() } })
-    if (
-      !user ||
-      user.name !== String(name).trim() ||
-      onlyDigits(user.phone) !== onlyDigits(phone)
-    ) {
-      return res.status(400).json({ message: '가입 정보가 일치하지 않습니다.' })
-    }
-    await prisma.user.update({
-      where: { email: user.email },
-      data: { password: await hashPassword(newPassword) },
-    })
-    res.json({ ok: true })
-  } catch (err) {
-    console.error('비밀번호 재설정 실패:', err)
-    res.status(500).json({ message: '서버 오류로 재설정에 실패했습니다.' })
-  }
-})
-
 // ── 비밀번호 재설정 — SMS/이메일 인증 방식(둘 중 선택) ──────────────
 // 전화 인증번호 발송 (가입된 번호만)
 router.post('/reset/send-phone-code', async (req, res) => {

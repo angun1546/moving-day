@@ -67,16 +67,6 @@ export async function findEmail(name: string, phone: string): Promise<string> {
   return data.email
 }
 
-// 비밀번호 재설정 — 이메일+이름+전화 대조 후 새 비밀번호
-export async function resetPassword(payload: {
-  email: string
-  name: string
-  phone: string
-  newPassword: string
-}): Promise<void> {
-  await post('/reset-password', payload)
-}
-
 // ── 비밀번호 재설정 — SMS/이메일 인증 방식 ──
 export async function resetSendPhoneCode(phone: string): Promise<{ devCode?: string }> {
   return post('/reset/send-phone-code', { phone })
