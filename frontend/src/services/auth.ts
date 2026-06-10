@@ -51,6 +51,22 @@ export async function verifyPhoneCode(phone: string, code: string): Promise<void
   await post('/verify-code', { phone, code })
 }
 
+// 아이디(이메일) 찾기 — 마스킹된 이메일 반환(예: an***@gmail.com)
+export async function findEmail(name: string, phone: string): Promise<string> {
+  const data = await post<{ email: string }>('/find-email', { name, phone })
+  return data.email
+}
+
+// 비밀번호 재설정 — 이메일+이름+전화 대조 후 새 비밀번호
+export async function resetPassword(payload: {
+  email: string
+  name: string
+  phone: string
+  newPassword: string
+}): Promise<void> {
+  await post('/reset-password', payload)
+}
+
 export async function signup(payload: unknown): Promise<User> {
   const data = await post<AuthResult>('/signup', payload)
   setToken(data.token)

@@ -8,6 +8,7 @@ import QuoteDonePage from '../pages/QuoteDonePage'
 import BidComparePage from '../pages/BidComparePage'
 import LoginPage from '../pages/LoginPage'
 import SignupPage from '../pages/SignupPage'
+import FindAccountPage from '../pages/FindAccountPage'
 import UserReviewPage from '../pages/UserReviewPage'
 import UserFaqPage from '../pages/UserFaqPage'
 import MyPage from '../pages/MyPage'
@@ -66,6 +67,7 @@ export const router = createBrowserRouter([
       // 인증
       { path: 'login', element: <LoginPage /> },
       { path: 'signup', element: <SignupPage /> },
+      { path: 'find-account', element: <FindAccountPage /> },
       // 고객 리뷰
       { path: 'reviews', element: <UserReviewPage /> },
       // FAQ (자주 묻는 질문 + Q&A)

@@ -60,7 +60,13 @@ function LoginPage() {
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-gray-500">
+      <p className="mt-6 text-center text-sm text-gray-500">
+        <Link to="/find-account" className="font-semibold text-brand hover:underline">
+          아이디 · 비밀번호 찾기
+        </Link>
+      </p>
+
+      <p className="mt-3 text-center text-sm text-gray-500">
         아직 회원이 아니신가요?{' '}
         <Link
           to={isPartner ? '/signup?role=partner' : '/signup'}

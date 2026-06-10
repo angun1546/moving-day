@@ -21,6 +21,14 @@ const VERIFIED_TTL = 30 * 60 * 1000 // 인증 후 30분 내 가입 유효
 
 // 하이픈·공백 제거한 숫자만
 const onlyDigits = (v: unknown) => String(v ?? '').replace(/\D/g, '')
+
+// 이메일 마스킹 — 앞 2글자만 노출 (예: an***@gmail.com)
+function maskEmail(email: string): string {
+  const [id, domain] = email.split('@')
+  if (!domain) return email
+  const head = id.slice(0, 2)
+  return `${head}${'*'.repeat(Math.max(id.length - 2, 1))}@${domain}`
+}
 // 관리자 이메일 — 코드에 두지 않고 환경변수(.env)로. 이 이메일로 가입 시 role=admin 자동 부여
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? ''
 
@@ -172,6 +180,58 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error('로그인 실패:', err)
     res.status(500).json({ message: '서버 오류로 로그인에 실패했습니다.' })
+  }
+})
+
+// 아이디(이메일) 찾기 — 이름+전화 일치하는 가입 이메일을 마스킹해서 반환
+router.post('/find-email', async (req, res) => {
+  const { name, phone } = req.body ?? {}
+  if (!name || !phone) {
+    return res.status(400).json({ message: '이름과 전화번호를 입력해 주세요.' })
+  }
+  try {
+    // 동명이인 대비 — 이름으로 후보 조회 후 전화번호(숫자만)로 대조
+    const users = await prisma.user.findMany({ where: { name: String(name).trim() } })
+    const target = users.find((u) => onlyDigits(u.phone) === onlyDigits(phone))
+    if (!target) {
+      return res.status(404).json({ message: '일치하는 가입 정보가 없습니다.' })
+    }
+    res.json({ email: maskEmail(target.email) })
+  } catch (err) {
+    console.error('아이디 찾기 실패:', err)
+    res.status(500).json({ message: '서버 오류로 조회에 실패했습니다.' })
+  }
+})
+
+// 비밀번호 재설정 — 이메일+이름+전화 3값이 모두 일치하면 새 비밀번호로 변경
+router.post('/reset-password', async (req, res) => {
+  const { email, name, phone, newPassword } = req.body ?? {}
+  if (!email || !name || !phone || !newPassword) {
+    return res.status(400).json({ message: '모든 항목을 입력해 주세요.' })
+  }
+  const pwRule = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/
+  if (!pwRule.test(String(newPassword))) {
+    return res
+      .status(400)
+      .json({ message: '비밀번호는 영문·숫자·특수문자를 포함해 8자 이상이어야 합니다.' })
+  }
+  try {
+    const user = await prisma.user.findUnique({ where: { email: String(email).trim() } })
+    if (
+      !user ||
+      user.name !== String(name).trim() ||
+      onlyDigits(user.phone) !== onlyDigits(phone)
+    ) {
+      return res.status(400).json({ message: '가입 정보가 일치하지 않습니다.' })
+    }
+    await prisma.user.update({
+      where: { email: user.email },
+      data: { password: await hashPassword(newPassword) },
+    })
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('비밀번호 재설정 실패:', err)
+    res.status(500).json({ message: '서버 오류로 재설정에 실패했습니다.' })
   }
 })
 
