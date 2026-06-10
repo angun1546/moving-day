@@ -34,7 +34,7 @@ function MyQuotesPage() {
         신청한 견적의 입찰·낙찰·진행 상태를 한눈에 확인하세요.
       </p>
       <div className="mt-8">
-        <MyQuotesBox email={user.email} />
+        <MyQuotesBox email={user.username} />
       </div>
     </section>
   )

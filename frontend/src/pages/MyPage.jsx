@@ -27,11 +27,11 @@ function MyPage() {
       .catch(() => setReviews([]))
   }, [])
   useEffect(() => {
-    if (!user?.email) return
-    getMyQuotes(user.email)
+    if (!user?.username) return
+    getMyQuotes(user.username)
       .then((d) => setQuoteCount(Array.isArray(d) ? d.length : 0))
       .catch(() => setQuoteCount(0))
-  }, [user?.email])
+  }, [user?.username])
   const [questions, setQuestions] = useState([])
   useEffect(() => {
     getQna('user')
@@ -40,11 +40,11 @@ function MyPage() {
   }, [])
   const [complaintCount, setComplaintCount] = useState(0)
   useEffect(() => {
-    if (!user?.email) return
+    if (!user?.username) return
     getMyComplaints()
       .then((d) => setComplaintCount(Array.isArray(d) ? d.length : 0))
       .catch(() => setComplaintCount(0))
-  }, [user?.email])
+  }, [user?.username])
 
   if (!ready) return null // 로그인 상태 복원 전 깜빡임 방지
   if (!user) {
@@ -74,6 +74,7 @@ function MyPage() {
       {/* 내 정보 */}
       <h2 className="mt-10 text-lg font-bold text-gray-900">내 정보</h2>
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Info label="아이디" value={user.username} />
         <Info label="이름" value={user.name} />
         <Info label="닉네임" value={user.nickname || '-'} />
         <Info label="이메일" value={user.email} />
@@ -87,12 +88,12 @@ function MyPage() {
         <ActivityCard
           to="/reviews"
           label="작성 리뷰"
-          count={reviews.filter((r) => r.authorEmail === user.email).length}
+          count={reviews.filter((r) => r.authorEmail === user.username).length}
         />
         <ActivityCard
           to="/faq"
           label="내 질문"
-          count={questions.filter((q) => q.authorEmail === user.email).length}
+          count={questions.filter((q) => q.authorEmail === user.username).length}
         />
         <ActivityCard to="/complaint" label="내 불편사항" count={complaintCount} />
       </div>

@@ -18,7 +18,7 @@ interface AuthValue {
   setHeaderMode: (mode: string) => void
   displayMode: string
   setDisplayMode: (mode: string) => void
-  login: (email: string, password: string) => Promise<User | null>
+  login: (username: string, password: string) => Promise<User | null>
   signup: (payload: Record<string, unknown>) => Promise<User | null>
   updateUser: (changes: Partial<User>) => void
   logout: () => void
@@ -106,8 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setHeaderMode,
     displayMode,
     setDisplayMode,
-    login: async (email, password) => {
-      const u = await auth.login(email, password)
+    login: async (username, password) => {
+      const u = await auth.login(username, password)
       const merged = u ? { ...u, ...getOverrides(u.email) } : u
       setUser(merged)
       return merged

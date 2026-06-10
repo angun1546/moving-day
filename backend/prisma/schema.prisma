@@ -47,7 +47,8 @@ model QuoteRequest {
 // 회원
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
+  username  String   @unique // 로그인 아이디 — 기존 회원은 이메일 값으로 백필
+  email     String   @unique // 회원가입 정보·아이디 찾기·인증용 (로그인 수단 아님)
   password  String // bcrypt 해시
   name      String
   role      String   @default("customer") // customer | partner | admin

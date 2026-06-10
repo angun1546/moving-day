@@ -27,19 +27,13 @@ const VERIFIED_TTL = 30 * 60 * 1000 // 인증 후 30분 내 가입 유효
 // 하이픈·공백 제거한 숫자만
 const onlyDigits = (v: unknown) => String(v ?? '').replace(/\D/g, '')
 
-// 이메일 마스킹 — 앞 2글자만 노출 (예: an***@gmail.com)
-function maskEmail(email: string): string {
-  const [id, domain] = email.split('@')
-  if (!domain) return email
-  const head = id.slice(0, 2)
-  return `${head}${'*'.repeat(Math.max(id.length - 2, 1))}@${domain}`
-}
 // 관리자 이메일 — 코드에 두지 않고 환경변수(.env)로. 이 이메일로 가입 시 role=admin 자동 부여
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? ''
 
 // 외부에 노출할 사용자 정보 (비밀번호 제외)
 function publicUser(u: {
   id: string
+  username: string
   email: string
   name: string
   role: string
@@ -50,6 +44,7 @@ function publicUser(u: {
 }) {
   return {
     id: u.id,
+    username: u.username,
     email: u.email,
     name: u.name,
     role: u.role,
@@ -60,13 +55,22 @@ function publicUser(u: {
   }
 }
 
+// 아이디(username) 형식 — 영문 소문자/숫자/_ 4~20자, 영문으로 시작
+const USERNAME_RE = /^[a-z][a-z0-9_]{3,19}$/
+
 // 회원가입
 router.post('/signup', async (req, res) => {
-  const { name, email, password, birthDate, gender, phone, role } =
+  const { name, username, email, password, birthDate, gender, phone, role } =
     req.body ?? {}
 
-  if (!name || !email || !password || !birthDate || !gender || !phone) {
+  if (!name || !username || !email || !password || !birthDate || !gender || !phone) {
     return res.status(400).json({ message: '모든 항목을 입력해 주세요.' })
+  }
+  const normUsername = String(username).trim().toLowerCase()
+  if (!USERNAME_RE.test(normUsername)) {
+    return res
+      .status(400)
+      .json({ message: '아이디는 영문으로 시작하는 영문·숫자·_ 4~20자여야 합니다.' })
   }
   if (!EMAIL_RE.test(email)) {
     return res.status(400).json({ message: '올바른 이메일 형식이 아닙니다.' })
@@ -99,6 +103,10 @@ router.post('/signup', async (req, res) => {
     if (exists) {
       return res.status(409).json({ message: '이미 가입된 이메일입니다.' })
     }
+    const idExists = await prisma.user.findUnique({ where: { username: normUsername } })
+    if (idExists) {
+      return res.status(409).json({ message: '이미 사용 중인 아이디입니다.' })
+    }
     // 역할 결정 — admin은 이메일로만(클라 입력 무시), 그 외엔 진입 경로(partner) 신뢰
     const resolvedRole =
       email === ADMIN_EMAIL
@@ -110,6 +118,7 @@ router.post('/signup', async (req, res) => {
     const user = await prisma.user.create({
       data: {
         name,
+        username: normUsername,
         email,
         password: await hashPassword(password),
         role: resolvedRole,
@@ -125,6 +134,21 @@ router.post('/signup', async (req, res) => {
   } catch (err) {
     console.error('회원가입 실패:', err)
     res.status(500).json({ message: '서버 오류로 가입에 실패했습니다.' })
+  }
+})
+
+// 아이디 중복 확인 (회원가입 실시간 체크) — available=true면 사용 가능
+router.get('/check-username', async (req, res) => {
+  const username = String(req.query.username ?? '').trim().toLowerCase()
+  if (!USERNAME_RE.test(username)) {
+    return res.json({ available: false, reason: 'invalid' })
+  }
+  try {
+    const exists = await prisma.user.findUnique({ where: { username } })
+    res.json({ available: !exists })
+  } catch (err) {
+    console.error('아이디 확인 실패:', err)
+    res.status(500).json({ message: '서버 오류로 확인에 실패했습니다.' })
   }
 })
 
@@ -217,18 +241,20 @@ router.post('/verify-email-code', (req, res) => {
   res.json({ ok: true })
 })
 
-// 로그인
+// 로그인 — 아이디(username) + 비밀번호
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body ?? {}
+  const { username, password } = req.body ?? {}
 
-  if (!email || !password) {
-    return res.status(400).json({ message: '이메일과 비밀번호를 입력해 주세요.' })
+  if (!username || !password) {
+    return res.status(400).json({ message: '아이디와 비밀번호를 입력해 주세요.' })
   }
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } })
+    const user = await prisma.user.findUnique({
+      where: { username: String(username).trim().toLowerCase() },
+    })
     if (!user || !(await comparePassword(password, user.password))) {
-      return res.status(401).json({ message: '이메일 또는 비밀번호가 올바르지 않습니다.' })
+      return res.status(401).json({ message: '아이디 또는 비밀번호가 올바르지 않습니다.' })
     }
     res.json({ token: signToken(user.id), user: publicUser(user) })
   } catch (err) {
@@ -237,7 +263,7 @@ router.post('/login', async (req, res) => {
   }
 })
 
-// 아이디(이메일) 찾기 — 이름+전화 일치하는 가입 이메일을 마스킹해서 반환
+// 아이디 찾기 — 이름+전화 일치하는 회원의 아이디(username)를 전체 공개로 반환
 router.post('/find-email', async (req, res) => {
   const { name, phone } = req.body ?? {}
   if (!name || !phone) {
@@ -250,7 +276,7 @@ router.post('/find-email', async (req, res) => {
     if (!target) {
       return res.status(404).json({ message: '일치하는 가입 정보가 없습니다.' })
     }
-    res.json({ email: maskEmail(target.email) })
+    res.json({ username: target.username })
   } catch (err) {
     console.error('아이디 찾기 실패:', err)
     res.status(500).json({ message: '서버 오류로 조회에 실패했습니다.' })

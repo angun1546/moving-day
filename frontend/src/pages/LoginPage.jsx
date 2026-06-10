@@ -19,7 +19,7 @@ function LoginPage() {
     setLoading(true)
     const fd = new FormData(e.currentTarget)
     try {
-      const u = await login(fd.get('email'), fd.get('password'))
+      const u = await login(fd.get('username'), fd.get('password'))
       // 역할 기준 이동 (admin → 대시보드, partner → 파트너 메인, 그 외 유저 메인)
       if (u?.role === 'admin') navigate('/admin')
       else if (u?.role === 'partner') navigate('/partner')
@@ -43,7 +43,7 @@ function LoginPage() {
       )}
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
-        <input name="email" type="email" required placeholder="이메일" className={inputClass} />
+        <input name="username" type="text" required placeholder="아이디" autoCapitalize="none" className={inputClass} />
         <input
           name="password"
           type="password"

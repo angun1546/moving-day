@@ -3,7 +3,8 @@
 
 export interface User {
   id: string
-  email: string
+  username: string // 로그인 아이디
+  email: string // 회원가입 정보·아이디 찾기·인증용
   name: string
   role: string // customer | partner | admin
   birthDate?: string | null

@@ -37,7 +37,7 @@ export function getDisplayName(user, mode) {
 // 리뷰 작성자 표시명 — 본인 리뷰는 현재 displayMode 따라 동적,
 // 타인 리뷰는 저장된 이름에 마스킹 안전망(실명 노출 방지)
 export function getReviewAuthorName(review, user, mode) {
-  if (review?.authorEmail && user && review.authorEmail === user.email) {
+  if (review?.authorEmail && user && review.authorEmail === user.username) {
     const m = mode || getDisplayMode()
     return m === 'real' ? maskName(user.name) : user.nickname || user.name
   }

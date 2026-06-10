@@ -40,6 +40,18 @@ export async function checkEmail(email: string): Promise<boolean> {
   }
 }
 
+// 아이디 중복 확인 (회원가입 실시간) — true면 사용 가능
+export async function checkUsername(username: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API}/check-username?username=${encodeURIComponent(username)}`)
+    if (!res.ok) return true
+    const data = await res.json()
+    return Boolean(data.available)
+  } catch {
+    return true
+  }
+}
+
 // 휴대폰 인증번호 발송 (가입 전 본인인증)
 // devCode: SMS 키 미설정(mock)일 때만 내려오는 개발용 인증번호
 export async function sendPhoneCode(phone: string): Promise<{ devCode?: string }> {
@@ -61,10 +73,10 @@ export async function verifyEmailCode(email: string, code: string): Promise<void
   await post('/verify-email-code', { email, code })
 }
 
-// 아이디(이메일) 찾기 — 마스킹된 이메일 반환(예: an***@gmail.com)
-export async function findEmail(name: string, phone: string): Promise<string> {
-  const data = await post<{ email: string }>('/find-email', { name, phone })
-  return data.email
+// 아이디 찾기 — 이름+전화로 가입 아이디(username) 전체를 반환
+export async function findUsername(name: string, phone: string): Promise<string> {
+  const data = await post<{ username: string }>('/find-email', { name, phone })
+  return data.username
 }
 
 // ── 비밀번호 재설정 — SMS/이메일 인증 방식 ──
@@ -95,8 +107,8 @@ export async function signup(payload: unknown): Promise<User> {
   return data.user
 }
 
-export async function login(email: string, password: string): Promise<User> {
-  const data = await post<AuthResult>('/login', { email, password })
+export async function login(username: string, password: string): Promise<User> {
+  const data = await post<AuthResult>('/login', { username, password })
   setToken(data.token)
   return data.user
 }

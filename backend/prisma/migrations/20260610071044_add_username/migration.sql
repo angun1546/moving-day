@@ -1,0 +1,24 @@
+-- 로그인 아이디(username) 추가 — 기존 회원은 username을 email 값으로 백필해 로그인 가능 상태 유지
+-- RedefineTables
+PRAGMA defer_foreign_keys=ON;
+PRAGMA foreign_keys=OFF;
+CREATE TABLE "new_User" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "username" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'customer',
+    "birthDate" TEXT,
+    "gender" TEXT,
+    "phone" TEXT,
+    "verified" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+INSERT INTO "new_User" ("username", "birthDate", "createdAt", "email", "gender", "id", "name", "password", "phone", "role", "verified") SELECT "email", "birthDate", "createdAt", "email", "gender", "id", "name", "password", "phone", "role", "verified" FROM "User";
+DROP TABLE "User";
+ALTER TABLE "new_User" RENAME TO "User";
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+PRAGMA foreign_keys=ON;
+PRAGMA defer_foreign_keys=OFF;

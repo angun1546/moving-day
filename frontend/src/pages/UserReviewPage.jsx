@@ -179,7 +179,7 @@ function UserReviewPage() {
         rating,
         moveType,
         company,
-        authorEmail: user?.email || '',
+        authorEmail: user?.username || '',
       })
       setReviews((prev) => [review, ...prev])
       // 사진은 메모리 맵에만 저장 (localStorage/서버 미전송)

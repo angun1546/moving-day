@@ -74,8 +74,10 @@ Moving-day/
 - `isAdmin` 판별: `user.role === 'admin'` (백엔드 `User.role` 기반). admin 권한은 `admin@movingday.com` 가입 시 서버가 자동 부여
 
 ### 인증·회원
-- **회원가입**: 이메일 도메인 분리(직접 입력 포함)·닉네임(15자)·**비밀번호(영문+숫자+특수문자 8자 이상, 프론트·백엔드 검증)**·비밀번호 확인·표시 방식 선택(닉네임/실명 마스킹)
-- **로그인**: 로그인 후 **`user.role` 기준 자동 리다이렉트**(admin→/admin, partner→/partner, customer→/)
+- **아이디(username) 로그인**: 로그인 수단은 **이메일이 아니라 아이디**(`username`, 영문 시작·영문/숫자/`_` 4~20자, 고유). 이메일은 **회원가입 정보·아이디 찾기·본인인증 용도**로만 사용(로그인 수단 아님). 기존 회원은 마이그레이션에서 **아이디=이메일 값으로 백필**되어 그대로 로그인 가능. 내부 신원 키(`authorEmail`·`userEmail`·`toEmail`·`bidderEmail` 등 컬럼명은 유지, **값은 아이디**)도 아이디 기준
+- **회원가입**: **아이디(실시간 중복확인 `GET /api/auth/check-username`)**·이메일 도메인 분리(직접 입력 포함, 실시간 중복확인)·닉네임(15자)·**비밀번호(영문+숫자+특수문자 8자 이상, 프론트·백엔드 검증)**·비밀번호 확인·표시 방식 선택(닉네임/실명 마스킹). **휴대폰+이메일 본인인증 필수**
+- **로그인**: 아이디+비밀번호 → 로그인 후 **`user.role` 기준 자동 리다이렉트**(admin→/admin, partner→/partner, customer→/)
+- **아이디·비밀번호 찾기**(`/find-account`): **아이디 찾기 = 이름+전화로 가입 아이디 전체 공개**(마스킹 없음). 비밀번호 찾기 = 휴대폰/이메일 인증(둘 중 선택) 후 재설정
 - **역할(role) 분리**: 가입 진입 경로로 역할 자동 결정(파트너 사이트 가입→partner, 일반→customer, `admin@movingday.com`→admin·서버 부여). **파트너 영역(입찰·대시보드·업체정보)은 `RequirePartner` 가드로 partner/admin만 접근**(고객 계정은 파트너 랜딩으로). admin 위장 입력은 서버가 이메일로 검증해 차단
 - **회원정보 수정**(`/account`): 닉네임·전화번호·**헤더 표시 방식**(닉네임/실명)·리뷰/FAQ 표시 방식·**비밀번호 변경(영문+숫자+특수문자 8자 이상, 회원가입과 동일 룰)** — 마이페이지·헤더에 즉시 반영
 - **클라이언트 오버라이드**: 이메일 키 기반 localStorage로 닉네임/전화 영속화(백엔드 컬럼 추가 전까지)
@@ -86,8 +88,9 @@ Moving-day/
 - **푸터**: 서비스·회사(기업소개·기업문화·인증현황·**정보처리방침 팝업**[내용 공란, 사이트 톤 모달]·**로그인/로그아웃** 상태 연동)·고객센터 컬럼
 - **알림 벨**: 좌우 흔들기 + 미확인 빨간점 + 드롭다운(수신자별 필터링)·사용자 메뉴 드롭다운(GSAP fade+slide)
 - **알림 시스템(서버 + 로컬 병합)**: BellIcon이 두 출처를 합쳐 최신순으로 보여줌
-  - **서버 거래 알림**(`Notification` 테이블): 입찰(`bid`)·낙찰(`award`)·거절(`reject`)·단계변경(`stage`) — 서버가 자동 생성, 로그인 사용자가 **20초 폴링**으로 수신. 고객·파트너가 서로 다른 브라우저여도 도달(localStorage 한계 해결). 열람 시 모두 읽음·비우기 API로 동기화
-  - **로컬 알림**(`addNotification({ type, message, link, to })`): 공지(`notice`)·관리자 답변(`reply`)·본인 견적 접수(`quote`) 등 비거래 알림은 기존 localStorage 큐 유지. `to` 지정 시 그 사용자에게만(`!to || to === user.email` 필터)
+  - **서버 거래 알림**(`Notification` 테이블): 입찰(`bid`)·낙찰(`award`)·거절(`reject`)·단계변경(`stage`)·**관리자 답변(`reply`)** — 서버가 자동 생성, 로그인 사용자가 **20초 폴링**으로 수신. 고객·파트너가 서로 다른 브라우저여도 도달(localStorage 한계 해결). 열람 시 모두 읽음·비우기 API로 동기화
+  - **불편사항·FAQ 답변 알림**: 관리자가 **불편사항(`PATCH /api/complaints/:id`)** 또는 **Q&A(`PATCH /api/qna/:id`)에 답변을 새로 등록하면** 작성자에게 서버 인앱 알림(`reply`) + **카톡 알림톡/SMS** 자동 발송(작성자 아이디로 회원 전화번호 조회, 알림톡 템플릿 `SOLAPI_ALIMTALK_TEMPLATE_REPLY` 있으면 알림톡·없으면 SMS·키 없으면 mock). **상태/숨김만 바꿀 땐 미발송**(답변이 비어있다가 새로 달릴 때만)
+  - **로컬 알림**(`addNotification({ type, message, link, to })`): 공지(`notice`)·본인 견적 접수(`quote`) 등 비거래 알림은 기존 localStorage 큐 유지. `to` 지정 시 그 사용자에게만(`!to || to === user.username` 필터)
 - **TOP 버튼**: 우하단 고정, 300px 스크롤 이상에서 페이드인
 - **페이지 전환**: 모든 라우트에 GSAP fade+slide-in(0.5s, y 16) + 스크롤 최상단 리셋
 - **마이크로 인터랙션**: 전역 탭 피드백(`useTapFeedback` — 모든 버튼·링크 누르면 미세 scale 0.95→1, `data-no-tap`으로 제외) + **메인 페이지 호버 리프트**(`useHoverLift` — 박스·버튼에 마우스 올리면 살짝 떠오르며 그림자, 이벤트 위임이라 동적 카드도 커버, `data-no-lift`로 제외). 모두 GSAP, design.md 톤 반영
@@ -130,10 +133,10 @@ cd frontend && npm install && npm run dev                          # 5173
 | 모델 | 주요 필드 |
 |------|------|
 | `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, **addons(부가 서비스 JSON `{cleaning, storage[], document[]}`·nullable)**, photos(JSON), visitDate, callTime, status, userEmail(회원 연결·nullable), stage(낙찰 후 진행 단계·nullable) |
-| `User` | id, email, password(bcrypt), name, **role(customer/partner/admin)**, birthDate, gender, phone, verified, createdAt |
+| `User` | id, **username(로그인 아이디·unique)**, email(unique·가입정보/인증/아이디찾기용), password(bcrypt), name, **role(customer/partner/admin)**, birthDate, gender, phone, verified, createdAt |
 | `Bid` | id, quoteRequestId(FK→QuoteRequest, Cascade), bidderEmail, company, price, message, eta, status(입찰/낙찰/거절), createdAt |
 | `StageLog` | id, quoteRequestId(FK→QuoteRequest, Cascade), stage, createdAt — 단계 변경 이력(택배식 타임라인) |
-| `Notification` | id, toEmail(수신자), type(bid/award/reject/stage), message, link, read, createdAt — 서버 거래 이벤트 알림(폴링 조회) |
+| `Notification` | id, toEmail(수신자 아이디·컬럼명은 레거시), type(bid/award/reject/stage/**reply**), message, link, read, createdAt — 서버 이벤트 알림(폴링 조회) |
 | `Notice` | id, title, body, createdAt — 공지사항(관리자 작성, 고객·파트너 공유) |
 | `Qna` | id, scope(user/partner), name, q, a(답변·nullable), authorEmail, hidden, createdAt — Q&A 문의 |
 | `PartnerStory` | id, company, text, rating, authorEmail, hidden, reply, createdAt — 파트너 플랫폼 이용 후기 |
@@ -160,8 +163,11 @@ cd frontend && npm install && npm run dev                          # 5173
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | GET | `/api/health` | 서버 상태 확인 |
-| POST | `/api/auth/signup` | 회원가입 → JWT 토큰 |
-| POST | `/api/auth/login` | 로그인 → JWT 토큰 |
+| POST | `/api/auth/signup` | 회원가입(아이디·이메일·휴대폰 인증) → JWT 토큰 |
+| POST | `/api/auth/login` | 로그인(**아이디+비밀번호**) → JWT 토큰 |
+| GET | `/api/auth/check-username` | 아이디 중복확인 (회원가입 실시간) |
+| GET | `/api/auth/check-email` | 이메일 중복확인 (회원가입 실시간) |
+| POST | `/api/auth/find-email` | 아이디 찾기 — 이름+전화 → 가입 아이디 전체 반환 |
 | GET | `/api/auth/me` | 내 정보 (Authorization: Bearer) |
 | POST | `/api/quotes` | 견적 신청 (사진 Cloudinary 업로드) |
 | GET | `/api/quotes` | 견적 목록 (입찰 포함 — 파트너·관리자) |
@@ -190,7 +196,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | DELETE | `/api/notices/:id` | 공지 삭제 |
 | GET | `/api/qna/:scope` | Q&A 목록 (scope=user/partner, 최신순) |
 | POST | `/api/qna` | 질문 작성 |
-| PATCH | `/api/qna/:id` | 관리자 답변·숨김 토글 |
+| PATCH | `/api/qna/:id` | 관리자 답변·숨김 토글 (**답변 새로 등록 시 작성자에게 인앱+카톡/SMS 알림**) |
 | DELETE | `/api/qna/:id` | 질문 삭제 |
 | GET | `/api/stories` | 파트너 스토리 목록 (최신순) |
 | POST | `/api/stories` | 파트너 스토리 작성 |
@@ -206,12 +212,14 @@ cd frontend && npm install && npm run dev                          # 5173
 | DELETE | `/api/vlogs/:id` | 브이로그 삭제 **[관리자]** |
 | GET | `/api/complaints` | 불편사항 목록 **[관리자]** |
 | POST | `/api/complaints` | 불편사항 접수 (공개·회원/비회원) |
-| PATCH | `/api/complaints/:id` | 불편사항 상태·답변 처리 **[관리자]** |
+| PATCH | `/api/complaints/:id` | 불편사항 상태·답변 처리 **[관리자]** (**답변 새로 등록 시 작성자에게 인앱+카톡/SMS 알림**) |
 | DELETE | `/api/complaints/:id` | 불편사항 삭제 **[관리자]** |
 | GET | `/api/tips` | 팁 목록 (공개, 최신순) |
 | POST | `/api/tips` | 팁 작성 **[관리자]** |
 | PATCH | `/api/tips/:id` | 팁 수정 **[관리자]** |
 | DELETE | `/api/tips/:id` | 팁 삭제 **[관리자]** |
+
+> 신원 식별용 경로 파라미터(`/quotes/mine/:email`·`/bids/mine/:email`·`/notifications/:email`·`/partners/:email`)는 이름이 `:email`이지만 **실제로는 아이디(username)** 를 받습니다(레거시 명칭 유지).
 
 ## 배포
 
@@ -247,10 +255,11 @@ cd frontend && npm install && npm run dev                          # 5173
 | `SOLAPI_ALIMTALK_TEMPLATE_AWARD` | 낙찰 알림톡 템플릿 ID — 낙찰 파트너에게(선택) | (선택) |
 | `SOLAPI_ALIMTALK_TEMPLATE_REJECT` | 거절 알림톡 템플릿 ID — 떨어진 파트너에게(선택) | (선택) |
 | `SOLAPI_ALIMTALK_TEMPLATE_STAGE` | 진행 단계 알림톡 템플릿 ID — 고객에게(선택) | (선택) |
+| `SOLAPI_ALIMTALK_TEMPLATE_REPLY` | 불편사항·FAQ 답변 알림톡 템플릿 ID — 작성자에게(선택, 변수 `#{종류}`) | (선택) |
 
 > `NODE_ENV=production`이면 시작 시 `JWT_SECRET` 누락을 거부합니다.
 > SMS: `SOLAPI_API_KEY`·`SOLAPI_API_SECRET`·`SOLAPI_SENDER` **3개만 있으면 문자 실제 발송**. 셋 중 하나라도 없으면 **mock 모드(콘솔 로그만)**.
-> 알림톡: 위 3개 + `SOLAPI_KAKAO_PF_ID` + 템플릿 ID(`..._QUOTE`/`..._BID`/`..._AWARD`/`..._REJECT`/`..._STAGE`)까지 설정되면 **알림톡 우선·실패 시 SMS 자동 대체**. 템플릿 변수 — 견적: `#{이사종류}#{출발지}#{도착지}#{이사예정일}#{이사규모}#{견적방식}`(예정일·규모 미입력 시 '미정' 자동), 입찰: `#{업체명}#{금액}#{출발지}#{도착지}#{이사예정일}#{예상일정}`(입찰마다 견적 주인에게 발송, 빈 값은 '미정' 자동), 낙찰: `#{고객명}#{연락처}#{출발지}#{도착지}#{이사예정일}#{금액}`(낙찰 시 낙찰 파트너에게 고객 연락처 전달), 거절: 변수 없는 고정 통보(낙찰 시 떨어진 파트너들에게), 단계: `#{진행단계}`(낙찰 후 진행 단계 변경 시 고객에게). (`backend/src/messaging.ts`)
+> 알림톡: 위 3개 + `SOLAPI_KAKAO_PF_ID` + 템플릿 ID(`..._QUOTE`/`..._BID`/`..._AWARD`/`..._REJECT`/`..._STAGE`)까지 설정되면 **알림톡 우선·실패 시 SMS 자동 대체**. 템플릿 변수 — 견적: `#{이사종류}#{출발지}#{도착지}#{이사예정일}#{이사규모}#{견적방식}`(예정일·규모 미입력 시 '미정' 자동), 입찰: `#{업체명}#{금액}#{출발지}#{도착지}#{이사예정일}#{예상일정}`(입찰마다 견적 주인에게 발송, 빈 값은 '미정' 자동), 낙찰: `#{고객명}#{연락처}#{출발지}#{도착지}#{이사예정일}#{금액}`(낙찰 시 낙찰 파트너에게 고객 연락처 전달), 거절: 변수 없는 고정 통보(낙찰 시 떨어진 파트너들에게), 단계: `#{진행단계}`(낙찰 후 진행 단계 변경 시 고객에게), 답변: `#{종류}`(불편사항·FAQ 답변 등록 시 작성자에게). (`backend/src/messaging.ts`)
 >
 > 프론트는 API를 `/api/...` 상대경로로 호출하므로 같은 도메인의 Nginx가 백엔드로 프록시합니다(별도 `VITE_API_BASE` 불필요).
 

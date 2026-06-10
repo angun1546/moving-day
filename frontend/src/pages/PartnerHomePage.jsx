@@ -67,11 +67,11 @@ function PartnerHomePage() {
   const { user } = useAuth()
   const [profileSaved, setProfileSaved] = useState(false)
   useEffect(() => {
-    if (!user?.email) {
+    if (!user?.username) {
       setProfileSaved(false)
       return
     }
-    getPartnerProfile(user.email)
+    getPartnerProfile(user.username)
       .then((p) => setProfileSaved(!!p))
       .catch(() => setProfileSaved(false))
   }, [user])

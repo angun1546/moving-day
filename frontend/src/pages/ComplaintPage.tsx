@@ -39,12 +39,12 @@ function ComplaintPage() {
 
   // 로그인 사용자(비관리자)는 본인 접수 내역 조회
   function loadMine() {
-    if (!user?.email || isAdmin) return
+    if (!user?.username || isAdmin) return
     getMyComplaints()
       .then((d) => setMine(Array.isArray(d) ? d : []))
       .catch(() => setMine([]))
   }
-  useEffect(loadMine, [user?.email, isAdmin])
+  useEffect(loadMine, [user?.username, isAdmin])
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -59,7 +59,7 @@ function ComplaintPage() {
         name,
         contact,
         content,
-        authorEmail: user?.email || undefined,
+        authorEmail: user?.username || undefined,
       })
       form.reset()
       setDone(true)

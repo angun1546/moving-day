@@ -73,8 +73,8 @@ router.put(
       return res.status(400).json({ message: '필수 항목을 모두 입력해 주세요.' })
     }
 
-    // 본인 프로필만 수정 가능 (관리자는 예외)
-    if (req.authUser?.email !== email && req.authUser?.role !== 'admin') {
+    // 본인 프로필만 수정 가능 (관리자는 예외) — email 파라미터엔 파트너 아이디(username)가 담김
+    if (req.authUser?.username !== email && req.authUser?.role !== 'admin') {
       return res.status(403).json({ message: '본인 업체 정보만 수정할 수 있습니다.' })
     }
 

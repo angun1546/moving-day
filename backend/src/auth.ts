@@ -8,7 +8,7 @@ const SECRET = process.env.JWT_SECRET ?? 'dev-secret-change-me'
 
 // 인증된 사용자 정보를 req에 실어 핸들러에서 사용
 export interface AuthedRequest extends Request {
-  authUser?: { id: string; email: string; role: string }
+  authUser?: { id: string; username: string; email: string; role: string }
 }
 const EXPIRES_IN = 60 * 60 * 24 * 7 // 7일(초)
 
@@ -62,7 +62,7 @@ export async function requireAuth(
   }
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, role: true },
+    select: { id: true, username: true, email: true, role: true },
   })
   if (!user) {
     return res.status(401).json({ message: '인증이 만료되었거나 올바르지 않습니다.' })

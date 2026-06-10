@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  findEmail,
+  findUsername,
   resetSendPhoneCode,
   resetVerifyPhoneCode,
   resetSendEmailCode,
@@ -248,23 +248,23 @@ function FindAccountPage() {
   const [tab, setTab] = useState('id') // id | pw
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [foundEmail, setFoundEmail] = useState('') // 아이디 찾기 결과
+  const [foundId, setFoundId] = useState('') // 아이디 찾기 결과(username 전체)
 
   function switchTab(t) {
     setTab(t)
     setError('')
-    setFoundEmail('')
+    setFoundId('')
   }
 
   async function onFindId(e) {
     e.preventDefault()
     setError('')
-    setFoundEmail('')
+    setFoundId('')
     setLoading(true)
     const fd = new FormData(e.currentTarget)
     try {
-      const email = await findEmail(fd.get('name'), fd.get('phone'))
-      setFoundEmail(email)
+      const uname = await findUsername(fd.get('name'), fd.get('phone'))
+      setFoundId(uname)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -307,10 +307,10 @@ function FindAccountPage() {
               {error}
             </div>
           )}
-          {foundEmail ? (
+          {foundId ? (
             <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-5 text-center">
-              <p className="text-sm text-gray-600">회원님의 가입 이메일</p>
-              <p className="mt-1 text-lg font-bold text-gray-900">{foundEmail}</p>
+              <p className="text-sm text-gray-600">회원님의 아이디</p>
+              <p className="mt-1 text-lg font-bold text-gray-900">{foundId}</p>
               <Link
                 to="/login"
                 className="mt-4 inline-block rounded-full bg-brand px-6 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"

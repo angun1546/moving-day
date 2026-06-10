@@ -139,7 +139,7 @@ function PartnerStoryPage() {
         company,
         text,
         rating,
-        authorEmail: user?.email || '',
+        authorEmail: user?.username || '',
       })
       setReviews((prev) => [created, ...prev])
       form.reset()

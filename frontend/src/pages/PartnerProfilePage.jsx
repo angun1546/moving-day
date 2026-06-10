@@ -49,11 +49,11 @@ function PartnerProfilePage() {
 
   // 서버에서 기존 프로필 로드
   useEffect(() => {
-    if (!user?.email) {
+    if (!user?.username) {
       setLoading(false)
       return
     }
-    getPartnerProfile(user.email)
+    getPartnerProfile(user.username)
       .then((p) => {
         setProfile(p)
         if (p) {
@@ -63,7 +63,7 @@ function PartnerProfilePage() {
         }
       })
       .finally(() => setLoading(false))
-  }, [user?.email])
+  }, [user?.username])
 
   function toggleRegion(value) {
     setSelectedRegions((prev) => {
@@ -141,7 +141,7 @@ function PartnerProfilePage() {
     const form = e.currentTarget
     const val = (n) => form.elements[n]?.value?.trim() || ''
     const fd = new FormData()
-    fd.append('email', user.email)
+    fd.append('email', user.username)
     fd.append('company', val('company'))
     fd.append('bizNo', val('bizNo'))
     fd.append('ceo', val('ceo'))

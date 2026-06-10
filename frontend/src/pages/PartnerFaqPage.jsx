@@ -241,7 +241,7 @@ function PartnerFaqPage() {
         scope: 'partner',
         name,
         q: text,
-        authorEmail: user?.email || '',
+        authorEmail: user?.username || '',
       })
       setQuestions((prev) => [created, ...prev])
       form.reset()

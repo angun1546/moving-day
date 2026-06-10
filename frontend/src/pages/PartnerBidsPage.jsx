@@ -11,7 +11,7 @@ function PartnerBidsPage() {
         제출한 입찰과 낙찰 후 이사 진행 단계를 확인하고 단계를 진행하세요.
       </p>
       <div className="mt-6">
-        <PartnerBidsList email={user?.email} />
+        <PartnerBidsList email={user?.username} />
       </div>
     </section>
   )

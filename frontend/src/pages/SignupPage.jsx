@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   checkEmail,
+  checkUsername,
   sendPhoneCode,
   verifyPhoneCode,
   sendEmailCode,
@@ -11,6 +12,8 @@ import {
 import DatePicker from '../components/DatePicker'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// 아이디: 영문 소문자로 시작하는 영문·숫자·_ 4~20자
+const USERNAME_RE = /^[a-z][a-z0-9_]{3,19}$/
 
 const inputClass =
   'w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -33,6 +36,28 @@ function SignupPage() {
   const isPartner = params.get('role') === 'partner' // 파트너 헤더에서 진입
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // 아이디(로그인 ID) + 실시간 중복확인: idle | invalid | checking | available | taken
+  const [username, setUsername] = useState('')
+  const [usernameStatus, setUsernameStatus] = useState('idle')
+
+  useEffect(() => {
+    const u = username.trim().toLowerCase()
+    if (!u) {
+      setUsernameStatus('idle')
+      return
+    }
+    if (!USERNAME_RE.test(u)) {
+      setUsernameStatus('invalid')
+      return
+    }
+    setUsernameStatus('checking')
+    const t = setTimeout(async () => {
+      const ok = await checkUsername(u)
+      setUsernameStatus(ok ? 'available' : 'taken')
+    }, 500)
+    return () => clearTimeout(t)
+  }, [username])
 
   // 이메일 분리 입력 (아이디 + 도메인)
   const [emailId, setEmailId] = useState('')
@@ -181,6 +206,16 @@ function SignupPage() {
     setError('')
 
     const fd = new FormData(e.currentTarget)
+    // 아이디 검증
+    const uname = username.trim().toLowerCase()
+    if (!USERNAME_RE.test(uname)) {
+      setError('아이디는 영문으로 시작하는 영문·숫자·_ 4~20자여야 합니다.')
+      return
+    }
+    if (usernameStatus === 'taken') {
+      setError('이미 사용 중인 아이디입니다. 다른 아이디를 사용해 주세요.')
+      return
+    }
     const password = fd.get('password')
     const passwordConfirm = fd.get('passwordConfirm')
     // 영문·숫자·특수문자 조합 8자 이상
@@ -228,6 +263,7 @@ function SignupPage() {
       // 진입 경로로 역할 결정 (admin 이메일은 서버가 admin으로 보정)
       const u = await signup({
         name: fd.get('name'),
+        username: uname,
         nickname: fd.get('nickname'),
         birthDate: fd.get('birthDate'),
         gender: fd.get('gender'),
@@ -261,6 +297,36 @@ function SignupPage() {
       )}
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
+        <label className="block">
+          <span className="text-xs font-medium text-gray-500">
+            아이디 <span className="text-red-500">*</span>
+          </span>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            autoCapitalize="none"
+            placeholder="아이디 (영문 시작, 영문·숫자·_ 4~20자)"
+            className={`${inputClass} mt-1`}
+          />
+          {usernameStatus === 'invalid' && (
+            <p className="mt-1 text-xs text-red-500">
+              영문으로 시작하는 영문·숫자·_ 4~20자로 입력해 주세요.
+            </p>
+          )}
+          {usernameStatus === 'checking' && (
+            <p className="mt-1 text-xs text-gray-400">아이디 확인 중...</p>
+          )}
+          {usernameStatus === 'taken' && (
+            <p className="mt-1 text-xs text-red-500">
+              이미 사용 중인 아이디입니다. 다른 아이디를 사용해 주세요.
+            </p>
+          )}
+          {usernameStatus === 'available' && (
+            <p className="mt-1 text-xs text-green-600">사용 가능한 아이디입니다.</p>
+          )}
+        </label>
         <label className="block">
           <span className="text-xs font-medium text-gray-500">
             이름 <span className="text-red-500">*</span>
@@ -554,7 +620,7 @@ function SignupPage() {
 
         <button
           type="submit"
-          disabled={loading || emailStatus === 'taken'}
+          disabled={loading || emailStatus === 'taken' || usernameStatus === 'taken' || usernameStatus === 'invalid'}
           className="w-full rounded-full bg-brand px-7 py-4 font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? '가입 중...' : '회원가입'}

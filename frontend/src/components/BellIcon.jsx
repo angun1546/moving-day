@@ -54,7 +54,7 @@ function BellIcon({ size = 22 }) {
   //  - id는 출처 접두사로 충돌 방지(l-: 로컬, s-: 서버)
   const visible = useMemo(() => {
     const local = notifications
-      .filter((n) => !n.to || n.to === user?.email)
+      .filter((n) => !n.to || n.to === user?.username)
       .map((n) => ({ ...n, id: `l-${n.id}` }))
     const server = serverItems.map((n) => ({
       id: `s-${n.id}`,
@@ -67,7 +67,7 @@ function BellIcon({ size = 22 }) {
     return [...server, ...local].sort(
       (a, b) => new Date(b.date) - new Date(a.date),
     )
-  }, [notifications, serverItems, user?.email])
+  }, [notifications, serverItems, user?.username])
 
   // 초기 로드 + 외부 addNotification 호출 시 자동 갱신
   useEffect(() => {
@@ -90,7 +90,7 @@ function BellIcon({ size = 22 }) {
 
   // 로그인 사용자면 서버 알림을 20초마다 폴링 (비로그인은 비움)
   useEffect(() => {
-    const email = user?.email
+    const email = user?.username
     if (!email) {
       setServerItems([])
       return
@@ -106,7 +106,7 @@ function BellIcon({ size = 22 }) {
       alive = false
       clearInterval(t)
     }
-  }, [user?.email])
+  }, [user?.username])
 
   const unreadCount = visible.filter((n) => !n.read).length
 
@@ -165,8 +165,8 @@ function BellIcon({ size = 22 }) {
       if (next && unreadCount > 0) {
         setTimeout(() => {
           // 서버 알림 읽음 (낙관적 갱신 + API)
-          if (user?.email) {
-            markAllRead(user.email)
+          if (user?.username) {
+            markAllRead(user.username)
             setServerItems((prev) => prev.map((n) => ({ ...n, read: true })))
           }
           // 로컬 알림 읽음
@@ -193,8 +193,8 @@ function BellIcon({ size = 22 }) {
     if (!(await confirm({ title: '알림 삭제', message: '모든 알림을 삭제할까요?', danger: true })))
       return
     // 서버 알림 비우기
-    if (user?.email) {
-      await clearNotifications(user.email)
+    if (user?.username) {
+      await clearNotifications(user.username)
       setServerItems([])
     }
     // 로컬 알림 비우기

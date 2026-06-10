@@ -39,36 +39,36 @@ function PartnerMyPage() {
   const [bidCount, setBidCount] = useState(0)
   const [complaintCount, setComplaintCount] = useState(0)
   useEffect(() => {
-    if (!user?.email) return
+    if (!user?.username) return
     getStories()
       .then((d) =>
         setStories(
-          Array.isArray(d) ? d.filter((s) => s.authorEmail === user.email) : [],
+          Array.isArray(d) ? d.filter((s) => s.authorEmail === user.username) : [],
         ),
       )
       .catch(() => setStories([]))
     getQna('partner')
       .then((d) =>
         setQuestions(
-          Array.isArray(d) ? d.filter((q) => q.authorEmail === user.email) : [],
+          Array.isArray(d) ? d.filter((q) => q.authorEmail === user.username) : [],
         ),
       )
       .catch(() => setQuestions([]))
-    getMyBids(user.email)
+    getMyBids(user.username)
       .then((d) => setBidCount(Array.isArray(d) ? d.length : 0))
       .catch(() => setBidCount(0))
     getMyComplaints()
       .then((d) => setComplaintCount(Array.isArray(d) ? d.length : 0))
       .catch(() => setComplaintCount(0))
-  }, [user?.email])
+  }, [user?.username])
   // 업체 정보 — 서버에서 로드
   const [profile, setProfile] = useState(null)
   useEffect(() => {
-    if (!user?.email) return
-    getPartnerProfile(user.email)
+    if (!user?.username) return
+    getPartnerProfile(user.username)
       .then(setProfile)
       .catch(() => setProfile(null))
-  }, [user?.email])
+  }, [user?.username])
   const profileSaved = !!profile
   const regions = profile ? safeArr(profile.regions) : []
 
@@ -99,6 +99,7 @@ function PartnerMyPage() {
       {/* 내 정보 */}
       <h2 className="mt-10 text-lg font-bold text-gray-900">내 정보</h2>
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Info label="아이디" value={user.username} />
         <Info label="이름" value={user.name} />
         <Info label="닉네임" value={user.nickname || '-'} />
         <Info label="이메일" value={user.email} />
@@ -201,7 +202,7 @@ function PartnerMyPage() {
       {/* 내 입찰 현황 — 낙찰건 이사 단계 진행 */}
       <h2 className="mt-10 text-lg font-bold text-gray-900">내 입찰 현황</h2>
       <div className="mt-4">
-        <PartnerBidsList email={user.email} />
+        <PartnerBidsList email={user.username} />
       </div>
 
       {/* 액션 */}

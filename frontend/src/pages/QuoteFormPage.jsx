@@ -149,7 +149,7 @@ function QuoteFormPage() {
         <input type="hidden" name="method" value={m.label} />
         <input type="hidden" name="moveType" value={t.label} />
         {/* 로그인 회원이면 견적을 계정과 연결 */}
-        <input type="hidden" name="userEmail" value={user?.email || ''} />
+        <input type="hidden" name="userEmail" value={user?.username || ''} />
         {/* 부가 서비스(청소·창고보관·문서) 구조화 JSON */}
         <input type="hidden" name="addons" value={addonsValue} />
 

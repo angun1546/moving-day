@@ -26,11 +26,11 @@ function PartnerDashboardPage() {
 
   // 업체명은 서버 프로필에서 — 입찰 시 사용 (localStorage에 없음)
   useEffect(() => {
-    if (!user?.email) return
-    getPartnerProfile(user.email)
+    if (!user?.username) return
+    getPartnerProfile(user.username)
       .then((p) => setCompany(p?.company || ''))
       .catch(() => setCompany(''))
-  }, [user?.email])
+  }, [user?.username])
 
   async function load() {
     try {
@@ -66,7 +66,7 @@ function PartnerDashboardPage() {
     try {
       await createBid({
         quoteRequestId: quote.id,
-        bidderEmail: user?.email || '',
+        bidderEmail: user?.username || '',
         company,
         price,
         message,
