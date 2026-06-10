@@ -89,7 +89,7 @@ Moving-day/
 - **알림 벨**: 좌우 흔들기 + 미확인 빨간점 + 드롭다운(수신자별 필터링)·사용자 메뉴 드롭다운(GSAP fade+slide)
 - **알림 시스템(서버 + 로컬 병합)**: BellIcon이 두 출처를 합쳐 최신순으로 보여줌
   - **서버 거래 알림**(`Notification` 테이블): 입찰(`bid`)·낙찰(`award`)·거절(`reject`)·단계변경(`stage`)·**관리자 답변(`reply`)** — 서버가 자동 생성, 로그인 사용자가 **20초 폴링**으로 수신. 고객·파트너가 서로 다른 브라우저여도 도달(localStorage 한계 해결). 열람 시 모두 읽음·비우기 API로 동기화
-  - **불편사항·FAQ 답변 알림**: 관리자가 **불편사항(`PATCH /api/complaints/:id`)** 또는 **Q&A(`PATCH /api/qna/:id`)에 답변을 새로 등록하면** 작성자에게 서버 인앱 알림(`reply`) + **카톡 알림톡/SMS** 자동 발송(작성자 아이디로 회원 전화번호 조회, 알림톡 템플릿 `SOLAPI_ALIMTALK_TEMPLATE_REPLY` 있으면 알림톡·없으면 SMS·키 없으면 mock). **상태/숨김만 바꿀 땐 미발송**(답변이 비어있다가 새로 달릴 때만)
+  - **불편사항·FAQ 답변 알림**: 관리자가 **불편사항(`PATCH /api/complaints/:id`)** 또는 **Q&A(`PATCH /api/qna/:id`)에 답변을 새로 등록하면** 작성자에게 서버 인앱 알림(`reply`) + **카톡 알림톡/SMS** 자동 발송(작성자 아이디로 회원 전화번호 조회, 알림톡 템플릿이 있으면 알림톡·없으면 SMS·키 없으면 mock). **불편사항·FAQ는 별도 템플릿**(`SOLAPI_ALIMTALK_TEMPLATE_REPLY_COMPLAINT`·`..._REPLY_QNA`, 버튼 링크도 각각 `/complaint`·`/faq`). **상태/숨김만 바꿀 땐 미발송**(답변이 비어있다가 새로 달릴 때만)
   - **로컬 알림**(`addNotification({ type, message, link, to })`): 공지(`notice`)·본인 견적 접수(`quote`) 등 비거래 알림은 기존 localStorage 큐 유지. `to` 지정 시 그 사용자에게만(`!to || to === user.username` 필터)
 - **TOP 버튼**: 우하단 고정, 300px 스크롤 이상에서 페이드인
 - **페이지 전환**: 모든 라우트에 GSAP fade+slide-in(0.5s, y 16) + 스크롤 최상단 리셋
@@ -255,11 +255,12 @@ cd frontend && npm install && npm run dev                          # 5173
 | `SOLAPI_ALIMTALK_TEMPLATE_AWARD` | 낙찰 알림톡 템플릿 ID — 낙찰 파트너에게(선택) | (선택) |
 | `SOLAPI_ALIMTALK_TEMPLATE_REJECT` | 거절 알림톡 템플릿 ID — 떨어진 파트너에게(선택) | (선택) |
 | `SOLAPI_ALIMTALK_TEMPLATE_STAGE` | 진행 단계 알림톡 템플릿 ID — 고객에게(선택) | (선택) |
-| `SOLAPI_ALIMTALK_TEMPLATE_REPLY` | 불편사항·FAQ 답변 알림톡 템플릿 ID — 작성자에게(선택, 변수 `#{종류}`) | (선택) |
+| `SOLAPI_ALIMTALK_TEMPLATE_REPLY_COMPLAINT` | 불편사항 답변 알림톡 템플릿 ID — 작성자에게(선택, 변수 없음·버튼 `/complaint`) | (선택) |
+| `SOLAPI_ALIMTALK_TEMPLATE_REPLY_QNA` | FAQ 답변 알림톡 템플릿 ID — 질문자에게(선택, 변수 없음·버튼 `/faq`) | (선택) |
 
 > `NODE_ENV=production`이면 시작 시 `JWT_SECRET` 누락을 거부합니다.
 > SMS: `SOLAPI_API_KEY`·`SOLAPI_API_SECRET`·`SOLAPI_SENDER` **3개만 있으면 문자 실제 발송**. 셋 중 하나라도 없으면 **mock 모드(콘솔 로그만)**.
-> 알림톡: 위 3개 + `SOLAPI_KAKAO_PF_ID` + 템플릿 ID(`..._QUOTE`/`..._BID`/`..._AWARD`/`..._REJECT`/`..._STAGE`)까지 설정되면 **알림톡 우선·실패 시 SMS 자동 대체**. 템플릿 변수 — 견적: `#{이사종류}#{출발지}#{도착지}#{이사예정일}#{이사규모}#{견적방식}`(예정일·규모 미입력 시 '미정' 자동), 입찰: `#{업체명}#{금액}#{출발지}#{도착지}#{이사예정일}#{예상일정}`(입찰마다 견적 주인에게 발송, 빈 값은 '미정' 자동), 낙찰: `#{고객명}#{연락처}#{출발지}#{도착지}#{이사예정일}#{금액}`(낙찰 시 낙찰 파트너에게 고객 연락처 전달), 거절: 변수 없는 고정 통보(낙찰 시 떨어진 파트너들에게), 단계: `#{진행단계}`(낙찰 후 진행 단계 변경 시 고객에게), 답변: `#{종류}`(불편사항·FAQ 답변 등록 시 작성자에게). (`backend/src/messaging.ts`)
+> 알림톡: 위 3개 + `SOLAPI_KAKAO_PF_ID` + 템플릿 ID(`..._QUOTE`/`..._BID`/`..._AWARD`/`..._REJECT`/`..._STAGE`)까지 설정되면 **알림톡 우선·실패 시 SMS 자동 대체**. 템플릿 변수 — 견적: `#{이사종류}#{출발지}#{도착지}#{이사예정일}#{이사규모}#{견적방식}`(예정일·규모 미입력 시 '미정' 자동), 입찰: `#{업체명}#{금액}#{출발지}#{도착지}#{이사예정일}#{예상일정}`(입찰마다 견적 주인에게 발송, 빈 값은 '미정' 자동), 낙찰: `#{고객명}#{연락처}#{출발지}#{도착지}#{이사예정일}#{금액}`(낙찰 시 낙찰 파트너에게 고객 연락처 전달), 거절: 변수 없는 고정 통보(낙찰 시 떨어진 파트너들에게), 단계: `#{진행단계}`(낙찰 후 진행 단계 변경 시 고객에게), 답변: 변수 없는 고정 통보(불편사항·FAQ 답변 등록 시 작성자에게, 템플릿 2종 분리). (`backend/src/messaging.ts`)
 >
 > 프론트는 API를 `/api/...` 상대경로로 호출하므로 같은 도메인의 Nginx가 백엔드로 프록시합니다(별도 `VITE_API_BASE` 불필요).
 

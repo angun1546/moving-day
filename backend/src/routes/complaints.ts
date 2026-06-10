@@ -93,13 +93,11 @@ async function notifyComplaintReply(c: {
     }
     // 회원 전화 없으면 접수 시 적은 연락처가 번호면 그쪽으로
     if (!phone && onlyDigits(c.contact).length >= 10) phone = c.contact
-    const replyTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_REPLY
+    const replyTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_REPLY_COMPLAINT
     void sendMessage({
       to: phone,
       text: `[이삿날] 접수하신 불편사항에 관리자 답변이 등록되었습니다.\n홈페이지에서 확인해 주세요.`,
-      kakao: replyTemplate
-        ? { templateId: replyTemplate, variables: { '#{종류}': '불편사항' } }
-        : undefined,
+      kakao: replyTemplate ? { templateId: replyTemplate } : undefined,
     })
   } catch (err) {
     console.error('불편사항 답변 알림 실패:', err)

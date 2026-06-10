@@ -13,13 +13,11 @@ async function notifyQnaAnswer(q: { scope: string; authorEmail: string | null })
     const link = q.scope === 'partner' ? '/partner/faq' : '/faq'
     await notify(q.authorEmail, 'reply', '문의하신 질문에 관리자 답변이 등록됐어요.', link)
     const user = await prisma.user.findUnique({ where: { username: q.authorEmail } })
-    const replyTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_REPLY
+    const replyTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_REPLY_QNA
     void sendMessage({
       to: user?.phone ?? null,
       text: `[이삿날] 문의하신 질문에 관리자 답변이 등록되었습니다.\n홈페이지에서 확인해 주세요.`,
-      kakao: replyTemplate
-        ? { templateId: replyTemplate, variables: { '#{종류}': '문의' } }
-        : undefined,
+      kakao: replyTemplate ? { templateId: replyTemplate } : undefined,
     })
   } catch (err) {
     console.error('Q&A 답변 알림 실패:', err)
