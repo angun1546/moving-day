@@ -422,11 +422,12 @@ function UserFaqPage() {
           onClick={() => setShowAsk((v) => !v)}
           className="shrink-0 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
         >
-          {showAsk ? '폼 닫기' : '+ 질문하기'}
+          {showAsk ? '닫기' : '+ 질문하기'}
         </button>
       </div>
 
-      {showAsk && (
+      <div className={`collapsible ${showAsk ? 'is-open' : ''}`}>
+        <div className="collapsible-inner">
       <form
         onSubmit={ask}
         className="mt-4 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
@@ -468,7 +469,8 @@ function UserFaqPage() {
           질문 등록
         </button>
       </form>
-      )}
+        </div>
+      </div>
 
       {/* 질문 목록 */}
       <div className="mt-8 space-y-4">

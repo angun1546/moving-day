@@ -247,8 +247,9 @@ function UserReviewPage() {
         이삿날과 함께한 경험을 자유롭게 남겨주세요.
       </p>
 
-      {/* 작성 폼 (토글) */}
-      {showForm && (
+      {/* 작성 폼 (토글 — 부드럽게 펼쳐짐) */}
+      <div className={`collapsible ${showForm ? 'is-open' : ''}`}>
+        <div className="collapsible-inner">
       <form
         onSubmit={submit}
         className="mt-8 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
@@ -356,7 +357,8 @@ function UserReviewPage() {
           리뷰 등록
         </button>
       </form>
-      )}
+        </div>
+      </div>
 
       {/* 등록된 리뷰 목록 */}
       <div className="mt-10">
@@ -369,7 +371,7 @@ function UserReviewPage() {
             onClick={() => setShowForm((v) => !v)}
             className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
           >
-            {showForm ? '폼 닫기' : '+ 리뷰 등록'}
+            {showForm ? '닫기' : '+ 리뷰 등록'}
           </button>
         </div>
         {listReviews.length === 0 ? (

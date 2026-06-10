@@ -191,8 +191,9 @@ function PartnerStoryPage() {
         먼저 시작한 파트너들의 솔직한 후기를 확인해보세요.
       </p>
 
-      {/* 후기 작성 폼 (토글) */}
-      {showForm && (
+      {/* 후기 작성 폼 (토글 — 부드럽게 펼쳐짐) */}
+      <div className={`collapsible ${showForm ? 'is-open' : ''}`}>
+        <div className="collapsible-inner">
         <form
           onSubmit={submit}
           className="mt-6 space-y-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm"
@@ -238,7 +239,8 @@ function PartnerStoryPage() {
             후기 등록
           </button>
         </form>
-      )}
+        </div>
+      </div>
 
       {/* 후기 목록 */}
       <div className="mt-8 space-y-4">
@@ -362,7 +364,7 @@ function PartnerStoryPage() {
           onClick={() => setShowForm((v) => !v)}
           className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark"
         >
-          {showForm ? '폼 닫기' : '+ 후기 등록'}
+          {showForm ? '닫기' : '+ 후기 등록'}
         </button>
       </div>
     </section>

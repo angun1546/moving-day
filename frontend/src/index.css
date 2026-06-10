@@ -80,3 +80,26 @@
     @apply bg-brand-bg font-sans text-gray-900 antialiased;
   }
 }
+
+@layer components {
+  /* 토글 폼이 부드럽게 펼쳐지는 컨테이너 (grid-rows 0fr→1fr · 높이 자동 애니메이션) */
+  .collapsible {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 350ms ease,
+      opacity 350ms ease;
+  }
+  .collapsible.is-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  /* 닫혔을 때 내용이 잘리도록 · 클릭 차단 */
+  .collapsible > .collapsible-inner {
+    overflow: hidden;
+  }
+  .collapsible:not(.is-open) .collapsible-inner {
+    pointer-events: none;
+  }
+}
