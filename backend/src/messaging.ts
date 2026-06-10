@@ -10,6 +10,9 @@ const KAKAO_PF_ID = process.env.SOLAPI_KAKAO_PF_ID // 카카오 비즈니스 채
 
 const live = Boolean(API_KEY && API_SECRET && SENDER)
 
+// SMS 실발송 가능 여부(키 설정됨) — 휴대폰 인증 mock 처리 판단용
+export const isSmsLive = (): boolean => live
+
 export interface KakaoOpts {
   templateId: string // 사전 승인된 알림톡 템플릿 ID
   variables?: Record<string, string>

@@ -40,6 +40,17 @@ export async function checkEmail(email: string): Promise<boolean> {
   }
 }
 
+// 휴대폰 인증번호 발송 (가입 전 본인인증)
+// devCode: SMS 키 미설정(mock)일 때만 내려오는 개발용 인증번호
+export async function sendPhoneCode(phone: string): Promise<{ devCode?: string }> {
+  return post('/send-code', { phone })
+}
+
+// 휴대폰 인증번호 확인 — 실패 시 throw(메시지 표시용)
+export async function verifyPhoneCode(phone: string, code: string): Promise<void> {
+  await post('/verify-code', { phone, code })
+}
+
 export async function signup(payload: unknown): Promise<User> {
   const data = await post<AuthResult>('/signup', payload)
   setToken(data.token)

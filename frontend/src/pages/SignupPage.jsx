@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { checkEmail } from '../services/auth'
+import { checkEmail, sendPhoneCode, verifyPhoneCode } from '../services/auth'
 import DatePicker from '../components/DatePicker'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -53,6 +53,63 @@ function SignupPage() {
     return () => clearTimeout(t)
   }, [fullEmail])
 
+  // 휴대폰 본인인증 (SMS 인증번호)
+  const [phone, setPhone] = useState('')
+  const [phoneCode, setPhoneCode] = useState('')
+  const [codeSent, setCodeSent] = useState(false)
+  const [phoneVerified, setPhoneVerified] = useState(false)
+  const [phoneMsg, setPhoneMsg] = useState('')
+  const [sending, setSending] = useState(false)
+  const [remain, setRemain] = useState(0) // 인증번호 남은 시간(초)
+
+  // 인증번호 3분 카운트다운
+  useEffect(() => {
+    if (remain <= 0) return
+    const id = setInterval(() => setRemain((r) => (r <= 1 ? 0 : r - 1)), 1000)
+    return () => clearInterval(id)
+  }, [remain])
+
+  async function onSendCode() {
+    setPhoneMsg('')
+    if (phone.replace(/\D/g, '').length < 10) {
+      setPhoneMsg('올바른 휴대폰 번호를 입력해 주세요.')
+      return
+    }
+    setSending(true)
+    try {
+      const r = await sendPhoneCode(phone)
+      setCodeSent(true)
+      setRemain(180) // 3분 카운트다운 시작
+      if (r?.devCode) {
+        // 개발 모드(SMS 키 미설정): 인증번호를 자동 입력 + 안내
+        setPhoneCode(r.devCode)
+        setPhoneMsg(`개발 모드 인증번호: ${r.devCode} (SMS 발송 미설정 상태)`)
+      } else {
+        setPhoneMsg('인증번호를 발송했어요. 시간 안에 입력해 주세요.')
+      }
+    } catch (err) {
+      setPhoneMsg(err.message)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  async function onVerifyCode() {
+    setPhoneMsg('')
+    try {
+      await verifyPhoneCode(phone, phoneCode)
+      setPhoneVerified(true)
+      setRemain(0) // 인증 완료 — 타이머 중지
+    } catch (err) {
+      setPhoneMsg(err.message)
+    }
+  }
+
+  // 비밀번호 확인 실시간 일치 여부
+  const [pw, setPw] = useState('')
+  const [pwConfirm, setPwConfirm] = useState('')
+  const pwMatch = pwConfirm.length > 0 && pw === pwConfirm
+
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
@@ -85,6 +142,12 @@ function SignupPage() {
       return
     }
 
+    // 휴대폰 본인인증 필수
+    if (!phoneVerified) {
+      setError('휴대폰 본인인증을 완료해 주세요.')
+      return
+    }
+
     // 리뷰·FAQ 표시 방식 저장 (닉네임 그대로 / 실명 일부 가림)
     setDisplayMode(fd.get('displayMode') || 'nickname')
 
@@ -96,7 +159,7 @@ function SignupPage() {
         nickname: fd.get('nickname'),
         birthDate: fd.get('birthDate'),
         gender: fd.get('gender'),
-        phone: fd.get('phone'),
+        phone,
         email,
         password,
         role: isPartner ? 'partner' : 'customer',
@@ -214,18 +277,65 @@ function SignupPage() {
           </label>
         </div>
 
-        <label className="block">
+        <div>
           <span className="text-xs font-medium text-gray-500">
             전화번호 <span className="text-red-500">*</span>
           </span>
-          <input
-            name="phone"
-            type="tel"
-            required
-            placeholder="전화번호 (010-1234-5678)"
-            className={`${inputClass} mt-1`}
-          />
-        </label>
+          <div className="mt-1 flex gap-2">
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              readOnly={phoneVerified}
+              placeholder="전화번호 (010-1234-5678)"
+              className={`${inputClass} min-w-0 flex-1 ${phoneVerified ? 'bg-gray-50' : ''}`}
+            />
+            <button
+              type="button"
+              onClick={onSendCode}
+              disabled={sending || phoneVerified}
+              className="shrink-0 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {phoneVerified ? '인증완료' : codeSent ? '재발송' : '인증번호 받기'}
+            </button>
+          </div>
+
+          {codeSent && !phoneVerified && (
+            <div className="mt-2 flex gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={phoneCode}
+                onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="인증번호 6자리"
+                className={`${inputClass} min-w-0 flex-1`}
+              />
+              <button
+                type="button"
+                onClick={onVerifyCode}
+                className="shrink-0 rounded-xl bg-gray-800 px-4 text-sm font-semibold text-white transition hover:bg-black"
+              >
+                확인
+              </button>
+            </div>
+          )}
+
+          {codeSent && !phoneVerified && (
+            <p className="mt-1 text-xs text-red-500">
+              {remain > 0
+                ? `남은 시간 ${Math.floor(remain / 60)}:${String(remain % 60).padStart(2, '0')}`
+                : '인증 시간이 만료되었어요. 다시 받아 주세요.'}
+            </p>
+          )}
+
+          {phoneVerified ? (
+            <p className="mt-1 text-xs text-green-600">휴대폰 인증이 완료되었어요.</p>
+          ) : (
+            phoneMsg && <p className="mt-1 text-xs text-gray-500">{phoneMsg}</p>
+          )}
+        </div>
 
         {/* 이메일: 아이디 + 도메인 선택/직접 입력 */}
         <div>
@@ -293,6 +403,8 @@ function SignupPage() {
             type="password"
             required
             minLength={8}
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
             placeholder="비밀번호 (영문·숫자·특수문자 8자 이상)"
             className={`${inputClass} mt-1`}
           />
@@ -306,9 +418,16 @@ function SignupPage() {
             type="password"
             required
             minLength={8}
+            value={pwConfirm}
+            onChange={(e) => setPwConfirm(e.target.value)}
             placeholder="비밀번호 확인"
             className={`${inputClass} mt-1`}
           />
+          {pwConfirm.length > 0 && (
+            <p className={`mt-1 text-xs ${pwMatch ? 'text-green-600' : 'text-red-500'}`}>
+              {pwMatch ? '비밀번호가 일치합니다.' : '비밀번호가 일치하지 않습니다.'}
+            </p>
+          )}
         </label>
 
         <button
