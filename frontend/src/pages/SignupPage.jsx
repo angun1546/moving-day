@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { checkEmail } from '../services/auth'
 import DatePicker from '../components/DatePicker'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const inputClass =
   'w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -30,6 +33,25 @@ function SignupPage() {
   const [domainChoice, setDomainChoice] = useState('gmail.com')
   const [customDomain, setCustomDomain] = useState('')
   const isCustomDomain = domainChoice === 'custom'
+  // 이메일 중복 상태: idle | checking | available | taken
+  const [emailStatus, setEmailStatus] = useState('idle')
+
+  const emailDomain = isCustomDomain ? customDomain.trim() : domainChoice
+  const fullEmail = emailId.trim() && emailDomain ? `${emailId.trim()}@${emailDomain}` : ''
+
+  // 이메일이 형식에 맞으면 0.5초 디바운스 후 중복 확인
+  useEffect(() => {
+    if (!fullEmail || !EMAIL_RE.test(fullEmail)) {
+      setEmailStatus('idle')
+      return
+    }
+    setEmailStatus('checking')
+    const t = setTimeout(async () => {
+      const ok = await checkEmail(fullEmail)
+      setEmailStatus(ok ? 'available' : 'taken')
+    }, 500)
+    return () => clearTimeout(t)
+  }, [fullEmail])
 
   async function onSubmit(e) {
     e.preventDefault()
@@ -56,6 +78,12 @@ function SignupPage() {
       return
     }
     const email = `${emailId.trim()}@${domain}`
+
+    // 이미 가입된 이메일이면 막기 (서버 409가 최종 방어선이지만 UX로 미리 차단)
+    if (emailStatus === 'taken') {
+      setError('이미 가입된 이메일입니다. 다른 이메일을 사용해 주세요.')
+      return
+    }
 
     // 리뷰·FAQ 표시 방식 저장 (닉네임 그대로 / 실명 일부 가림)
     setDisplayMode(fd.get('displayMode') || 'nickname')
@@ -243,6 +271,17 @@ function SignupPage() {
               </option>
             ))}
           </select>
+          {emailStatus === 'checking' && (
+            <p className="mt-1 text-xs text-gray-400">이메일 확인 중...</p>
+          )}
+          {emailStatus === 'taken' && (
+            <p className="mt-1 text-xs text-red-500">
+              이미 가입된 이메일입니다. 다른 이메일을 사용해 주세요.
+            </p>
+          )}
+          {emailStatus === 'available' && (
+            <p className="mt-1 text-xs text-green-600">사용 가능한 이메일입니다.</p>
+          )}
         </div>
 
         <label className="block">
@@ -274,7 +313,7 @@ function SignupPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || emailStatus === 'taken'}
           className="w-full rounded-full bg-brand px-7 py-4 font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? '가입 중...' : '회원가입'}

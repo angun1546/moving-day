@@ -90,6 +90,21 @@ router.post('/signup', async (req, res) => {
   }
 })
 
+// 이메일 중복 확인 (회원가입 실시간 체크) — available=true면 사용 가능
+router.get('/check-email', async (req, res) => {
+  const email = String(req.query.email ?? '').trim()
+  if (!EMAIL_RE.test(email)) {
+    return res.json({ available: false, reason: 'invalid' })
+  }
+  try {
+    const exists = await prisma.user.findUnique({ where: { email } })
+    res.json({ available: !exists })
+  } catch (err) {
+    console.error('이메일 확인 실패:', err)
+    res.status(500).json({ message: '서버 오류로 확인에 실패했습니다.' })
+  }
+})
+
 // 로그인
 router.post('/login', async (req, res) => {
   const { email, password } = req.body ?? {}

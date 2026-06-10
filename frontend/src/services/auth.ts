@@ -27,6 +27,19 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return data as T
 }
 
+// 이메일 중복 확인 (회원가입 실시간) — true면 사용 가능
+// 네트워크 실패 시 true(막지 않음) — 서버 signup의 409가 최종 방어선
+export async function checkEmail(email: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API}/check-email?email=${encodeURIComponent(email)}`)
+    if (!res.ok) return true
+    const data = await res.json()
+    return Boolean(data.available)
+  } catch {
+    return true
+  }
+}
+
 export async function signup(payload: unknown): Promise<User> {
   const data = await post<AuthResult>('/signup', payload)
   setToken(data.token)
