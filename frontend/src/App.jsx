@@ -3,6 +3,7 @@ import Header from './components/Header'
 import Footer from './components/Footer'
 import PageTransition from './components/PageTransition'
 import TopButton from './components/TopButton'
+import ConsultDock from './components/ConsultDock'
 import NoticeBanner from './components/NoticeBanner'
 import { useTapFeedback } from './hooks/useTapFeedback'
 
@@ -21,6 +22,7 @@ function App() {
       </main>
       <Footer />
       <TopButton />
+      <ConsultDock />
     </div>
   )
 }

@@ -13,6 +13,10 @@
   /* 형광 포인트: 로고 시그니처 그린 (강조·배경용) */
   --color-accent: #00e676;
 
+  /* 카카오톡 브랜드 색 (상담 버튼) */
+  --color-kakao: #fee500;
+  --color-kakao-text: #3c1e1e;
+
   /* GNB(헤더) 컨테이너 폭 — 1200px */
   --container-gnb: 75rem;
 

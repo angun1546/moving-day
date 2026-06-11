@@ -12,7 +12,6 @@
     "db:seed": "node prisma/seed.ts",
     "db:studio": "prisma studio",
     "test:sms": "node --env-file-if-exists=.env scripts/test-sms.ts",
-    "test:alimtalk": "node --env-file-if-exists=.env scripts/test-alimtalk.ts",
     "reset:admin": "node --env-file-if-exists=.env scripts/reset-admin-password.ts",
     "clear:content": "node --env-file-if-exists=.env scripts/clear-content.ts",
     "migrate:admin-email": "node --env-file-if-exists=.env scripts/migrate-admin-email.ts"
