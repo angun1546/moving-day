@@ -157,7 +157,7 @@ router.post('/', upload.array('photos', 5), async (req, res) => {
     const homeSizeText = homeSize || '미정'
     void sendMessageToMany(
       partners.map((p) => p.phone),
-      `[이삿날] 새 견적 요청 도착\n${moveType} · ${fromRegion} → ${toRegion}\n예정일 ${moveDateText} · 규모 ${homeSizeText} · ${method}\n파트너센터에서 입찰하세요.`,
+      `[이삿날] 새로운 견적 요청이 도착했어요.\n고객님이 함께할 이사 파트너를 기다리고 있습니다.\n\n▶ ${moveType} · ${fromRegion} → ${toRegion}\n▶ 예정일 ${moveDateText} · 규모 ${homeSizeText}\n▶ 견적방식 ${method}\n\n지금 입찰하고 고객님과 연결되세요.`,
       quoteTemplate
         ? {
             templateId: quoteTemplate,
@@ -232,7 +232,7 @@ router.patch('/:id/stage', async (req, res) => {
       const stageTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_STAGE
       void sendMessage({
         to: quote.phone,
-        text: `[이삿날] 회원님이 신청·계약하신 이사 건의 진행 상태가 '${stage}'(으)로 업데이트되었습니다.\n마이페이지에서 확인하세요.`,
+        text: `[이삿날] 회원님이 신청·계약하신 이사 건의 진행 상태가 업데이트되었어요.\n\n▶ 현재 단계 '${stage}'\n\n차근차근 준비되고 있으니 안심하세요.\n자세한 내용은 마이페이지에서 확인하실 수 있어요.`,
         kakao: stageTemplate
           ? { templateId: stageTemplate, variables: { '#{진행단계}': stage } }
           : undefined,

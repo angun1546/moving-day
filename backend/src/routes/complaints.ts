@@ -96,7 +96,7 @@ async function notifyComplaintReply(c: {
     const replyTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_REPLY_COMPLAINT
     void sendMessage({
       to: phone,
-      text: `[이삿날] 접수하신 불편사항에 관리자 답변이 등록되었습니다.\n홈페이지에서 확인해 주세요.`,
+      text: `[이삿날] 접수하신 불편사항에 관리자 답변이 등록되었습니다.\n\n소중한 의견 들려주셔서 감사해요.\n홈페이지에서 답변을 확인해 주세요.`,
       kakao: replyTemplate ? { templateId: replyTemplate } : undefined,
     })
   } catch (err) {

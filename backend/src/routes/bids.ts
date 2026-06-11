@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
     const etaText = eta || '미정'
     void sendMessage({
       to: quote?.phone,
-      text: `[이삿날] ${company}님이 입찰했어요. ${won}원\n${fromText} → ${toText} · 예정일 ${moveDateText}\n앱에서 비교하고 선택하세요.\n\n※ 본 알림은 회원님이 등록하신 견적 요청에 새로운 입찰이 도착할 때마다 발송되며, 견적 신청 시 수신에 동의하신 알림입니다.`,
+      text: `[이삿날] 반가운 소식이 있어요.\n${company}님이 회원님의 이사에 입찰했습니다.\n\n▶ 견적 금액 ${won}원\n▶ ${fromText} → ${toText}\n▶ 이사예정일 ${moveDateText}\n▶ 예상일정 ${etaText}\n\n여러 업체를 천천히 비교하고, 가장 마음에 드는 곳을 선택하세요.\n\n※ 본 알림은 회원님이 등록하신 견적 요청에 새로운 입찰이 도착할 때마다 발송되며, 견적 신청 시 수신에 동의하신 알림입니다.`,
       kakao: bidTemplate
         ? {
             templateId: bidTemplate,
@@ -180,7 +180,7 @@ router.patch('/:id/accept', async (req, res) => {
     const custPhone = target?.phone ?? '미정'
     void sendMessage({
       to: winner?.phone,
-      text: `[이삿날] 낙찰되었습니다! ${awardWon}원\n${custName} 고객 · ${custPhone}\n${aFrom} → ${aTo} · 예정일 ${aDate}\n고객에게 연락해 일정을 확정하세요.`,
+      text: `[이삿날] 축하합니다! 고객님이 회원님을 선택했어요.\n\n▶ 낙찰 금액 ${awardWon}원\n▶ 고객 ${custName} · ${custPhone}\n▶ ${aFrom} → ${aTo}\n▶ 이사예정일 ${aDate}\n\n고객님께 먼저 연락드려 따뜻한 첫인상을 남겨보세요.`,
       kakao: awardTemplate
         ? {
             templateId: awardTemplate,
@@ -214,7 +214,7 @@ router.patch('/:id/accept', async (req, res) => {
       })
       void sendMessageToMany(
         loserProfiles.map((p) => p.phone),
-        '[이삿날] 아쉽게도 이번 견적은 다른 업체로 결정되었습니다.\n다음 기회에 다시 입찰해 주세요.',
+        '[이삿날] 이번 견적은 아쉽게도 다른 업체로 결정되었습니다.\n\n소중한 입찰 감사드려요.\n회원님과 꼭 맞는 다음 고객님이 기다리고 있어요.\n다음 기회에 다시 도전해 주세요.',
         rejectTemplate ? { templateId: rejectTemplate, variables: {} } : undefined,
       )
     }

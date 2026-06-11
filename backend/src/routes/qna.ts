@@ -16,7 +16,7 @@ async function notifyQnaAnswer(q: { scope: string; authorEmail: string | null })
     const replyTemplate = process.env.SOLAPI_ALIMTALK_TEMPLATE_REPLY_QNA
     void sendMessage({
       to: user?.phone ?? null,
-      text: `[이삿날] 문의하신 질문에 관리자 답변이 등록되었습니다.\n홈페이지에서 확인해 주세요.`,
+      text: `[이삿날] 문의하신 질문에 관리자 답변이 등록되었습니다.\n\n기다려 주셔서 감사해요.\n홈페이지에서 답변을 확인해 주세요.`,
       kakao: replyTemplate ? { templateId: replyTemplate } : undefined,
     })
   } catch (err) {
