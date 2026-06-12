@@ -10,6 +10,24 @@ export const getToken = (): string | null => localStorage.getItem(TOKEN_KEY)
 export const clearToken = (): void => localStorage.removeItem(TOKEN_KEY)
 const setToken = (t: string): void => localStorage.setItem(TOKEN_KEY, t)
 
+// 소셜 로그인 콜백에서 받은 토큰을 저장 (OAuthKakaoPage에서 사용)
+export const saveToken = (t: string): void => setToken(t)
+
+// 카카오 REST 키가 설정돼 있으면 카카오 로그인 사용 가능
+const KAKAO_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY ?? ''
+const KAKAO_REDIRECT = import.meta.env.VITE_KAKAO_REDIRECT_URI ?? ''
+export const isKakaoEnabled = (): boolean => Boolean(KAKAO_KEY && KAKAO_REDIRECT)
+
+// '카카오로 시작하기' 클릭 시 이동할 카카오 인가 URL
+export function kakaoAuthUrl(): string {
+  const params = new URLSearchParams({
+    client_id: KAKAO_KEY,
+    redirect_uri: KAKAO_REDIRECT,
+    response_type: 'code',
+  })
+  return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
+}
+
 // 인증이 필요한 요청(관리자·본인) 헤더 — 토큰 없으면 빈 객체
 export const authHeaders = (): Record<string, string> => {
   const t = getToken()

@@ -19,6 +19,7 @@ interface AuthValue {
   displayMode: string
   setDisplayMode: (mode: string) => void
   login: (username: string, password: string) => Promise<User | null>
+  socialLogin: (token: string) => Promise<User | null>
   signup: (payload: Record<string, unknown>) => Promise<User | null>
   updateUser: (changes: Partial<User>) => void
   logout: () => void
@@ -108,6 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setDisplayMode,
     login: async (username, password) => {
       const u = await auth.login(username, password)
+      const merged = u ? { ...u, ...getOverrides(u.email) } : u
+      setUser(merged)
+      return merged
+    },
+    // 카카오 콜백에서 받은 토큰 저장 후 내 정보 조회 → 로그인 상태 세움
+    socialLogin: async (token) => {
+      auth.saveToken(token)
+      const u = await auth.fetchMe()
       const merged = u ? { ...u, ...getOverrides(u.email) } : u
       setUser(merged)
       return merged

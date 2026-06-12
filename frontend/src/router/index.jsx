@@ -9,6 +9,7 @@ import BidComparePage from '../pages/BidComparePage'
 import LoginPage from '../pages/LoginPage'
 import SignupPage from '../pages/SignupPage'
 import FindAccountPage from '../pages/FindAccountPage'
+import OAuthKakaoPage from '../pages/OAuthKakaoPage'
 import UserReviewPage from '../pages/UserReviewPage'
 import UserFaqPage from '../pages/UserFaqPage'
 import MyPage from '../pages/MyPage'
@@ -69,6 +70,8 @@ export const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
       { path: 'signup', element: <SignupPage /> },
       { path: 'find-account', element: <FindAccountPage /> },
+      // 카카오 로그인 콜백 처리 (백엔드가 토큰 붙여 리다이렉트)
+      { path: 'oauth/kakao', element: <OAuthKakaoPage /> },
       // 고객 리뷰
       { path: 'reviews', element: <UserReviewPage /> },
       // FAQ (자주 묻는 질문 + Q&A)

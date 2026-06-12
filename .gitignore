@@ -29,3 +29,6 @@ Thumbs.db
 
 # Claude Code 로컬 설정
 .claude/settings.local.json
+
+# 개인 업무일지(저장소 비포함)
+업무일지/

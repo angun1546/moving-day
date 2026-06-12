@@ -41,6 +41,7 @@ function publicUser(u: {
   gender: string | null
   phone: string | null
   verified: boolean
+  provider?: string | null
 }) {
   return {
     id: u.id,
@@ -52,6 +53,7 @@ function publicUser(u: {
     gender: u.gender,
     phone: u.phone,
     verified: u.verified,
+    provider: u.provider ?? null,
   }
 }
 
@@ -253,7 +255,16 @@ router.post('/login', async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { username: String(username).trim().toLowerCase() },
     })
-    if (!user || !(await comparePassword(password, user.password))) {
+    if (!user) {
+      return res.status(401).json({ message: '아이디 또는 비밀번호가 올바르지 않습니다.' })
+    }
+    // 카카오 간편가입 계정은 비밀번호가 없음 — 소셜 로그인으로 안내
+    if (!user.password) {
+      return res
+        .status(401)
+        .json({ message: '카카오로 가입한 계정입니다. 카카오로 로그인해 주세요.' })
+    }
+    if (!(await comparePassword(password, user.password))) {
       return res.status(401).json({ message: '아이디 또는 비밀번호가 올바르지 않습니다.' })
     }
     res.json({ token: signToken(user.id), user: publicUser(user) })
@@ -442,6 +453,100 @@ router.post('/reset/password', async (req, res) => {
   } catch (err) {
     console.error('비밀번호 재설정 실패:', err)
     res.status(500).json({ message: '서버 오류로 재설정에 실패했습니다.' })
+  }
+})
+
+// ── 카카오 간편 로그인(B안) ─────────────────────────────────────────
+// 프론트 '카카오로 시작하기' → 카카오 인가 화면 → 이 콜백으로 code 전달
+// code→액세스토큰→프로필 교환 후 회원 찾기/생성 → JWT 발급 → 프론트로 리다이렉트
+const KAKAO_REST_KEY = process.env.KAKAO_REST_API_KEY ?? ''
+const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET ?? ''
+const KAKAO_REDIRECT_URI = process.env.KAKAO_REDIRECT_URI ?? ''
+
+// 소셜 로그인 후 돌아갈 프론트 주소 (FRONTEND_URL 첫 항목)
+function frontendBase() {
+  return (process.env.FRONTEND_URL ?? 'http://localhost:5173').split(',')[0].trim()
+}
+
+router.get('/kakao/callback', async (req, res) => {
+  const base = frontendBase()
+  const code = String(req.query.code ?? '')
+  if (!KAKAO_REST_KEY || !KAKAO_REDIRECT_URI) {
+    return res.redirect(`${base}/oauth/kakao?error=config`)
+  }
+  if (!code) {
+    return res.redirect(`${base}/oauth/kakao?error=cancel`)
+  }
+  try {
+    // 1) 인가코드 → 액세스 토큰
+    const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: KAKAO_REST_KEY,
+        redirect_uri: KAKAO_REDIRECT_URI,
+        code,
+        ...(KAKAO_CLIENT_SECRET ? { client_secret: KAKAO_CLIENT_SECRET } : {}),
+      }),
+    })
+    const tokenJson = (await tokenRes.json()) as { access_token?: string }
+    if (!tokenRes.ok || !tokenJson.access_token) {
+      console.error('카카오 토큰 교환 실패:', tokenJson)
+      return res.redirect(`${base}/oauth/kakao?error=token`)
+    }
+    // 2) 액세스 토큰 → 카카오 프로필
+    const meRes = await fetch('https://kapi.kakao.com/v2/user/me', {
+      headers: { Authorization: `Bearer ${tokenJson.access_token}` },
+    })
+    const me = (await meRes.json()) as {
+      id?: number
+      kakao_account?: { email?: string; profile?: { nickname?: string } }
+    }
+    if (!meRes.ok || !me.id) {
+      console.error('카카오 프로필 조회 실패:', me)
+      return res.redirect(`${base}/oauth/kakao?error=profile`)
+    }
+    const kakaoId = String(me.id)
+    const account = me.kakao_account ?? {}
+    const kakaoEmail = account.email ?? null
+    const nickname = account.profile?.nickname ?? '카카오회원'
+
+    // 3) 회원 찾기/생성
+    //   ① provider+providerId로 기존 카카오 회원
+    let user = await prisma.user.findFirst({
+      where: { provider: 'kakao', providerId: kakaoId },
+    })
+    //   ② 카카오 이메일이 기존 일반 회원과 같으면 계정 연결
+    if (!user && kakaoEmail) {
+      const byEmail = await prisma.user.findUnique({ where: { email: kakaoEmail } })
+      if (byEmail) {
+        user = await prisma.user.update({
+          where: { id: byEmail.id },
+          data: { provider: 'kakao', providerId: kakaoId },
+        })
+      }
+    }
+    //   ③ 신규 간편가입 (비밀번호 없음·이메일 없으면 합성 이메일로 채움)
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          name: nickname,
+          username: `kakao_${kakaoId}`,
+          email: kakaoEmail ?? `kakao_${kakaoId}@kakao.user`,
+          password: null,
+          role: 'customer',
+          provider: 'kakao',
+          providerId: kakaoId,
+          verified: false,
+        },
+      })
+    }
+    // 4) JWT 발급 → 프론트로 전달 (프론트가 토큰 저장 후 로그인 상태 복원)
+    return res.redirect(`${base}/oauth/kakao?token=${signToken(user.id)}`)
+  } catch (err) {
+    console.error('카카오 로그인 실패:', err)
+    return res.redirect(`${base}/oauth/kakao?error=server`)
   }
 })
 

@@ -11,6 +11,7 @@ export interface User {
   gender?: string | null
   phone?: string | null
   verified?: boolean
+  provider?: string | null // 소셜 로그인 제공자: kakao (일반 가입은 null)
   nickname?: string // 클라이언트 표시용(서버 컬럼 외)
 }
 

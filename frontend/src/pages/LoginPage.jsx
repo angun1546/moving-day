@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { isKakaoEnabled, kakaoAuthUrl } from '../services/auth'
 
 const inputClass =
   'w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20'
@@ -59,6 +60,29 @@ function LoginPage() {
           {loading ? '로그인 중...' : '로그인'}
         </button>
       </form>
+
+      {/* 카카오 간편 로그인 — REST 키 설정 시에만 노출 */}
+      {isKakaoEnabled() && (
+        <>
+          <div className="mt-6 flex items-center gap-3 text-sm text-gray-400">
+            <span className="h-px flex-1 bg-gray-200" />
+            또는
+            <span className="h-px flex-1 bg-gray-200" />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = kakaoAuthUrl()
+            }}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-kakao px-7 py-4 font-semibold text-kakao-text transition hover:brightness-95"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7-.2.7-.7 2.6-.8 3-.1.5.2.5.4.4.2-.1 2.6-1.8 3.7-2.5.6.1 1.3.1 2 .1 5.5 0 10-3.6 10-8S17.5 3 12 3z" />
+            </svg>
+            카카오로 시작하기
+          </button>
+        </>
+      )}
 
       <p className="mt-6 text-center text-sm text-gray-500">
         <Link to="/find-account" className="font-semibold text-brand hover:underline">

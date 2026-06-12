@@ -77,6 +77,7 @@ Moving-day/
 - **아이디(username) 로그인**: 로그인 수단은 **이메일이 아니라 아이디**(`username`, 영문 시작·영문/숫자/`_` 4~20자, 고유). 이메일은 **회원가입 정보·아이디 찾기·본인인증 용도**로만 사용(로그인 수단 아님). 기존 회원은 마이그레이션에서 **아이디=이메일 값으로 백필**되어 그대로 로그인 가능. 내부 신원 키(`authorEmail`·`userEmail`·`toEmail`·`bidderEmail` 등 컬럼명은 유지, **값은 아이디**)도 아이디 기준
 - **회원가입**: **아이디(실시간 중복확인 `GET /api/auth/check-username`)**·이메일 도메인 분리(직접 입력 포함, 실시간 중복확인)·닉네임(15자)·**비밀번호(영문+숫자+특수문자 8자 이상, 프론트·백엔드 검증)**·비밀번호 확인·표시 방식 선택(닉네임/실명 마스킹). **휴대폰+이메일 본인인증 필수**
 - **로그인**: 아이디+비밀번호 → 로그인 후 **`user.role` 기준 자동 리다이렉트**(admin→/admin, partner→/partner, customer→/)
+- **카카오 간편 로그인·가입**: 로그인 페이지 '카카오로 시작하기' → 카카오 인가 → 백엔드 콜백(`/api/auth/kakao/callback`)이 인가코드→토큰→프로필 교환 후 **회원 자동 찾기/가입**(비밀번호 없음·`provider`=kakao·`providerId`=카카오 user id) → JWT 발급 후 프론트(`/oauth/kakao`)로 토큰 전달해 로그인. 카카오 이메일이 기존 일반회원과 같으면 **계정 자동 연결**, 이메일 미동의 시 `kakao_<id>@kakao.user`로 채움. 일반 로그인 시 카카오 계정이면 "카카오로 로그인" 안내. **REST 키 미설정 시 버튼 자동 숨김**(`VITE_KAKAO_REST_API_KEY` 기준)
 - **아이디·비밀번호 찾기**(`/find-account`): **아이디 찾기 = 이름+전화 일치 + 휴대폰 SMS 인증번호까지 통과해야** 가입 아이디 전체 공개(마스킹 없음·본인만). 비밀번호 찾기 = 휴대폰/이메일 인증(둘 중 선택) 후 재설정
 - **역할(role) 분리**: 가입 진입 경로로 역할 자동 결정(파트너 사이트 가입→partner, 일반→customer, `admin@movingday.com`→admin·서버 부여). **파트너 영역(입찰·대시보드·업체정보)은 `RequirePartner` 가드로 partner/admin만 접근**(고객 계정은 파트너 랜딩으로). admin 위장 입력은 서버가 이메일로 검증해 차단
 - **회원정보 수정**(`/account`): 닉네임·전화번호·**헤더 표시 방식**(닉네임/실명)·리뷰/FAQ 표시 방식·**비밀번호 변경(영문+숫자+특수문자 8자 이상, 회원가입과 동일 룰)** — 마이페이지·헤더에 즉시 반영
@@ -133,7 +134,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | 모델 | 주요 필드 |
 |------|------|
 | `QuoteRequest` | name, phone, method(방문/사진/전화), moveType, fromRegion, toRegion, moveDate, homeSize, memo, **addons(부가 서비스 JSON `{cleaning, storage[], document[]}`·nullable)**, photos(JSON), visitDate, callTime, status, userEmail(회원 연결·nullable), stage(낙찰 후 진행 단계·nullable) |
-| `User` | id, **username(로그인 아이디·unique)**, email(unique·가입정보/인증/아이디찾기용), password(bcrypt), name, **role(customer/partner/admin)**, birthDate, gender, phone, verified, createdAt |
+| `User` | id, **username(로그인 아이디·unique)**, email(unique·가입정보/인증/아이디찾기용), password(bcrypt·**nullable**, 카카오 가입은 없음), name, **role(customer/partner/admin)**, birthDate, gender, phone, verified, **provider(소셜 제공자 kakao·nullable)**, **providerId(카카오 user id·nullable)**, createdAt · `@@unique([provider, providerId])` |
 | `Bid` | id, quoteRequestId(FK→QuoteRequest, Cascade), bidderEmail, company, price, message, eta, status(입찰/낙찰/거절), createdAt |
 | `StageLog` | id, quoteRequestId(FK→QuoteRequest, Cascade), stage, createdAt — 단계 변경 이력(택배식 타임라인) |
 | `Notification` | id, toEmail(수신자 아이디·컬럼명은 레거시), type(bid/award/reject/stage/**reply**), message, link, read, createdAt — 서버 이벤트 알림(폴링 조회) |
@@ -170,6 +171,7 @@ cd frontend && npm install && npm run dev                          # 5173
 | GET | `/api/auth/check-email` | 이메일 중복확인 (회원가입 실시간) |
 | POST | `/api/auth/find-id/send-code` | 아이디 찾기 ① 이름+전화 일치 시 SMS 인증번호 발송 |
 | POST | `/api/auth/find-id/confirm` | 아이디 찾기 ② 인증번호 통과 시 가입 아이디 전체 반환 |
+| GET | `/api/auth/kakao/callback` | 카카오 로그인 콜백 — 코드→토큰→프로필 교환 후 회원 찾기/가입 → 프론트로 JWT 리다이렉트 |
 | GET | `/api/auth/me` | 내 정보 (Authorization: Bearer) |
 | POST | `/api/quotes` | 견적 신청 (사진 Cloudinary 업로드) |
 | GET | `/api/quotes` | 견적 목록 (입찰 포함 — 파트너·관리자) |
@@ -264,8 +266,12 @@ cd frontend && npm install && npm run dev                          # 5173
 | `SOLAPI_ALIMTALK_TEMPLATE_STAGE` | 진행 단계 알림톡 템플릿 ID — 고객에게(선택) | (선택) |
 | `SOLAPI_ALIMTALK_TEMPLATE_REPLY_COMPLAINT` | 불편사항 답변 알림톡 템플릿 ID — 작성자에게(선택, 변수 없음·버튼 `/complaint`) | (선택) |
 | `SOLAPI_ALIMTALK_TEMPLATE_REPLY_QNA` | FAQ 답변 알림톡 템플릿 ID — 질문자에게(선택, 변수 없음·버튼 `/faq`) | (선택) |
+| `KAKAO_REST_API_KEY` | 카카오 간편 로그인 REST API 키(선택) | (시크릿) |
+| `KAKAO_CLIENT_SECRET` | 카카오 Client Secret — 콘솔에서 '사용함'으로 켰을 때만(선택) | (선택) |
+| `KAKAO_REDIRECT_URI` | 카카오 콜백 주소(콘솔 등록값과 일치) | `https://themovingday.com/api/auth/kakao/callback` |
 
 > `NODE_ENV=production`이면 시작 시 `JWT_SECRET` 누락을 거부합니다.
+> 카카오 로그인: `KAKAO_REST_API_KEY`+`KAKAO_REDIRECT_URI`가 있어야 동작(`KAKAO_CLIENT_SECRET`은 콘솔에서 켰을 때만). 프론트는 `frontend/.env`의 `VITE_KAKAO_REST_API_KEY`+`VITE_KAKAO_REDIRECT_URI`로 버튼 노출·인가 URL 생성(REST 키는 동일 값, Redirect URI는 백엔드와 동일). 콘솔 **카카오 로그인 > Redirect URI**에 로컬(`http://localhost:4000/...`)·운영(`https://themovingday.com/...`) 둘 다 등록.
 > SMS: `SOLAPI_API_KEY`·`SOLAPI_API_SECRET`·`SOLAPI_SENDER` **3개만 있으면 문자 실제 발송**. 셋 중 하나라도 없으면 **mock 모드(콘솔 로그만)**.
 > 알림톡: 위 3개 + `SOLAPI_KAKAO_PF_ID` + 템플릿 ID(`..._QUOTE`/`..._BID`/`..._AWARD`/`..._REJECT`/`..._STAGE`)까지 설정되면 **알림톡 우선·실패 시 SMS 자동 대체**. 템플릿 변수 — 견적: `#{이사종류}#{출발지}#{도착지}#{이사예정일}#{이사규모}#{견적방식}`(예정일·규모 미입력 시 '미정' 자동), 입찰: `#{업체명}#{금액}#{출발지}#{도착지}#{이사예정일}#{예상일정}`(입찰마다 견적 주인에게 발송, 빈 값은 '미정' 자동, **다발성 메시지라 "신청 시 동의·새 입찰마다 발송" 고정 동의 문구를 템플릿/SMS 본문에 포함** — 카카오 심사 요건), 낙찰: `#{고객명}#{연락처}#{출발지}#{도착지}#{이사예정일}#{금액}`(낙찰 시 낙찰 파트너에게 고객 연락처 전달), 거절: 변수 없는 고정 통보(낙찰 시 떨어진 파트너들에게), 단계: `#{진행단계}`(낙찰 후 진행 단계 변경 시 고객에게, **"회원님이 신청·계약하신 이사 건" 수신자 액션 명시** — 카카오 심사 요건), 답변: 변수 없는 고정 통보(불편사항·FAQ 답변 등록 시 작성자에게, 템플릿 2종 분리). (`backend/src/messaging.ts`)
 >
@@ -364,3 +370,5 @@ cd /var/www/moving-day/frontend && npm install && npm run build
 10. **UX·운영 개선** (완료) — 회원정보 수정 저장 시 **마이페이지로 자동 이동**(`AccountEditPage`), **`DatePicker` 직접 타이핑 입력**(달력 선택 + `YYYY-MM-DD` 자동 포맷, 회원가입 생년월일 등 공용 적용), **운영 스크립트**(`npm run reset:admin`·`clear:content`·`test:sms`·`migrate:admin-email` — `DATABASE_URL` 기준 동작), **관리자 이메일 단일화**(`migrate:admin-email`: `.env`의 `ADMIN_EMAIL` 계정만 admin으로 수렴·나머지 admin 강등·재실행 안전), 배포 정리(Vercel·Render·**Turso/libSQL 제거 → better-sqlite3 단일 어댑터**, 도메인 메타 `themovingday.com` 교정), 솔라피 알림톡 변수 키 `#{}` 규격 수정, **회원가입·견적 폼 필수 입력 표시 강화**(필수 항목 라벨+빨간 `*`·상단 안내, `DatePicker` `required` 지원, 회원가입 생년월일·견적 이사예정일·주거형태/평형을 프론트·서버 모두 필수화), **이메일 중복 실시간 차단**(회원가입 시 0.5초 디바운스로 중복 이메일 확인·제출 차단 — `GET /api/auth/check-email`), **등록 폼 펼침 인터랙션**(리뷰·FAQ·후기 작성 폼이 `grid-rows` 0fr→1fr로 부드럽게 열림·`.collapsible`), 토글 버튼 문구 '폼 닫기'→'닫기' 통일, **휴대폰 본인인증(가입 필수)** — SMS 인증번호(솔라피) 발송·3분 카운트다운·서버 검증(`POST /api/auth/send-code`·`verify-code`, 인증 통과 번호만 가입·`verified=true`). SMS 키 미설정 시 **개발 모드**(인증번호 화면 표시 → 키 넣으면 자동 실발송 전환). **비밀번호 확인 실시간 일치 표시**, **아이디·비밀번호 찾기**(`/find-account` 탭형 — 아이디=이름+전화→마스킹 이메일 `an***@…`, 비번=**휴대폰 또는 이메일 인증(둘 중 선택)** 후 새 비밀번호 설정(`POST /api/auth/reset/send-phone-code`·`verify-phone-code`·`send-email-code`·`verify-email-code`·`reset/password`, 가입된 번호·이메일만 발송), 로그인 페이지 링크), **이메일 본인인증(가입 필수)** — Gmail SMTP(`nodemailer`) 인증번호 발송/확인(`POST /api/auth/send-email-code`·`verify-email-code`, `mailer.ts`), 메일 키(`GMAIL_USER`·`GMAIL_APP_PASSWORD`) 미설정 시 개발모드(화면 표시). 가입은 **휴대폰+이메일 둘 다 인증** 필요. **우측 플로팅 상담 도크**(`ConsultDock` — 손잡이로 여닫는 박스: 카카오톡 1:1 채팅·맞춤 상담신청(`/consult`)·"연중무휴 상담" 안내 + 대표번호 `1577-3101` 전화걸기) 전 페이지 공통 노출, 카카오 색은 `@theme` 토큰화(`--color-kakao`). **Footer 대표(이장민)·대표번호(1577-3101) 갱신**. **관리자 계정 `rio7158`로 이전**(아이디·이메일·`ADMIN_EMAIL`, 비번 유지)
 
 11. **상담신청 풀스택 + 접수/답변 알림** (완료) — `Consult` 모델(name·contact·moveType·content·status[접수/상담중/완료]·memo?[관리자 내부 메모·고객 비노출]·reply?[관리자 답변]·hidden·authorEmail?) + `/api/consults` CRUD(제출 공개·목록/처리/삭제 관리자, `/mine` 본인 조회). **상담 도크 '맞춤 상담신청' → 전용 페이지 `/consult`(`ConsultPage`)**(이름·연락처·이사종류·내용 **모두 필수**, 회원은 본인 신청 내역·답변 표시). **관리자 대시보드 '상담신청' 탭**(상태 변경·내부 메모·고객 답변·숨김/삭제 + "미처리 상담신청" 통계). **연락처 기반 자동 알림**: 접수 시 연락처가 **이메일이면 메일(`sendMail`)·전화면 SMS(`sendMessage`)로 접수 확인** 발송(`isEmail`로 판별). **관리자 답변 등록 시(빈 값→작성) 이메일 신청자에겐 답변 메일 발송**(전화 신청은 상담원이 직접 통화) + 회원이면 인앱 알림(`reply`)도 함께. 메일 발송은 Gmail SMTP 계정(`GMAIL_*`)로 보내되 **수신처는 네이버·다음 등 모든 제공사 가능**(발신 계정만 Gmail, 수신 도메인 제한 없음). 파트너/고객 헤더 하단 메뉴 정리(고객: 고객후기·FAQ 제거 / 파트너: 파트너스토리·FAQ 제거·무빙 프로젝트 추가 — 모두 상단 보조 링크엔 유지)
+
+12. **카카오 간편 로그인·가입** (완료) — `User`에 `provider`·`providerId` 추가 + `password` nullable화(마이그레이션 `add_social_login`, `@@unique([provider, providerId])`). 백엔드 콜백 `GET /api/auth/kakao/callback`(인가코드→토큰→`/v2/user/me` 프로필 → provider+providerId로 회원 찾기 / 카카오 이메일이 기존 일반회원과 같으면 계정 연결 / 없으면 신규 간편가입[username=`kakao_<id>`·이메일 미동의 시 `kakao_<id>@kakao.user`·비번 없음] → `signToken` → 프론트 `/oauth/kakao`로 토큰 리다이렉트). 일반 로그인 라우트에 **소셜 계정 가드**(비번 없으면 "카카오로 로그인" 안내). 프론트: 로그인 페이지 '카카오로 시작하기' 버튼(`isKakaoEnabled` 시만 노출)·콜백 처리 페이지 `OAuthKakaoPage`·`AuthContext.socialLogin(token)`. env: 백엔드 `KAKAO_REST_API_KEY`·`KAKAO_CLIENT_SECRET`·`KAKAO_REDIRECT_URI`, 프론트 `VITE_KAKAO_REST_API_KEY`·`VITE_KAKAO_REDIRECT_URI`. 기본 간편로그인은 비즈앱/검수 불필요(이메일 등 선택 동의항목만 검수 필요)

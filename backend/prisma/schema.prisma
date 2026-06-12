@@ -49,14 +49,18 @@ model User {
   id        String   @id @default(cuid())
   username  String   @unique // 로그인 아이디 — 기존 회원은 이메일 값으로 백필
   email     String   @unique // 회원가입 정보·아이디 찾기·인증용 (로그인 수단 아님)
-  password  String // bcrypt 해시
+  password  String? // bcrypt 해시 — 소셜(카카오) 간편가입 회원은 비밀번호 없음(null)
   name      String
   role      String   @default("customer") // customer | partner | admin
   birthDate String? // 생년월일 (YYYY-MM-DD) — 회원가입 시 API에서 필수 검증
   gender    String? // 성별: 남 / 여
   phone     String? // 전화번호
   verified  Boolean  @default(false) // 휴대폰 본인인증 여부 (추후 CI/DI 연동)
+  provider   String? // 소셜 로그인 제공자: kakao (일반 가입은 null)
+  providerId String? // 제공자 측 고유 회원 ID (카카오 user id)
   createdAt DateTime @default(now())
+
+  @@unique([provider, providerId]) // 같은 카카오 계정 중복 가입 방지
 }
 
 // 업체(파트너) 입찰 — 견적 요청에 대한 제안
