@@ -35,8 +35,6 @@ const MENU = [
     subs: storageServices.map((s) => ({ label: s.label, to: `/storage/${s.slug}` })),
   },
   { to: '/quote', label: '상담문의' },
-  { to: '/reviews', label: '고객 후기' },
-  { to: '/faq', label: 'FAQ' },
   {
     to: '/projects',
     label: '무빙 프로젝트',

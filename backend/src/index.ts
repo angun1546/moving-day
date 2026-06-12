@@ -12,6 +12,7 @@ import storiesRouter from './routes/stories.ts'
 import projectsRouter from './routes/projects.ts'
 import vlogsRouter from './routes/vlogs.ts'
 import complaintsRouter from './routes/complaints.ts'
+import consultsRouter from './routes/consults.ts'
 import tipsRouter from './routes/tips.ts'
 
 // 배포 환경(NODE_ENV=production)에서는 JWT_SECRET이 반드시 필요 — 누락 시 시작 거부
@@ -83,6 +84,9 @@ app.use('/api/vlogs', vlogsRouter)
 
 // 불편사항 접수 API
 app.use('/api/complaints', complaintsRouter)
+
+// 상담 신청 API
+app.use('/api/consults', consultsRouter)
 
 // 팁 게시판 API
 app.use('/api/tips', tipsRouter)

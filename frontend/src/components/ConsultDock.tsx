@@ -64,7 +64,7 @@ function ConsultDock() {
 
           {/* 맞춤 상담신청 */}
           <Link
-            to="/complaint"
+            to="/consult"
             className="flex flex-col items-center gap-1 rounded-xl bg-brand py-3 text-sm font-bold text-white transition hover:bg-brand-dark"
           >
             <svg

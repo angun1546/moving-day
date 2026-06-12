@@ -33,6 +33,11 @@ import {
   updateComplaint,
   deleteComplaint,
 } from '../services/complaints'
+import {
+  getConsults,
+  updateConsult,
+  deleteConsult,
+} from '../services/consults'
 import { getTips, createTip, updateTip, deleteTip } from '../services/tips'
 
 const inputClass =
@@ -47,6 +52,7 @@ const SECTIONS = [
   { key: 'qa', label: 'Q&A 답변' },
   { key: 'notice', label: '공지사항' },
   { key: 'projects', label: '무빙 프로젝트' },
+  { key: 'consults', label: '상담신청' },
   { key: 'complaints', label: '불편사항' },
   { key: 'tips', label: '팁 게시판' },
 ]
@@ -57,6 +63,15 @@ const complaintStatusStyle = {
   완료: 'bg-brand-light text-brand-dark',
 }
 const COMPLAINT_STATUS = ['접수', '처리중', '완료']
+
+const consultStatusStyle = {
+  접수: 'bg-gray-100 text-gray-600',
+  상담중: 'bg-amber-100 text-amber-700',
+  완료: 'bg-brand-light text-brand-dark',
+}
+const CONSULT_STATUS = ['접수', '상담중', '완료']
+// 연락처가 이메일이면 답변 저장 시 메일 발송됨
+const isEmailContact = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v || '').trim())
 
 function StatCard({ label, value }) {
   return (
@@ -394,10 +409,14 @@ function AdminDashboardPage() {
     ? vlogs.find((v) => v.id === editingVlogId)
     : null
 
-  // 불편사항 접수 + 팁 게시판
+  // 상담신청 + 불편사항 접수 + 팁 게시판
+  const [consults, setConsults] = useState([])
   const [complaints, setComplaints] = useState([])
   const [tips, setTips] = useState([])
   useEffect(() => {
+    getConsults()
+      .then((d) => setConsults(Array.isArray(d) ? d : []))
+      .catch(() => setConsults([]))
     getComplaints()
       .then((d) => setComplaints(Array.isArray(d) ? d : []))
       .catch(() => setComplaints([]))
@@ -468,6 +487,7 @@ function AdminDashboardPage() {
   const reviewPage = usePagination(allReviews, 5)
   const qaPage = usePagination(allInquiries, 5)
   const noticePage = usePagination(notices, 5)
+  const consultPage = usePagination(consults, 5)
   const complaintPage = usePagination(complaints, 5)
   const tipPage = usePagination(tips, 5)
 
@@ -477,6 +497,7 @@ function AdminDashboardPage() {
   const hiddenReviews = allReviews.filter((r) => r.hidden).length
   const pendingQa = allInquiries.filter((i) => !i.a).length
   const pendingComplaints = complaints.filter((c) => c.status !== '완료').length
+  const pendingConsults = consults.filter((c) => c.status !== '완료').length
 
   // 리뷰 액션 — 어느 큐인지 _kind로 분기해 같은 키에 반영
   // 고객 리뷰(_kind==='user')는 서버 반영, 파트너 스토리는 기존 localStorage
@@ -749,6 +770,50 @@ function AdminDashboardPage() {
     setVlogOpen(true)
   }
 
+  // 상담신청 처리 (관리자 — 상태·메모·숨김·삭제)
+  async function setConsultStatus(id, status) {
+    try {
+      const updated = await updateConsult(id, { status })
+      setConsults((prev) => prev.map((c) => (c.id === id ? updated : c)))
+    } catch {
+      // 무시
+    }
+  }
+  async function saveConsultMemo(id, memo) {
+    try {
+      const updated = await updateConsult(id, { memo })
+      setConsults((prev) => prev.map((c) => (c.id === id ? updated : c)))
+    } catch {
+      // 무시
+    }
+  }
+  async function saveConsultReply(id, reply) {
+    try {
+      const updated = await updateConsult(id, { reply })
+      setConsults((prev) => prev.map((c) => (c.id === id ? updated : c)))
+    } catch {
+      // 무시
+    }
+  }
+  async function toggleConsultHide(c) {
+    try {
+      const updated = await updateConsult(c.id, { hidden: !c.hidden })
+      setConsults((prev) => prev.map((x) => (x.id === c.id ? updated : x)))
+    } catch {
+      // 무시
+    }
+  }
+  async function removeConsult(id) {
+    if (!(await confirm({ title: '삭제', message: '이 상담신청을 삭제할까요?', danger: true })))
+      return
+    try {
+      await deleteConsult(id)
+      setConsults((prev) => prev.filter((c) => c.id !== id))
+    } catch {
+      // 무시
+    }
+  }
+
   // 불편사항 처리 (관리자 — 상태·답변·삭제)
   async function setComplaintStatus(id, status) {
     try {
@@ -839,11 +904,12 @@ function AdminDashboardPage() {
       </p>
 
       {/* 통계 (Bento) */}
-      <dl className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <dl className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
         <StatCard label="진행 중 견적" value={inProgress} />
         <StatCard label="누적 입찰" value={totalBids} />
         <StatCard label="숨김 리뷰" value={hiddenReviews} />
         <StatCard label="미답변 Q&A" value={pendingQa} />
+        <StatCard label="미처리 상담신청" value={pendingConsults} />
         <StatCard label="미처리 불편사항" value={pendingComplaints} />
         <StatCard label="공지" value={notices.length} />
       </dl>
@@ -1409,6 +1475,143 @@ function AdminDashboardPage() {
                   ))
                 )}
               </div>
+            </>
+          )}
+
+          {tab === 'consults' && (
+            <>
+              <h2 className="text-xl font-bold text-gray-900">
+                상담신청 <span className="text-brand">{consults.length}</span>
+              </h2>
+              <p className="mt-2 text-sm text-gray-500">
+                상담 도크로 들어온 신청입니다. 연락처로 응대 후 상태를 변경하고
+                내부 메모를 남길 수 있습니다.
+              </p>
+              <div className="mt-4 space-y-3">
+                {consults.length === 0 ? (
+                  <Empty />
+                ) : (
+                  consultPage.pageItems.map((c) => (
+                    <article
+                      key={c.id}
+                      className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${consultStatusStyle[c.status] || consultStatusStyle['접수']}`}
+                            >
+                              {c.status}
+                            </span>
+                            {c.moveType && (
+                              <span className="rounded-full bg-brand-light px-2.5 py-0.5 text-xs font-semibold text-brand-dark">
+                                {c.moveType}
+                              </span>
+                            )}
+                            {c.hidden && (
+                              <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-600">
+                                숨김
+                              </span>
+                            )}
+                            <span className="font-semibold text-gray-900">
+                              {c.name}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {c.contact}
+                            </span>
+                          </div>
+                          {c.content && (
+                            <p className="mt-2 leading-relaxed whitespace-pre-line text-gray-700">
+                              {c.content}
+                            </p>
+                          )}
+                          <p className="mt-1 text-xs text-gray-400">
+                            {formatDate(c.createdAt)}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleConsultHide(c)}
+                            className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-brand hover:text-brand"
+                          >
+                            {c.hidden ? '노출' : '숨김'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeConsult(c.id)}
+                            className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500">
+                          상태
+                        </span>
+                        {CONSULT_STATUS.map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setConsultStatus(c.id, s)}
+                            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                              c.status === s
+                                ? 'bg-brand text-white'
+                                : 'border border-gray-300 text-gray-600 hover:border-brand hover:text-brand'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                      <textarea
+                        defaultValue={c.memo || ''}
+                        rows={2}
+                        placeholder="내부 메모(고객 비노출) — 포커스를 벗어나면 저장됩니다."
+                        className={inputClass}
+                        onBlur={(e) => {
+                          if (e.target.value !== (c.memo || ''))
+                            saveConsultMemo(c.id, e.target.value)
+                        }}
+                      />
+                      {/* 고객 답변 — 이메일 신청이면 저장 시 해당 메일로 발송 */}
+                      <div className="mt-3 border-t border-gray-100 pt-3">
+                        <p className="text-xs font-semibold text-gray-500">
+                          고객 답변
+                          {isEmailContact(c.contact) ? (
+                            <span className="ml-1 font-normal text-brand">
+                              저장 시 {c.contact}로 답변 메일 발송
+                            </span>
+                          ) : (
+                            <span className="ml-1 font-normal text-gray-400">
+                              전화 신청 — 답변은 기록만(상담원이 직접 통화)
+                            </span>
+                          )}
+                        </p>
+                        <textarea
+                          defaultValue={c.reply || ''}
+                          rows={2}
+                          placeholder="고객에게 전달할 답변을 입력하고 포커스를 벗어나면 저장됩니다."
+                          className={inputClass}
+                          onBlur={(e) => {
+                            if (e.target.value !== (c.reply || ''))
+                              saveConsultReply(c.id, e.target.value)
+                          }}
+                        />
+                      </div>
+                    </article>
+                  ))
+                )}
+              </div>
+              <Pagination
+                page={consultPage.page}
+                setPage={consultPage.setPage}
+                totalPages={consultPage.totalPages}
+                perPage={consultPage.perPage}
+                setPerPage={consultPage.setPerPage}
+              />
             </>
           )}
 

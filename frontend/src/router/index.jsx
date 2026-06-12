@@ -43,6 +43,7 @@ import GalleryPage from '../pages/GalleryPage'
 import PortfolioPage from '../pages/PortfolioPage'
 import VlogPage from '../pages/VlogPage'
 import ComplaintPage from '../pages/ComplaintPage'
+import ConsultPage from '../pages/ConsultPage'
 import TipBoardPage from '../pages/TipBoardPage'
 import { createQuote } from '../services/quotes'
 
@@ -72,8 +73,9 @@ export const router = createBrowserRouter([
       { path: 'reviews', element: <UserReviewPage /> },
       // FAQ (자주 묻는 질문 + Q&A)
       { path: 'faq', element: <UserFaqPage /> },
-      // 불편사항 접수 · 팁 게시판 (공용)
+      // 불편사항 접수 · 상담신청 · 팁 게시판 (공용)
       { path: 'complaint', element: <ComplaintPage /> },
+      { path: 'consult', element: <ConsultPage /> },
       { path: 'tips', element: <TipBoardPage /> },
       // 회원 영역
       { path: 'mypage', element: <MyPage /> },
@@ -152,8 +154,9 @@ export const router = createBrowserRouter([
       { path: 'faq', element: <PartnerFaqPage /> },
       { path: 'mypage', element: <PartnerMyPage /> },
       { path: 'notice', element: <NoticePage /> },
-      // 불편사항 접수 · 팁 게시판 (공용 컴포넌트, 파트너 레이아웃 유지)
+      // 불편사항 접수 · 상담신청 · 팁 게시판 (공용 컴포넌트, 파트너 레이아웃 유지)
       { path: 'complaint', element: <ComplaintPage /> },
+      { path: 'consult', element: <ConsultPage /> },
       { path: 'tips', element: <TipBoardPage /> },
       // 파트너 사이트 검색
       { path: 'search', element: <SearchResultsPage scope="partner" /> },

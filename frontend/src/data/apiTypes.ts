@@ -174,6 +174,21 @@ export interface Complaint {
   authorEmail?: string | null
 }
 
+// 상담 신청 — 상담 도크에서 제출, 관리자가 상태·메모 처리
+export interface Consult {
+  id: string
+  createdAt: string
+  name: string
+  contact: string
+  moveType?: string | null // 이사 종류
+  content?: string | null // 상담 요청 내용
+  status: string // 접수 | 상담중 | 완료
+  memo?: string | null // 관리자 내부 메모(고객 비노출)
+  reply?: string | null // 관리자 답변(이메일 신청 시 해당 메일로 발송)
+  hidden?: boolean // 관리자 숨김 여부
+  authorEmail?: string | null
+}
+
 // 팁 게시판 — 관리자 작성 글
 export interface Tip {
   id: string

@@ -10,13 +10,12 @@ import PageTransition from './PageTransition'
 import TopButton from './TopButton'
 import { useTapFeedback } from '../hooks/useTapFeedback'
 
-// 하단 메뉴 바 — 파트너 주요 메뉴
+// 하단 메뉴 바 — 파트너 주요 메뉴 (파트너 스토리·FAQ는 상단 보조 링크로만 노출)
 const MENU = [
   { to: '/partner/dashboard', label: '견적 요청' },
   { to: '/partner/bids', label: '내 입찰' },
   { to: '/partner/profile', label: '업체 정보' },
-  { to: '/partner/story', label: '파트너 스토리' },
-  { to: '/partner/faq', label: 'FAQ' },
+  { to: '/projects', label: '무빙 프로젝트' },
 ]
 
 // 상단 줄 보조 링크 (로고 오른쪽) — 고객 지원·커뮤니티 (파트너 컨텍스트)
